@@ -13,7 +13,7 @@
 use std::time::Duration;
 
 use async_trait::async_trait;
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use bytes::Bytes;
 use tracing::{error, warn};
 
 use crate::{
@@ -61,7 +61,7 @@ impl IpcWebSocketHandler {
         connection_id: String,
         request_id: Option<String>,
         client_ip: String,
-        message: String,
+        message: Bytes,
         is_binary: bool,
     ) -> Result<(), WebSocketsMessageError> {
         let event = EventData {
@@ -175,7 +175,7 @@ impl WebSocketMessageHandler for IpcWebSocketHandler {
         &self,
         message: JsonMessageInfo,
     ) -> Result<(), WebSocketsMessageError> {
-        let body = serde_json::to_string(&message.body).map_err(|err| {
+        let body = serde_json::to_vec(&message.body).map_err(|err| {
             WebSocketsMessageError::UnexpectedError(format!(
                 "failed to serialise the message body: {err}"
             ))
@@ -192,7 +192,7 @@ impl WebSocketMessageHandler for IpcWebSocketHandler {
                 .as_ref()
                 .map(|ctx| ctx.client_ip.clone())
                 .unwrap_or_default(),
-            body,
+            Bytes::from(body),
             false,
         )
         .await
@@ -202,13 +202,9 @@ impl WebSocketMessageHandler for IpcWebSocketHandler {
         &self,
         message: BinaryMessageInfo<'a>,
     ) -> Result<(), WebSocketsMessageError> {
-        // The event is carried as JSON, which cannot represent raw bytes, so a
-        // binary frame is base64 encoded rather than being forced through a
-        // lossy UTF-8 conversion that would silently corrupt it. `is_binary`
-        // tells the handler to decode it. When the event moves to protobuf the
-        // body becomes `bytes` and the encoding step disappears, but the flag
-        // still distinguishes a binary frame from a text one.
-        let body = BASE64.encode(message.body);
+        // Carried as received. `is_binary` still travels with it, because bytes
+        // alone cannot say which frame type they arrived as.
+        let body = Bytes::copy_from_slice(message.body);
 
         self.dispatch(
             message.connection_id,

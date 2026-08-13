@@ -153,7 +153,9 @@ message HttpRequest {
   string method = 1;
   // Raw, percent-encoded as received.
   string path = 2;
-  // The blueprint route template, e.g. /files/{path+}.
+  // The route template this request matched, in the router's own form, so a
+  // blueprint's /files/{path+} arrives as /files/{*path}. The same form the
+  // handler tag is built from.
   string route = 3;
   // A catch-all parameter yields one value per path segment. Segments are split
   // from the raw path before being percent-decoded, so a segment containing an

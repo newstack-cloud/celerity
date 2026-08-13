@@ -15,12 +15,11 @@
 use std::{collections::HashMap, time::Duration};
 
 use axum::{
-    body::{to_bytes, Body, Bytes},
+    body::{to_bytes, Body},
     extract::{RawPathParams, Request},
     http::{header::RETRY_AFTER, HeaderMap, StatusCode},
     response::{IntoResponse, Response},
 };
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use http_body_util::LengthLimitError;
 use tracing::{error, warn};
 
@@ -71,13 +70,12 @@ pub async fn handle_request(
         .map(|ip| ip.0.to_string())
         .unwrap_or_default();
 
-    let (single_headers, multi_headers) = collect_headers(request.headers());
-    let path_params = collect_path_params(&path_params);
-    let (query_params, multi_query_params) = collect_query_params(&query);
+    let headers = collect_headers(request.headers());
+    let path_params = collect_path_params(&path_params, &route.route, &path);
+    let query_params = collect_query_params(&query);
 
-    let (body, is_binary) = match to_bytes(request.into_body(), MAX_HTTP_REQUEST_BODY_BYTES).await {
-        Ok(bytes) if bytes.is_empty() => (None, false),
-        Ok(bytes) => encode_body(bytes),
+    let body = match to_bytes(request.into_body(), MAX_HTTP_REQUEST_BODY_BYTES).await {
+        Ok(bytes) => bytes,
         Err(err) if is_length_limit(&err) => {
             warn!(
                 limit = MAX_HTTP_REQUEST_BODY_BYTES,
@@ -109,11 +107,8 @@ pub async fn handle_request(
             route: route.route.clone(),
             path_params,
             query_params,
-            multi_query_params,
-            headers: single_headers,
-            multi_headers,
+            headers,
             body,
-            is_binary,
             source_ip,
             request_id,
         })),
@@ -205,22 +200,6 @@ async fn dispatch(route: &IpcHttpRoute, event: EventData) -> Response {
     response
 }
 
-/// Carries the body without losing anything.
-///
-/// A text body travels as sent. One that is not valid UTF-8 is base64 encoded
-/// rather than being forced through a lossy conversion, which would replace
-/// every invalid sequence with the replacement character and silently corrupt
-/// any payload that is not text, such as an upload or a protobuf request.
-///
-/// The event is serialised as JSON, which cannot represent raw bytes, so an
-/// encoding is unavoidable here. It disappears when bodies become `bytes`.
-fn encode_body(bytes: Bytes) -> (Option<String>, bool) {
-    match String::from_utf8(bytes.into()) {
-        Ok(text) => (Some(text), false),
-        Err(err) => (Some(BASE64.encode(err.as_bytes())), true),
-    }
-}
-
 /// Whether reading the body failed because it exceeded the limit, as opposed to
 /// the connection breaking partway through.
 fn is_length_limit(err: &axum::Error) -> bool {
@@ -266,8 +245,12 @@ fn build_response(response: HttpResponseData) -> Response {
     let status = StatusCode::from_u16(response.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
 
     let mut builder = Response::builder().status(status);
-    for (name, value) in response.headers {
-        builder = builder.header(name, value);
+    for (name, values) in response.headers {
+        // Appended one at a time rather than folded together, so two
+        // `Set-Cookie` headers stay two headers.
+        for value in values {
+            builder = builder.header(&name, value);
+        }
     }
 
     builder
@@ -282,88 +265,146 @@ fn build_response(response: HttpResponseData) -> Response {
         })
 }
 
-/// Collects request headers into the single and multi valued maps the event
-/// carries.
+/// Collects request headers, keeping every value a name was sent with.
 ///
 /// Header names are lowercased, which HTTP/2 requires on the wire and which
 /// makes lookup unambiguous for handlers regardless of how a client cased them.
-fn collect_headers(headers: &HeaderMap) -> (HashMap<String, String>, HashMap<String, Vec<String>>) {
-    let mut single = HashMap::new();
-    let mut multi: HashMap<String, Vec<String>> = HashMap::new();
+fn collect_headers(headers: &HeaderMap) -> HashMap<String, Vec<String>> {
+    let mut collected: HashMap<String, Vec<String>> = HashMap::new();
 
     for (name, value) in headers {
         let Ok(value) = value.to_str() else {
             // A header whose bytes are not valid UTF-8 cannot be represented in
-            // the current string-typed event, so it is dropped rather than
-            // corrupted.
+            // the string-typed event, so it is dropped rather than corrupted.
             warn!(header = %name, "skipping header with a non UTF-8 value");
             continue;
         };
-        let name = name.as_str().to_lowercase();
-        single
-            .entry(name.clone())
-            .or_insert_with(|| value.to_string());
-        multi.entry(name).or_default().push(value.to_string());
+        collected
+            .entry(name.as_str().to_lowercase())
+            .or_default()
+            .push(value.to_string());
     }
 
-    (single, multi)
+    collected
 }
 
-fn collect_path_params(params: &RawPathParams) -> HashMap<String, String> {
+/// Collects path parameters, splitting a catch-all into one value per segment.
+///
+/// An ordinary parameter arrives already decoded from the extractor and is
+/// taken as it is; decoding it again would turn a literal `%20` a client took
+/// care to escape into a space.
+///
+/// A catch-all cannot be taken from the extractor at all. It matches the whole
+/// remaining path, and by the time the extractor has decoded it an encoded
+/// separator is indistinguishable from a real one, so `a%2Fb` would be torn
+/// into two segments. The segments are therefore recovered from the request's
+/// own path, which is still encoded, and decoded one at a time afterwards.
+fn collect_path_params(
+    params: &RawPathParams,
+    route: &str,
+    raw_path: &str,
+) -> HashMap<String, Vec<String>> {
     params
         .iter()
-        .map(|(name, value)| (name.to_string(), value.to_string()))
+        .map(|(name, value)| {
+            let values = if is_catch_all(route, name) {
+                catch_all_segments(route, name, raw_path)
+            } else {
+                vec![value.to_string()]
+            };
+            (name.to_string(), values)
+        })
         .collect()
 }
 
-/// Parses the query string into the single and multi valued maps.
+/// The segments a catch-all matched, taken from the still-encoded request path.
 ///
-/// The single valued map keeps the first occurrence of a name, so that
-/// `?tag=a&tag=b` yields `a` there and both values in the multi valued map.
-fn collect_query_params(query: &str) -> (HashMap<String, String>, HashMap<String, Vec<String>>) {
-    let mut single = HashMap::new();
-    let mut multi: HashMap<String, Vec<String>> = HashMap::new();
+/// A catch-all is always the last thing in a route, so everything after the
+/// segments the template spells out belongs to it.
+fn catch_all_segments(route: &str, name: &str, raw_path: &str) -> Vec<String> {
+    let placeholder = format!("{{*{name}}}");
+    let consumed_by_template = route
+        .trim_start_matches('/')
+        .split('/')
+        .take_while(|segment| *segment != placeholder)
+        .count();
+
+    raw_path
+        .trim_start_matches('/')
+        .split('/')
+        .skip(consumed_by_template)
+        .map(percent_decode)
+        .collect()
+}
+
+/// Whether a parameter is declared as a catch-all.
+///
+/// Read from the route template rather than from the matched value, since a
+/// catch-all that happened to match a single segment is indistinguishable from
+/// an ordinary parameter by its value alone.
+///
+/// The template is the router's own form, `{*name}`, not the blueprint's
+/// `{name+}`, because the blueprint path is normalised for the router when the
+/// configuration is transformed and that normalised form is what the runtime
+/// carries from then on, handler tags included.
+fn is_catch_all(route: &str, name: &str) -> bool {
+    route.contains(&format!("{{*{name}}}"))
+}
+
+/// Percent-decodes one path segment.
+///
+/// Deliberately not the query string decoder, which reads `&` and `=` as
+/// separators and `+` as a space. All three are legal literals in a path
+/// segment, so decoding one that way would silently drop or alter them.
+fn percent_decode(value: &str) -> String {
+    percent_encoding::percent_decode_str(value)
+        .decode_utf8_lossy()
+        .into_owned()
+}
+
+/// Parses the query string, keeping every value a name was sent with, so that
+/// `?tag=a&tag=b` yields both.
+fn collect_query_params(query: &str) -> HashMap<String, Vec<String>> {
+    let mut collected: HashMap<String, Vec<String>> = HashMap::new();
 
     for (name, value) in form_urlencoded::parse(query.as_bytes()) {
-        let (name, value) = (name.into_owned(), value.into_owned());
-        single.entry(name.clone()).or_insert_with(|| value.clone());
-        multi.entry(name).or_default().push(value);
+        collected
+            .entry(name.into_owned())
+            .or_default()
+            .push(value.into_owned());
     }
 
-    (single, multi)
+    collected
 }
 
 #[cfg(test)]
 mod tests {
+    use axum::body::Bytes;
+
     use super::*;
 
     #[test]
-    fn collects_repeated_query_params_into_both_maps() {
-        let (single, multi) = collect_query_params("tag=a&tag=b&page=2");
+    fn keeps_every_value_of_a_repeated_query_param() {
+        let collected = collect_query_params("tag=a&tag=b&page=2");
 
-        assert_eq!(single.get("tag"), Some(&"a".to_string()));
-        assert_eq!(single.get("page"), Some(&"2".to_string()));
         assert_eq!(
-            multi.get("tag"),
+            collected.get("tag"),
             Some(&vec!["a".to_string(), "b".to_string()])
         );
-        assert_eq!(multi.get("page"), Some(&vec!["2".to_string()]));
+        assert_eq!(collected.get("page"), Some(&vec!["2".to_string()]));
     }
 
     #[test]
     fn collects_percent_decoded_query_params() {
-        let (single, _) = collect_query_params("q=hello%20world&filter=a%26b");
+        let collected = collect_query_params("q=hello%20world&filter=a%26b");
 
-        assert_eq!(single.get("q"), Some(&"hello world".to_string()));
-        assert_eq!(single.get("filter"), Some(&"a&b".to_string()));
+        assert_eq!(collected.get("q"), Some(&vec!["hello world".to_string()]));
+        assert_eq!(collected.get("filter"), Some(&vec!["a&b".to_string()]));
     }
 
     #[test]
-    fn collects_empty_query_as_empty_maps() {
-        let (single, multi) = collect_query_params("");
-
-        assert!(single.is_empty());
-        assert!(multi.is_empty());
+    fn collects_empty_query_as_an_empty_map() {
+        assert!(collect_query_params("").is_empty());
     }
 
     #[test]
@@ -373,12 +414,14 @@ mod tests {
         headers.append("set-cookie", "b=2".parse().unwrap());
         headers.insert("Content-Type", "application/json".parse().unwrap());
 
-        let (single, multi) = collect_headers(&headers);
+        let collected = collect_headers(&headers);
 
-        assert_eq!(single.get("content-type"), Some(&"application/json".into()));
-        assert_eq!(single.get("set-cookie"), Some(&"a=1".to_string()));
         assert_eq!(
-            multi.get("set-cookie"),
+            collected.get("content-type"),
+            Some(&vec!["application/json".to_string()])
+        );
+        assert_eq!(
+            collected.get("set-cookie"),
             Some(&vec!["a=1".to_string(), "b=2".to_string()])
         );
     }
@@ -387,8 +430,11 @@ mod tests {
     fn builds_a_response_from_handler_result_data() {
         let response = build_response(HttpResponseData {
             status: 201,
-            headers: HashMap::from([("content-type".to_string(), "application/json".to_string())]),
-            body: r#"{"id":1}"#.to_string(),
+            headers: HashMap::from([(
+                "content-type".to_string(),
+                vec!["application/json".to_string()],
+            )]),
+            body: Bytes::from_static(br#"{"id":1}"#),
         });
 
         assert_eq!(response.status(), StatusCode::CREATED);
@@ -405,30 +451,27 @@ mod tests {
         let response = build_response(HttpResponseData {
             status: 1000,
             headers: HashMap::new(),
-            body: String::new(),
+            body: Bytes::new(),
         });
 
         assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[test]
-    fn carries_a_text_body_as_sent() {
-        let (body, is_binary) = encode_body(Bytes::from_static(br#"{"id":1}"#));
+    fn emits_a_repeated_response_header_once_per_value() {
+        let response = build_response(HttpResponseData {
+            status: 200,
+            headers: HashMap::from([(
+                "set-cookie".to_string(),
+                vec!["a=1".to_string(), "b=2".to_string()],
+            )]),
+            body: Bytes::new(),
+        });
 
-        assert_eq!(body.as_deref(), Some(r#"{"id":1}"#));
-        assert!(!is_binary);
-    }
-
-    #[test]
-    fn carries_a_non_utf8_body_without_corrupting_it() {
-        let raw = vec![0xff, 0xfe, 0x00, 0x80, 0x01];
-        let (body, is_binary) = encode_body(Bytes::from(raw.clone()));
-
-        assert!(is_binary);
-        let decoded = BASE64
-            .decode(body.expect("a body should be carried"))
-            .expect("the body should be base64 encoded");
-        assert_eq!(decoded, raw);
+        // Two headers rather than one folded value, which RFC 9110 forbids for
+        // Set-Cookie.
+        let cookies: Vec<_> = response.headers().get_all("set-cookie").iter().collect();
+        assert_eq!(cookies, vec!["a=1", "b=2"]);
     }
 
     #[tokio::test]
@@ -448,6 +491,45 @@ mod tests {
         .await
         .unwrap_err();
         assert!(!is_length_limit(&err));
+    }
+
+    #[test]
+    fn takes_catch_all_segments_from_the_still_encoded_path() {
+        // The middle segment carries an encoded separator, which belongs inside
+        // that segment rather than splitting it.
+        assert_eq!(
+            catch_all_segments(
+                "/files/{*filePath}",
+                "filePath",
+                "/files/docs/a%2Fb/report%20final.pdf"
+            ),
+            vec!["docs", "a/b", "report final.pdf"]
+        );
+        // Segments the template spells out are not part of the catch-all.
+        assert_eq!(
+            catch_all_segments("/files/{bucket}/{*path}", "path", "/files/main/a/b"),
+            vec!["a", "b"]
+        );
+    }
+
+    #[test]
+    fn decodes_a_percent_encoded_path_parameter() {
+        assert_eq!(percent_decode("order%20one"), "order one");
+        assert_eq!(percent_decode("plain"), "plain");
+        // Characters the query string decoder would treat as syntax are
+        // ordinary literals in a path segment and must survive.
+        assert_eq!(percent_decode("a+b"), "a+b");
+        assert_eq!(percent_decode("a=b"), "a=b");
+        assert_eq!(percent_decode("a&b"), "a&b");
+        assert_eq!(percent_decode("k=v&x=y"), "k=v&x=y");
+    }
+
+    #[test]
+    fn reads_catch_all_parameters_from_the_route_template() {
+        assert!(is_catch_all("/files/{*path}", "path"));
+        assert!(!is_catch_all("/orders/{orderId}", "orderId"));
+        // A catch-all elsewhere in the route does not make this one a catch-all.
+        assert!(!is_catch_all("/files/{bucket}/{*path}", "bucket"));
     }
 
     #[test]

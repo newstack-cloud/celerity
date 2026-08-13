@@ -946,6 +946,9 @@ name = "bytes"
 version = "1.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "bytes-utils"
@@ -1220,6 +1223,7 @@ dependencies = [
  "axum-extra 0.10.3",
  "base64 0.22.1",
  "biscuit",
+ "bytes",
  "celerity_blueprint_config_parser",
  "celerity_consumer_azure_events_hub",
  "celerity_consumer_azure_service_bus",
@@ -1244,6 +1248,7 @@ dependencies = [
  "opentelemetry-aws",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
+ "percent-encoding",
  "pretty_assertions",
  "prost 0.14.4",
  "reqwest",

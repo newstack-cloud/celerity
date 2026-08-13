@@ -24,10 +24,12 @@ opentelemetry-otlp = { version = "0.15.0", features = ["metrics"] }
 tracing-opentelemetry = "0.23.0"
 opentelemetry-aws = "0.10.0"
 base64 = "0.22"
+bytes = { version = "1", features = ["serde"] }
 prost = "0.14"
 tonic = "0.14"
 tonic-prost = "0.14"
 form_urlencoded = "1.2"
+percent-encoding = "2.3"
 futures = "0.3"
 http-body-util = "0.1.2"
 nanoid = "0.4.0"

@@ -234,7 +234,9 @@ pub struct HttpRequest {
     /// Raw, percent-encoded as received.
     #[prost(string, tag = "2")]
     pub path: ::prost::alloc::string::String,
-    /// The blueprint route template, e.g. /files/{path+}.
+    /// The route template this request matched, in the router's own form, so a
+    /// blueprint's /files/{path+} arrives as /files/{\*path}. The same form the
+    /// handler tag is built from.
     #[prost(string, tag = "3")]
     pub route: ::prost::alloc::string::String,
     /// A catch-all parameter yields one value per path segment. Segments are split
