@@ -35,9 +35,15 @@ use celerity_ws_registry::{
     types::{AckWorkerConfig, MessageType},
 };
 use reqwest::Client;
-use tokio::{net::TcpListener, sync::Mutex as AsyncMutex, task::JoinHandle};
+use tokio::{
+    net::TcpListener,
+    sync::{mpsc, Mutex as AsyncMutex},
+    task::JoinHandle,
+};
+use tokio_stream::wrappers::UnixListenerStream;
+use tonic::transport::Server;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
-use tracing::{debug, info, info_span, warn};
+use tracing::{debug, error, info, info_span, warn};
 
 use crate::{
     auth_custom::AuthGuardHandler,
@@ -46,10 +52,14 @@ use crate::{
         ApiConfig, AppConfig, ConsumerConfig, EventConfig, RuntimeConfig, ScheduleConfig,
         WebSocketConfig,
     },
-    consts::{DEFAULT_EVENT_QUEUE_CAPACITY, DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT},
+    consts::{
+        DEFAULT_EVENT_QUEUE_CAPACITY, DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT,
+        DISPATCHER_COMMAND_BUFFER,
+    },
     consumer_handler::{
         ConsumerEventHandler, EventQueueConsumerEventHandler, SharedConsumerEventHandler,
     },
+    dispatcher::{Dispatcher, DispatcherCommand},
     errors::{ApplicationStartError, ConfigError},
     event_queue::{
         collect_handler_timeouts, http_handler_tag, timeout_from_seconds, websocket_handler_tag,
@@ -60,6 +70,11 @@ use crate::{
         HandlerInvoker, InvokeHandlerState,
     },
     ipc_http::{self, IpcHttpRoute},
+    ipc_proto::handler_runtime_server::HandlerRuntimeServer,
+    ipc_stream::{
+        runtime_config_from_app_config, tags_from_runtime_config, HandlerRuntimeService,
+        StreamContext,
+    },
     ipc_websocket::IpcWebSocketHandler,
     request::request_id,
     runtime_local_api::create_runtime_local_api,
@@ -94,6 +109,12 @@ pub struct Application {
     event_queue: Option<EventQueueHandles>,
     /// Created during setup, started in `run`.
     event_cleanup_task: Option<EventCleanupTask>,
+    /// Built during setup, served in `run` once there is a runtime to spawn on.
+    ipc_stream_context: Option<Arc<StreamContext>>,
+    ipc_dispatcher: Option<Dispatcher>,
+    ipc_commands_rx: Option<mpsc::Receiver<DispatcherCommand>>,
+    ipc_dispatcher_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
+    ipc_server_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     event_cleanup_task_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     ws_connections: Option<Arc<dyn WebSocketRegistrySend + 'static>>,
     ws_app_routes: Arc<AsyncMutex<HashMap<String, Arc<dyn WebSocketMessageHandler + Send + Sync>>>>,
@@ -135,6 +156,11 @@ impl Application {
             event_queue: None,
             event_cleanup_task: None,
             event_cleanup_task_shutdown_signal: None,
+            ipc_stream_context: None,
+            ipc_dispatcher: None,
+            ipc_commands_rx: None,
+            ipc_dispatcher_shutdown_signal: None,
+            ipc_server_shutdown_signal: None,
             ws_connections: None,
             ws_app_routes: Arc::new(AsyncMutex::new(HashMap::new())),
             custom_auth_guards: Arc::new(AsyncMutex::new(HashMap::new())),
@@ -206,6 +232,7 @@ impl Application {
 
         if self.runtime_config.runtime_call_mode == RuntimeCallMode::Ipc {
             self.runtime_local_api = Some(self.setup_runtime_local_api(&app_config)?);
+            self.setup_ipc_stream(&app_config);
         }
 
         // Store consumer/schedule configs for later creation in run() (async context required).
@@ -464,6 +491,107 @@ impl Application {
         )
     }
 
+    /// Prepares the handler stream including the dispatcher that decides where events go,
+    /// and the context each connected handler stream serves from.
+    ///
+    /// Nothing is spawned or bound here. The dispatcher and the server both need
+    /// a runtime, so `run` starts them.
+    fn setup_ipc_stream(&mut self, app_config: &AppConfig) {
+        let Some(event_queue) = &self.event_queue else {
+            return;
+        };
+
+        let runtime_config = runtime_config_from_app_config(
+            app_config,
+            self.app_tracing_enabled,
+            self.runtime_config.metrics_enabled,
+        );
+        let blueprint_tags = tags_from_runtime_config(&runtime_config);
+        let (commands_tx, commands_rx) = mpsc::channel(DISPATCHER_COMMAND_BUFFER);
+
+        self.ipc_dispatcher = Some(Dispatcher::new(
+            event_queue.in_flight.clone(),
+            collect_handler_timeouts(app_config),
+        ));
+        self.ipc_commands_rx = Some(commands_rx);
+        self.ipc_stream_context = Some(Arc::new(StreamContext {
+            runtime_config,
+            blueprint_tags,
+            commands: commands_tx,
+            in_flight: event_queue.in_flight.clone(),
+        }));
+    }
+
+    /// Starts the dispatcher and serves the handler stream.
+    ///
+    /// A Unix socket is preferred as it is faster than loopback on Linux, needs no
+    /// port allocation, and its access control is filesystem permissions rather
+    /// than reachability of localhost. Where one cannot be bound the runtime
+    /// falls back to loopback TCP so the platform is still serviceable.
+    async fn run_ipc_stream_server(&mut self) -> Result<(), ApplicationStartError> {
+        let (Some(dispatcher), Some(commands_rx), Some(context), Some(event_queue)) = (
+            self.ipc_dispatcher.take(),
+            self.ipc_commands_rx.take(),
+            self.ipc_stream_context.clone(),
+            self.event_queue.clone(),
+        ) else {
+            return Ok(());
+        };
+
+        let (dispatcher_shutdown_tx, dispatcher_shutdown_rx) = tokio::sync::oneshot::channel();
+        tokio::spawn(dispatcher.run(
+            event_queue.receiver.clone(),
+            commands_rx,
+            dispatcher_shutdown_rx,
+        ));
+        self.ipc_dispatcher_shutdown_signal = Some(dispatcher_shutdown_tx);
+
+        let service = HandlerRuntimeServer::new(HandlerRuntimeService::new(context));
+        let (server_shutdown_tx, server_shutdown_rx) = tokio::sync::oneshot::channel();
+        let shutdown = async {
+            server_shutdown_rx.await.ok();
+        };
+
+        match bind_runtime_socket(&self.runtime_config.runtime_socket).await {
+            Ok(listener) => {
+                info!(
+                    socket = %self.runtime_config.runtime_socket,
+                    "serving the handler stream on a unix socket"
+                );
+                let incoming = UnixListenerStream::new(listener);
+                tokio::spawn(async move {
+                    if let Err(err) = Server::builder()
+                        .add_service(service)
+                        .serve_with_incoming_shutdown(incoming, shutdown)
+                        .await
+                    {
+                        error!("handler stream server stopped: {err}");
+                    }
+                });
+            }
+            Err(err) => {
+                let port = self.runtime_config.local_api_port;
+                warn!(
+                    socket = %self.runtime_config.runtime_socket,
+                    "could not bind a unix socket ({err}), falling back to loopback tcp on {port}"
+                );
+                let addr = SocketAddr::from((std::net::Ipv4Addr::LOCALHOST, port as u16));
+                tokio::spawn(async move {
+                    if let Err(err) = Server::builder()
+                        .add_service(service)
+                        .serve_with_shutdown(addr, shutdown)
+                        .await
+                    {
+                        error!("handler stream server stopped: {err}");
+                    }
+                });
+            }
+        }
+
+        self.ipc_server_shutdown_signal = Some(server_shutdown_tx);
+        Ok(())
+    }
+
     pub async fn run(&mut self, block: bool) -> Result<AppInfo, ApplicationStartError> {
         // Tracing setup is in `run` instead of `setup` because
         // we need to be in an async context (tokio runtime) in order to set up tracing.
@@ -480,6 +608,8 @@ impl Application {
         if let Some(cleanup_task) = self.event_cleanup_task.take() {
             self.event_cleanup_task_shutdown_signal = Some(cleanup_task.spawn());
         }
+
+        self.run_ipc_stream_server().await?;
 
         let mut server_task = None;
         let mut local_api_task = None;
@@ -1174,6 +1304,12 @@ impl Application {
             tx.send(())
                 .expect("failed to send shutdown signal to local api server");
         }
+        if let Some(tx) = self.ipc_server_shutdown_signal.take() {
+            let _ = tx.send(());
+        }
+        if let Some(tx) = self.ipc_dispatcher_shutdown_signal.take() {
+            let _ = tx.send(());
+        }
         if let Some(tx) = self.event_cleanup_task_shutdown_signal.take() {
             // The cleanup task also stops when the arm channel closes, so a failed
             // send here just means it has already gone.
@@ -1581,4 +1717,20 @@ fn register_ipc_http_route(
             router
         }
     }
+}
+
+/// Binds the Unix socket the handler stream is served on.
+///
+/// A socket file left behind by a previous run would make binding fail, so a
+/// stale one is removed first. The parent directory is created because the
+/// default path lives under `/var/run`, which a container image may not have.
+async fn bind_runtime_socket(path: &str) -> std::io::Result<tokio::net::UnixListener> {
+    let path = std::path::Path::new(path);
+    if let Some(parent) = path.parent() {
+        tokio::fs::create_dir_all(parent).await?;
+    }
+    if tokio::fs::try_exists(path).await.unwrap_or(false) {
+        tokio::fs::remove_file(path).await?;
+    }
+    tokio::net::UnixListener::bind(path)
 }

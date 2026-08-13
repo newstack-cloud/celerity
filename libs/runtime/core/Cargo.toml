@@ -77,6 +77,10 @@ optional = true
 path = "../ws/ws-registry"
 
 [dev-dependencies]
+# tonic 0.14 builds on tower 0.5 while the crate itself still uses 0.4, so
+# the test connector needs the newer one under a name that cannot collide.
+tower_tonic = { package = "tower", version = "0.5", features = ["util"] }
+tokio-stream = "0.1"
 test-log = { version = "0.2.16", features = ["log", "trace"] }
 tokio = { version = "1.38.1", features = ["full", "test-util"] }
 pretty_assertions = "1.4.0"

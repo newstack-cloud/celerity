@@ -1288,6 +1288,8 @@ impl CoreRuntimeApplication {
       // as the runtime mode for interaction with application handlers
       // is FFI.
       local_api_port: 0,
+      // Unused in the FFI call mode, where handlers run in-process.
+      runtime_socket: String::new(),
       use_custom_health_check: runtime_config.use_custom_health_check,
       trace_otlp_collector_endpoint: runtime_config.trace_otlp_collector_endpoint,
       runtime_max_diagnostics_level: diagnostics_level,

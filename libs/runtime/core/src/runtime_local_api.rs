@@ -62,10 +62,18 @@ async fn next_event_handler(
     State(state): State<Arc<LocalRuntimeAppState>>,
 ) -> Json<Option<EventData>> {
     debug!("retrieving next event in the runtime queue");
-    // `try_recv` keeps this endpoint's existing behaviour of returning
-    // immediately when there is nothing queued, rather than holding the
-    // single receiver while waiting.
-    let taken = state.event_queue.receiver.lock().await.try_recv().ok();
+    // The handler stream owns the receiver whenever one is attached, and holds
+    // it for as long as it runs. `try_lock` means this endpoint reports an
+    // empty queue in that case rather than blocking forever on a lock it will
+    // never get. This endpoint is superseded by the stream and goes away with
+    // the rest of this API.
+    let taken = match state.event_queue.receiver.try_lock() {
+        Ok(mut receiver) => receiver.try_recv().ok(),
+        Err(_) => {
+            debug!("the handler stream is draining the event queue, reporting none here");
+            None
+        }
+    };
 
     let Some((result_tx, event)) = taken else {
         debug!("no events in the queue, returning null");

@@ -11,7 +11,7 @@ use celerity_helpers::{
 use serde_json::Value;
 use tracing::Level;
 
-use crate::consts::DEFAULT_LOCAL_API_PORT;
+use crate::consts::{DEFAULT_LOCAL_API_PORT, DEFAULT_RUNTIME_SOCKET};
 
 /// Core runtime configuration
 /// that is used to locate blueprint files
@@ -40,6 +40,13 @@ pub struct RuntimeConfig {
     /// This is only used when the runtime call mode
     /// is set to `RuntimeCallMode::Ipc`.
     pub local_api_port: i32,
+    /// The Unix socket the handler stream is served on in the IPC runtime call
+    /// mode.
+    ///
+    /// When this cannot be bound, the runtime falls back to loopback TCP on
+    /// `local_api_port`, so that platforms without Unix sockets are still
+    /// serviceable.
+    pub runtime_socket: String,
     /// Set to true if one of your handlers defines a custom health check endpoint.
     ///
     /// Defaults to false.
@@ -187,6 +194,10 @@ impl RuntimeConfig {
             .parse()
             .expect("Invalid local API port, must be a valid integer");
 
+        let runtime_socket = env
+            .var("CELERITY_RUNTIME_SOCKET")
+            .unwrap_or_else(|_| DEFAULT_RUNTIME_SOCKET.to_string());
+
         let use_custom_health_check = env.var("CELERITY_USE_CUSTOM_HEALTH_CHECK").ok();
         let use_custom_health_check = use_custom_health_check.map(|val| {
             val.parse().expect(
@@ -282,6 +293,7 @@ impl RuntimeConfig {
             server_port,
             server_loopback_only,
             local_api_port,
+            runtime_socket,
             use_custom_health_check,
             trace_otlp_collector_endpoint,
             runtime_max_diagnostics_level,
