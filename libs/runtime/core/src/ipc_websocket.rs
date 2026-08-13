@@ -19,7 +19,9 @@ use tracing::{error, warn};
 use crate::{
     errors::WebSocketsMessageError,
     event_queue::{admission_wait, EventQueue, EventQueueError},
-    types::{EventData, EventDataPayload, EventResultData, EventType, WebSocketEventData},
+    types::{
+        EventData, EventDataPayload, EventOutcome, EventResultData, EventType, WebSocketEventData,
+    },
     websocket::{BinaryMessageInfo, JsonMessageInfo, WebSocketMessageHandler},
 };
 
@@ -110,8 +112,22 @@ impl IpcWebSocketHandler {
             }
         };
 
+        // Deliberately not cancelled when the connection goes away, unlike an
+        // HTTP request. A WebSocket message is closer to a queue message than
+        // to a request and response as the client closing does not make the work
+        // pointless, and a handler part way through persisting the message
+        // should finish. The connection loop awaits this inline on its own
+        // task, so a close is handled by the loop rather than dropping this.
         match tokio::time::timeout_at(deadline, result_rx).await {
-            Ok(Ok((_event, result))) => self.check_result(result.data),
+            Ok(Ok(EventOutcome::Completed(_event, result))) => self.check_result(result.data),
+            Ok(Ok(EventOutcome::Unservable(reason))) => {
+                warn!(
+                    handler_tag = %self.handler_tag,
+                    %reason,
+                    "shedding WebSocket message, the runtime will not dispatch it"
+                );
+                Err(WebSocketsMessageError::UnexpectedError(reason.to_string()))
+            }
             // The sender was dropped, which happens when the cleanup task
             // removes the in-flight entry after its deadline passed, or when
             // the handlers executable went away mid-message.

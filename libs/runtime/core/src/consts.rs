@@ -58,6 +58,32 @@ pub const EVENT_QUEUE_ADMISSION_WAIT_DIVISOR: u32 = 4;
 // IPC call mode. Matches axum's own default extractor limit.
 pub const MAX_HTTP_REQUEST_BODY_BYTES: usize = 2 * 1024 * 1024;
 
+// How long a queued event waits for a handler stream serving its tag to attach
+// before the runtime gives up on it.
+//
+// Without a grace window, a request arriving in the moment before the handlers
+// executable finishes connecting would be shed, so every restart would drop
+// traffic it could have served. With one that is too long, an application whose
+// handlers are not running holds requests open instead of failing them. A few
+// seconds covers a connect that is already in progress and stays well inside
+// any handler timeout, so an event shed here is one no handler was ever going to run.
+pub const HANDLER_ATTACH_GRACE_SECS: u64 = 3;
+
+// The longest the dispatcher will wait for in-flight events to come back once
+// the runtime starts shutting down, when no drain timeout is configured.
+//
+// The default is derived from the longest handler timeout the blueprint
+// configures, so an application whose handlers are all short shuts down
+// promptly while one with a long running handler is given the time that handler
+// was told it had. This caps that derivation, because a deployment cannot wait
+// out an hour long handler, past this point the work is abandoned and, for a
+// source that acknowledges (a queue or topic), redelivered on the next start.
+pub const MAX_DERIVED_DRAIN_TIMEOUT_SECS: u64 = 300;
+
+// The drain timeout used when nothing is configured and no handler timeout can
+// be resolved, which is the case for an application with no handlers at all.
+pub const DEFAULT_DRAIN_TIMEOUT_SECS: u64 = 30;
+
 // How many dispatcher commands may be queued before a handler stream waits.
 // Commands are small and are drained by a single task, so this only needs to
 // absorb bursts of results arriving together.

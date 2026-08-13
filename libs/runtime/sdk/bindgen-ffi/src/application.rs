@@ -45,6 +45,7 @@ pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut
                 local_api_port: 3001,
                 // Unused in the FFI call mode, where handlers run in-process.
                 runtime_socket: String::new(),
+                drain_timeout: None,
                 use_custom_health_check: Some(false),
                 service_name: "CelerityTestService".to_string(),
                 platform: RuntimePlatform::Local,

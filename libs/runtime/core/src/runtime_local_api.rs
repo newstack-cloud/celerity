@@ -24,7 +24,7 @@ use crate::{
     handler_invoke::{
         invoke_handler as invoke_handler_fn, HandlerInvokeRegistry, InvokeHandlerState,
     },
-    types::{EventData, EventResult},
+    types::{EventData, EventOutcome, EventResult},
 };
 
 // Creates a router for the local runtime API
@@ -96,7 +96,7 @@ async fn event_result_handler(
     if let Some(entry) = state.event_queue.in_flight.remove(&event_result.event_id) {
         entry
             .result_tx
-            .send((entry.event, event_result))
+            .send(EventOutcome::Completed(Box::new(entry.event), event_result))
             .map_err(|_| EventResultError::UnexpectedError)?;
         return Ok(Json(ResponseMessage {
             message: "The result has been successfully processed".to_string(),
@@ -629,7 +629,10 @@ mod tests {
             }
             received_wrapped = verify_rx.recv() => {
                 let received = received_wrapped.unwrap().unwrap();
-                assert_eq!(received, (event, result));
+                let EventOutcome::Completed(received_event, received_result) = received else {
+                    panic!("expected a completed outcome, got {received:?}");
+                };
+                assert_eq!((*received_event, received_result), (event, result));
             }
         }
     }

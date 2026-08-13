@@ -25,13 +25,20 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::sync::Arc;
+use std::time::Duration;
 
-use tokio::sync::{mpsc, oneshot};
-use tracing::{debug, warn};
+use tokio::{
+    sync::{mpsc, oneshot},
+    time::Instant,
+};
+use tracing::{debug, info, warn};
 
 use crate::{
-    event_queue::{EventQueueReceiver, HandlerTimeouts, InFlightEntry, InFlightTable},
-    types::EventData,
+    consts::{HANDLER_ATTACH_GRACE_SECS, MAX_DERIVED_DRAIN_TIMEOUT_SECS},
+    event_queue::{
+        CancelReceiver, EventQueueReceiver, HandlerTimeouts, InFlightEntry, InFlightTable,
+    },
+    types::{CancelReason, CancelRequest, EventData, EventOutcome, EventTuple, UnservableReason},
 };
 
 /// Identifies one attached handler stream.
@@ -49,6 +56,26 @@ pub struct DispatchedEvent {
     pub deadline_unix_ms: i64,
 }
 
+/// What the dispatcher sends down an attached stream.
+///
+/// Cancellation and drain share the event channel rather than having their own,
+/// so that a handler sees them in order relative to the events they concern.
+#[derive(Debug)]
+pub enum StreamFrame {
+    Dispatch(Box<DispatchedEvent>),
+    /// Stop work on an event nobody is waiting for. This is advisory, the handler is
+    /// still expected to return a result, which is what returns its credit.
+    Cancel {
+        event_id: String,
+        reason: CancelReason,
+    },
+    /// The runtime has stopped dispatching and is waiting for what is already
+    /// in flight.
+    Drain {
+        deadline_unix_ms: i64,
+    },
+}
+
 /// What a handler stream declares about itself when it attaches.
 #[derive(Debug)]
 pub struct StreamRegistration {
@@ -60,8 +87,8 @@ pub struct StreamRegistration {
     /// Optional per-tag concurrency caps. A tag with no entry is bounded only
     /// by the credit window.
     pub limits: HashMap<String, u32>,
-    /// Where dispatched events are sent.
-    pub dispatch_tx: mpsc::Sender<DispatchedEvent>,
+    /// Where dispatched events and the frames concerning them are sent.
+    pub dispatch_tx: mpsc::Sender<StreamFrame>,
 }
 
 /// Tells the dispatcher about something that happened outside its own loop.
@@ -82,9 +109,15 @@ pub enum DispatcherCommand {
     Detach { stream_id: StreamId },
     /// A result came back, freeing a slot and returning whatever credit the
     /// handler chose to give back.
+    ///
+    /// Sent for every result, including one for an event whose deadline had
+    /// already passed. The credit for that event was still consumed, so a
+    /// result the caller can no longer use must still return it, or the window
+    /// shrinks by one every time a handler answers late and eventually stalls
+    /// the stream.
     Completed {
         stream_id: StreamId,
-        handler_tag: String,
+        event_id: String,
         credit_grant: u32,
     },
     /// Credit returned outside a result, used to resize the window or to resume
@@ -105,9 +138,11 @@ struct StreamState {
     limits: HashMap<String, u32>,
     /// How many events are in flight to this stream, per tag.
     in_flight: HashMap<String, u32>,
-    /// The events this stream is holding, so they can be released if it goes.
-    holding: HashSet<String>,
-    dispatch_tx: mpsc::Sender<DispatchedEvent>,
+    /// The events this stream is holding, by event id and the tag they were
+    /// dispatched for, so that a result identifies which per-tag count to
+    /// release and a departing stream releases everything it still holds.
+    holding: HashMap<String, String>,
+    dispatch_tx: mpsc::Sender<StreamFrame>,
 }
 
 impl StreamState {
@@ -131,8 +166,25 @@ pub struct Dispatcher {
     /// Where the last round-robin pass stopped, so the next starts after it.
     cursor: usize,
     streams: BTreeMap<StreamId, StreamState>,
+    /// Which stream holds each dispatched event, so a cancellation can be
+    /// routed without searching every stream.
+    holders: HashMap<String, StreamId>,
     in_flight: Arc<InFlightTable>,
     timeouts: HandlerTimeouts,
+    /// How long a shutdown waits for in-flight events before abandoning them.
+    drain_timeout: Duration,
+}
+
+/// Waits until an instant, or forever when there is nothing to wait for.
+///
+/// A `select!` branch has to produce a future either way, and a branch that
+/// never completes is how "no deadline" is expressed without disabling the
+/// branch and losing it when a deadline appears.
+async fn sleep_until_or_never(deadline: Option<Instant>) {
+    match deadline {
+        Some(deadline) => tokio::time::sleep_until(deadline).await,
+        None => std::future::pending().await,
+    }
 }
 
 /// The wall-clock instant a timeout from now lands on, in milliseconds.
@@ -145,38 +197,80 @@ fn unix_millis_from_now(timeout: std::time::Duration) -> i64 {
 
 /// An event waiting for a stream that can take it.
 struct QueuedEvent {
-    result_tx: oneshot::Sender<(EventData, crate::types::EventResult)>,
+    result_tx: oneshot::Sender<EventOutcome>,
     event: EventData,
+    /// When this joined the queue, which starts the grace window allowed for a
+    /// stream serving its tag to attach.
+    queued_at: Instant,
+}
+
+/// How long a shutdown should wait for in-flight events before abandoning them.
+///
+/// A configured value is taken as given, since an operator setting it is
+/// matching the deployment's own grace period. Otherwise it comes from the
+/// longest handler timeout the blueprint configures, so an application of short
+/// handlers stops promptly and one with a long running handler is given the
+/// time that handler was told it had, bounded because a deployment cannot wait
+/// out an hour long handler.
+pub fn drain_timeout(configured: Option<u64>, timeouts: &HandlerTimeouts) -> Duration {
+    match configured {
+        Some(seconds) => Duration::from_secs(seconds),
+        None => timeouts
+            .longest()
+            .min(Duration::from_secs(MAX_DERIVED_DRAIN_TIMEOUT_SECS)),
+    }
 }
 
 impl Dispatcher {
-    pub fn new(in_flight: Arc<InFlightTable>, timeouts: HandlerTimeouts) -> Self {
+    pub fn new(
+        in_flight: Arc<InFlightTable>,
+        timeouts: HandlerTimeouts,
+        drain_timeout: Duration,
+    ) -> Self {
         Dispatcher {
             queues: BTreeMap::new(),
             cursor: 0,
             streams: BTreeMap::new(),
+            holders: HashMap::new(),
             in_flight,
             timeouts,
+            drain_timeout,
         }
     }
 
-    /// Runs dispatch until the event queue closes or shutdown is signalled.
+    /// Runs dispatch until the event queue closes or shutdown is signalled,
+    /// then drains what is already in flight.
     pub async fn run(
         mut self,
         event_rx: EventQueueReceiver,
+        cancel_rx: CancelReceiver,
         mut command_rx: mpsc::Receiver<DispatcherCommand>,
         mut shutdown_rx: oneshot::Receiver<()>,
     ) {
         let mut events = event_rx.lock().await;
+        let mut cancellations = cancel_rx.lock().await;
 
         loop {
+            // Recomputed each pass because attaching a stream can make a queue
+            // servable again, and dispatching can empty one.
+            let shed_at = self.next_shed_deadline();
+
             tokio::select! {
                 _ = &mut shutdown_rx => break,
+                _ = sleep_until_or_never(shed_at) => self.shed_unservable(),
                 taken = events.recv() => match taken {
                     Some((result_tx, event)) => {
-                        self.enqueue(QueuedEvent { result_tx, event });
+                        self.enqueue(QueuedEvent {
+                            result_tx,
+                            event,
+                            queued_at: Instant::now(),
+                        });
                         self.dispatch_ready().await;
                     }
+                    None => break,
+                },
+                request = cancellations.recv() => match request {
+                    Some(request) => self.cancel(request),
                     None => break,
                 },
                 command = command_rx.recv() => match command {
@@ -189,6 +283,7 @@ impl Dispatcher {
             }
         }
 
+        self.drain(&mut events, &mut command_rx).await;
         debug!("dispatcher stopping");
     }
 
@@ -197,6 +292,108 @@ impl Dispatcher {
             .entry(queued.event.handler_tag.clone())
             .or_default()
             .push_back(queued);
+    }
+
+    /// Tells whichever stream holds an event to stop working on it.
+    ///
+    /// A cancellation for an event no stream holds is expected rather than
+    /// an exception, it may have completed in the moment before the caller went
+    /// away, or its stream may have detached.
+    fn cancel(&mut self, request: CancelRequest) {
+        let CancelRequest { event_id, reason } = request;
+        let Some(stream) = self
+            .holders
+            .get(&event_id)
+            .and_then(|stream_id| self.streams.get(stream_id))
+        else {
+            return;
+        };
+
+        // A caller that went away leaves an entry nobody will ever read, so it
+        // is released here rather than being held until its deadline, which
+        // would also produce a second cancellation for the same event. A
+        // deadline that has already passed took its own entry out.
+        if reason == CancelReason::CallerGone {
+            self.in_flight.remove(&event_id);
+        }
+
+        debug!(event_id = %event_id, ?reason, "cancelling an in-flight event");
+        if stream
+            .dispatch_tx
+            .try_send(StreamFrame::Cancel {
+                event_id: event_id.clone(),
+                reason,
+            })
+            .is_err()
+        {
+            debug!(event_id = %event_id, "could not deliver a cancellation to the handler stream");
+        }
+    }
+
+    /// Stops dispatching, tells attached streams to finish, and waits for what
+    /// is already in flight.
+    ///
+    /// Queued events are shed rather than held, nothing will dispatch them now,
+    /// so waiting out their own timeouts would only delay the callers finding
+    /// out.
+    async fn drain(
+        &mut self,
+        events: &mut mpsc::Receiver<EventTuple>,
+        command_rx: &mut mpsc::Receiver<DispatcherCommand>,
+    ) {
+        let deadline = Instant::now() + self.drain_timeout;
+        let deadline_unix_ms = unix_millis_from_now(self.drain_timeout);
+
+        // Closing first stops producers adding more, then everything already
+        // accepted is taken so its callers get an answer. Left in the channel
+        // they would instead see it close under them, which is indistinguishable
+        // from the handlers executable dying mid-request.
+        events.close();
+        while let Ok((result_tx, event)) = events.try_recv() {
+            self.enqueue(QueuedEvent {
+                result_tx,
+                event,
+                queued_at: Instant::now(),
+            });
+        }
+        self.shed_queued(UnservableReason::ShuttingDown);
+        for stream in self.streams.values() {
+            let _ = stream
+                .dispatch_tx
+                .try_send(StreamFrame::Drain { deadline_unix_ms });
+        }
+
+        if self.holders.is_empty() {
+            return;
+        }
+        info!(
+            in_flight = self.holders.len(),
+            drain_timeout = ?self.drain_timeout,
+            "waiting for in-flight events before stopping the dispatcher"
+        );
+
+        while !self.holders.is_empty() {
+            tokio::select! {
+                _ = tokio::time::sleep_until(deadline) => {
+                    warn!(
+                        in_flight = self.holders.len(),
+                        "drain deadline passed with events still in flight, abandoning them"
+                    );
+                    self.abandon_in_flight();
+                    return;
+                }
+                command = command_rx.recv() => match command {
+                    // A stream attaching now would be given no work, and the
+                    // dropped confirmation tells it to stop rather than sit
+                    // idle believing it is serving traffic.
+                    Some(DispatcherCommand::Attach { stream_id, .. }) => {
+                        debug!(stream_id, "refusing a handler stream that attached during drain");
+                    }
+                    Some(command) => self.apply(command),
+                    None => return,
+                },
+            }
+        }
     }
 
     fn apply(&mut self, command: DispatcherCommand) {
@@ -220,7 +417,7 @@ impl Dispatcher {
                         credit: registration.initial_credit,
                         limits: registration.limits,
                         in_flight: HashMap::new(),
-                        holding: HashSet::new(),
+                        holding: HashMap::new(),
                         dispatch_tx: registration.dispatch_tx,
                     },
                 );
@@ -231,12 +428,15 @@ impl Dispatcher {
             DispatcherCommand::Detach { stream_id } => self.detach(stream_id),
             DispatcherCommand::Completed {
                 stream_id,
-                handler_tag,
+                event_id,
                 credit_grant,
             } => {
+                self.holders.remove(&event_id);
                 if let Some(stream) = self.streams.get_mut(&stream_id) {
-                    if let Some(count) = stream.in_flight.get_mut(&handler_tag) {
-                        *count = count.saturating_sub(1);
+                    if let Some(handler_tag) = stream.holding.remove(&event_id) {
+                        if let Some(count) = stream.in_flight.get_mut(&handler_tag) {
+                            *count = count.saturating_sub(1);
+                        }
                     }
                     stream.credit = stream.credit.saturating_add(credit_grant);
                 }
@@ -271,8 +471,108 @@ impl Dispatcher {
             in_flight = stream.holding.len(),
             "handler stream detached while holding events, releasing them"
         );
-        for event_id in stream.holding {
+        for event_id in stream.holding.into_keys() {
+            self.holders.remove(&event_id);
             self.in_flight.remove(&event_id);
+        }
+    }
+
+    /// Whether any attached stream serves a handler tag at all, regardless of
+    /// whether it could take an event right now.
+    ///
+    /// Distinct from [`StreamState::can_take`]: a stream that serves the tag
+    /// but has no credit left is busy, and its events wait for their own
+    /// timeout. A tag no stream serves has nothing to wait for.
+    fn is_served(&self, handler_tag: &str) -> bool {
+        self.streams
+            .values()
+            .any(|stream| stream.tags.contains(handler_tag))
+    }
+
+    /// When the oldest event waiting on a tag nothing serves has surpassed
+    /// the grace period.
+    fn next_shed_deadline(&self) -> Option<Instant> {
+        let grace = Duration::from_secs(HANDLER_ATTACH_GRACE_SECS);
+        self.queues
+            .iter()
+            .filter(|(handler_tag, _)| !self.is_served(handler_tag))
+            .filter_map(|(_, queue)| queue.front().map(|queued| queued.queued_at + grace))
+            .min()
+    }
+
+    /// Fails the events that have waited out their grace period on a tag nothing
+    /// serves.
+    ///
+    /// Callers are told now rather than at the end of a handler timeout they
+    /// were never going to survive, so a request to an application whose
+    /// handlers are not running fails in seconds rather than in a minute.
+    fn shed_unservable(&mut self) {
+        let now = Instant::now();
+        let grace = Duration::from_secs(HANDLER_ATTACH_GRACE_SECS);
+        let unserved: Vec<String> = self
+            .queues
+            .keys()
+            .filter(|handler_tag| !self.is_served(handler_tag))
+            .cloned()
+            .collect();
+
+        for handler_tag in unserved {
+            let Some(queue) = self.queues.get_mut(&handler_tag) else {
+                continue;
+            };
+
+            let mut shed = 0;
+            while queue
+                .front()
+                .is_some_and(|queued| queued.queued_at + grace <= now)
+            {
+                let queued = queue.pop_front().expect("the front was just inspected");
+                let _ = queued
+                    .result_tx
+                    .send(EventOutcome::Unservable(UnservableReason::NoHandler));
+                shed += 1;
+            }
+
+            if shed > 0 {
+                warn!(
+                    %handler_tag,
+                    shed,
+                    "shedding events, no attached handler stream serves this tag"
+                );
+            }
+        }
+    }
+
+    /// Tells the handlers still holding events that the runtime has stopped
+    /// waiting for them.
+    ///
+    /// Only reached when the drain deadline passes, at which point the process
+    /// is going away regardless; the cancellations are what stop a handler
+    /// that outlives it from finishing work whose result has nowhere to go.
+    fn abandon_in_flight(&mut self) {
+        for (event_id, stream_id) in std::mem::take(&mut self.holders) {
+            let Some(stream) = self.streams.get(&stream_id) else {
+                continue;
+            };
+            let _ = stream.dispatch_tx.try_send(StreamFrame::Cancel {
+                event_id,
+                reason: CancelReason::Shutdown,
+            });
+        }
+    }
+
+    /// Fails everything still queued, for a runtime that will not dispatch
+    /// again.
+    fn shed_queued(&mut self, reason: UnservableReason) {
+        let mut shed = 0;
+        for queue in self.queues.values_mut() {
+            for queued in queue.drain(..) {
+                let _ = queued.result_tx.send(EventOutcome::Unservable(reason));
+                shed += 1;
+            }
+        }
+        if shed > 0 {
+            warn!(shed, %reason, "shedding queued events");
         }
     }
 
@@ -344,10 +644,14 @@ impl Dispatcher {
             .get_mut(&stream_id)
             .expect("the chosen stream should still be attached");
 
-        if let Err(err) = stream.dispatch_tx.try_send(DispatchedEvent {
-            event: queued.event,
-            deadline_unix_ms,
-        }) {
+        if let Err(err) =
+            stream
+                .dispatch_tx
+                .try_send(StreamFrame::Dispatch(Box::new(DispatchedEvent {
+                    event: queued.event,
+                    deadline_unix_ms,
+                })))
+        {
             // The stream went away between being chosen and being sent to.
             // Releasing the entry lets the caller fail now rather than wait.
             warn!(stream_id, %handler_tag, "failed to send to handler stream: {err}");
@@ -358,7 +662,10 @@ impl Dispatcher {
 
         stream.credit = stream.credit.saturating_sub(1);
         *stream.in_flight.entry(handler_tag.to_string()).or_insert(0) += 1;
-        stream.holding.insert(event_id);
+        stream
+            .holding
+            .insert(event_id.clone(), handler_tag.to_string());
+        self.holders.insert(event_id, stream_id);
         true
     }
 
@@ -415,8 +722,17 @@ mod tests {
     struct Harness {
         queue: crate::event_queue::EventQueue,
         commands: mpsc::Sender<DispatcherCommand>,
-        _shutdown: oneshot::Sender<()>,
+        shutdown: Option<oneshot::Sender<()>>,
         _cleanup_shutdown: oneshot::Sender<()>,
+    }
+
+    impl Harness {
+        /// Signals shutdown, which is what puts the dispatcher into its drain.
+        fn stop(&mut self) {
+            if let Some(shutdown) = self.shutdown.take() {
+                let _ = shutdown.send(());
+            }
+        }
     }
 
     fn start(capacity: usize) -> Harness {
@@ -425,14 +741,19 @@ mod tests {
         let (command_tx, command_rx) = mpsc::channel(16);
         let (shutdown_tx, shutdown_rx) = oneshot::channel();
 
-        let dispatcher = Dispatcher::new(handles.in_flight.clone(), timeouts());
+        let dispatcher = Dispatcher::new(
+            handles.in_flight.clone(),
+            timeouts(),
+            Duration::from_secs(30),
+        );
         let receiver = handles.receiver.clone();
-        tokio::spawn(dispatcher.run(receiver, command_rx, shutdown_rx));
+        let cancellations = handles.cancellations.clone();
+        tokio::spawn(dispatcher.run(receiver, cancellations, command_rx, shutdown_rx));
 
         Harness {
             queue: handles.queue.clone(),
             commands: command_tx,
-            _shutdown: shutdown_tx,
+            shutdown: Some(shutdown_tx),
             _cleanup_shutdown: cleanup_shutdown,
         }
     }
@@ -443,7 +764,7 @@ mod tests {
         tags: &[&str],
         credit: u32,
         limits: HashMap<String, u32>,
-    ) -> mpsc::Receiver<DispatchedEvent> {
+    ) -> mpsc::Receiver<StreamFrame> {
         let (dispatch_tx, dispatch_rx) = mpsc::channel(64);
         let (registered_tx, registered_rx) = oneshot::channel();
         harness
@@ -466,11 +787,21 @@ mod tests {
         dispatch_rx
     }
 
-    async fn recv(rx: &mut mpsc::Receiver<DispatchedEvent>) -> Option<DispatchedEvent> {
+    async fn recv(rx: &mut mpsc::Receiver<StreamFrame>) -> Option<StreamFrame> {
         tokio::time::timeout(Duration::from_secs(2), rx.recv())
             .await
             .ok()
             .flatten()
+    }
+
+    /// The next frame, when it is expected to be an event rather than a
+    /// cancellation or a drain.
+    async fn recv_dispatch(rx: &mut mpsc::Receiver<StreamFrame>) -> Option<DispatchedEvent> {
+        match recv(rx).await {
+            Some(StreamFrame::Dispatch(dispatched)) => Some(*dispatched),
+            Some(other) => panic!("expected an event, got {other:?}"),
+            None => None,
+        }
     }
 
     #[tokio::test]
@@ -487,7 +818,9 @@ mod tests {
             .await
             .unwrap();
 
-        let dispatched = recv(&mut stream).await.expect("the event should arrive");
+        let dispatched = recv_dispatch(&mut stream)
+            .await
+            .expect("the event should arrive");
         assert_eq!(dispatched.event.id, "event-1");
     }
 
@@ -524,24 +857,24 @@ mod tests {
                 .unwrap();
         }
 
-        assert!(recv(&mut stream).await.is_some());
-        assert!(recv(&mut stream).await.is_some());
+        assert!(recv_dispatch(&mut stream).await.is_some());
+        assert!(recv_dispatch(&mut stream).await.is_some());
         // Credit is exhausted, so the rest wait rather than being sent.
-        assert!(recv(&mut stream).await.is_none());
+        assert!(recv_dispatch(&mut stream).await.is_none());
 
         // Returning credit with a result releases exactly one more.
         harness
             .commands
             .send(DispatcherCommand::Completed {
                 stream_id: 1,
-                handler_tag: "schedule::a".to_string(),
+                event_id: "event-0".to_string(),
                 credit_grant: 1,
             })
             .await
             .unwrap();
 
-        assert!(recv(&mut stream).await.is_some());
-        assert!(recv(&mut stream).await.is_none());
+        assert!(recv_dispatch(&mut stream).await.is_some());
+        assert!(recv_dispatch(&mut stream).await.is_none());
     }
 
     #[tokio::test]
@@ -578,7 +911,7 @@ mod tests {
             .unwrap();
 
         let mut seen = Vec::new();
-        while let Some(dispatched) = recv(&mut stream).await {
+        while let Some(dispatched) = recv_dispatch(&mut stream).await {
             seen.push(dispatched.event.id);
         }
 
@@ -607,10 +940,10 @@ mod tests {
 
         let mut first_count = 0;
         let mut second_count = 0;
-        while recv(&mut first).await.is_some() {
+        while recv_dispatch(&mut first).await.is_some() {
             first_count += 1;
         }
-        while recv(&mut second).await.is_some() {
+        while recv_dispatch(&mut second).await.is_some() {
             second_count += 1;
         }
 
@@ -619,6 +952,236 @@ mod tests {
             first_count > 0 && second_count > 0,
             "both streams should have been given work, got {first_count} and {second_count}"
         );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn sheds_events_for_a_tag_nothing_serves_once_the_grace_window_passes() {
+        let harness = start(8);
+        let _stream = attach(&harness, 1, &["schedule::a"], 4, HashMap::new()).await;
+
+        let result_rx = harness
+            .queue
+            .enqueue(
+                event("event-1", "schedule::b"),
+                admission_wait(Duration::from_secs(60)),
+            )
+            .await
+            .unwrap();
+
+        // The caller is told in seconds rather than being held for the whole
+        // sixty second handler timeout it was never going to survive.
+        let outcome = tokio::time::timeout(
+            Duration::from_secs(HANDLER_ATTACH_GRACE_SECS + 2),
+            result_rx,
+        )
+        .await
+        .expect("the caller should be woken")
+        .expect("an outcome should arrive");
+        assert!(matches!(
+            outcome,
+            EventOutcome::Unservable(UnservableReason::NoHandler)
+        ));
+    }
+
+    #[tokio::test]
+    async fn dispatches_an_event_that_arrives_before_the_stream_serving_it() {
+        let harness = start(8);
+
+        harness
+            .queue
+            .enqueue(
+                event("event-1", "schedule::a"),
+                admission_wait(Duration::from_secs(60)),
+            )
+            .await
+            .unwrap();
+
+        // Attaching within the grace window is what a handlers executable that
+        // is still starting up looks like, and the event waits for it rather
+        // than being shed on arrival.
+        let mut stream = attach(&harness, 1, &["schedule::a"], 4, HashMap::new()).await;
+
+        let dispatched = recv_dispatch(&mut stream)
+            .await
+            .expect("the event should arrive");
+        assert_eq!(dispatched.event.id, "event-1");
+    }
+
+    #[tokio::test]
+    async fn routes_a_cancellation_to_the_stream_holding_the_event() {
+        let harness = start(8);
+        let mut stream = attach(&harness, 1, &["schedule::a"], 4, HashMap::new()).await;
+
+        let _result_rx = harness
+            .queue
+            .enqueue(
+                event("event-1", "schedule::a"),
+                admission_wait(Duration::from_secs(60)),
+            )
+            .await
+            .unwrap();
+        let dispatched = recv_dispatch(&mut stream)
+            .await
+            .expect("the event should arrive");
+
+        // Stands in for the guard an HTTP route holds while it waits, which
+        // drops when the response future does.
+        drop(harness.queue.cancel_on_drop(dispatched.event.id));
+
+        let frame = recv(&mut stream).await;
+        let Some(StreamFrame::Cancel { event_id, reason }) = frame else {
+            panic!("expected a cancellation, got {frame:?}");
+        };
+        assert_eq!(event_id, "event-1");
+        assert_eq!(reason, CancelReason::CallerGone);
+    }
+
+    #[tokio::test]
+    async fn ignores_a_cancellation_for_an_event_no_stream_holds() {
+        let harness = start(8);
+        let mut stream = attach(&harness, 1, &["schedule::a"], 4, HashMap::new()).await;
+
+        drop(harness.queue.cancel_on_drop("never-dispatched".to_string()));
+
+        assert!(recv(&mut stream).await.is_none());
+    }
+
+    #[test]
+    fn a_configured_drain_timeout_is_taken_as_given() {
+        let timeouts = HandlerTimeouts::new(HashMap::new(), Duration::from_secs(60));
+
+        // An operator setting this is matching the deployment's own grace
+        // period, so it is not second-guessed against the handler timeouts.
+        assert_eq!(
+            drain_timeout(Some(600), &timeouts),
+            Duration::from_secs(600)
+        );
+    }
+
+    #[test]
+    fn an_unconfigured_drain_timeout_comes_from_the_longest_handler() {
+        let timeouts = HandlerTimeouts::new(
+            HashMap::from([
+                ("health".to_string(), Duration::from_secs(1)),
+                ("report".to_string(), Duration::from_secs(120)),
+            ]),
+            Duration::from_secs(60),
+        );
+
+        // A handler told it had two minutes is not abandoned after thirty
+        // seconds, and the short handler alongside it does not shorten that.
+        assert_eq!(drain_timeout(None, &timeouts), Duration::from_secs(120));
+    }
+
+    #[test]
+    fn a_derived_drain_timeout_is_bounded() {
+        let timeouts = HandlerTimeouts::new(
+            HashMap::from([("slow".to_string(), Duration::from_secs(3600))]),
+            Duration::from_secs(60),
+        );
+
+        // A deployment cannot wait out an hour long handler, so past the bound
+        // the work is abandoned rather than the shutdown being held open.
+        assert_eq!(
+            drain_timeout(None, &timeouts),
+            Duration::from_secs(MAX_DERIVED_DRAIN_TIMEOUT_SECS)
+        );
+    }
+
+    #[tokio::test]
+    async fn tells_attached_streams_to_drain_and_sheds_what_is_still_queued() {
+        let mut harness = start(8);
+        // One credit, so the second event is still queued when shutdown lands.
+        let mut stream = attach(&harness, 1, &["schedule::a"], 1, HashMap::new()).await;
+
+        let _first = harness
+            .queue
+            .enqueue(
+                event("event-1", "schedule::a"),
+                admission_wait(Duration::from_secs(60)),
+            )
+            .await
+            .unwrap();
+        assert!(recv_dispatch(&mut stream).await.is_some());
+
+        let second = harness
+            .queue
+            .enqueue(
+                event("event-2", "schedule::a"),
+                admission_wait(Duration::from_secs(60)),
+            )
+            .await
+            .unwrap();
+
+        harness.stop();
+
+        let frame = recv(&mut stream).await;
+        assert!(
+            matches!(frame, Some(StreamFrame::Drain { .. })),
+            "the attached stream should be told to drain, got {frame:?}"
+        );
+
+        // Nothing will dispatch the queued event now, so its caller is told
+        // rather than left waiting out a timeout.
+        let outcome = tokio::time::timeout(Duration::from_secs(2), second)
+            .await
+            .expect("the caller should be woken")
+            .expect("an outcome should arrive");
+        assert!(matches!(
+            outcome,
+            EventOutcome::Unservable(UnservableReason::ShuttingDown)
+        ));
+    }
+
+    #[tokio::test]
+    async fn returns_credit_for_a_result_that_arrives_after_its_caller_gave_up() {
+        let harness = start(8);
+        // A single credit, so the stream stalls if the first event never
+        // returns it.
+        let mut stream = attach(&harness, 1, &["schedule::a"], 1, HashMap::new()).await;
+
+        let first = harness
+            .queue
+            .enqueue(
+                event("event-1", "schedule::a"),
+                admission_wait(Duration::from_secs(60)),
+            )
+            .await
+            .unwrap();
+        assert!(recv_dispatch(&mut stream).await.is_some());
+
+        // The caller gives up, which releases the in-flight entry, so the late
+        // result has nobody to go to.
+        drop(first);
+        drop(harness.queue.cancel_on_drop("event-1".to_string()));
+        assert!(matches!(
+            recv(&mut stream).await,
+            Some(StreamFrame::Cancel { .. })
+        ));
+
+        harness
+            .commands
+            .send(DispatcherCommand::Completed {
+                stream_id: 1,
+                event_id: "event-1".to_string(),
+                credit_grant: 1,
+            })
+            .await
+            .unwrap();
+
+        let _second = harness
+            .queue
+            .enqueue(
+                event("event-2", "schedule::a"),
+                admission_wait(Duration::from_secs(60)),
+            )
+            .await
+            .unwrap();
+
+        let dispatched = recv_dispatch(&mut stream)
+            .await
+            .expect("the returned credit should let the next event through");
+        assert_eq!(dispatched.event.id, "event-2");
     }
 
     #[tokio::test]
@@ -634,7 +1197,7 @@ mod tests {
             )
             .await
             .unwrap();
-        assert!(recv(&mut stream).await.is_some());
+        assert!(recv_dispatch(&mut stream).await.is_some());
 
         harness
             .commands

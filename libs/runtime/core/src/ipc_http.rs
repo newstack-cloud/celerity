@@ -29,8 +29,8 @@ use crate::{
     event_queue::{admission_wait, EventQueue, EventQueueError},
     request::{RequestId, ResolvedClientIp},
     types::{
-        EventData, EventDataPayload, EventResultData, EventType, HttpRequestEventData,
-        HttpResponseData,
+        EventData, EventDataPayload, EventOutcome, EventResultData, EventType,
+        HttpRequestEventData, HttpResponseData,
     },
 };
 
@@ -129,6 +129,7 @@ async fn dispatch(route: &IpcHttpRoute, event: EventData) -> Response {
     // Waiting for queue capacity spends the same budget the handler needs, so
     // both waits are anchored to a deadline taken before admission.
     let deadline = tokio::time::Instant::now() + timeout;
+    let event_id = event.id.clone();
 
     let result_rx = match route
         .event_queue
@@ -141,19 +142,43 @@ async fn dispatch(route: &IpcHttpRoute, event: EventData) -> Response {
                 handler_tag = %route.handler_tag,
                 "shedding request, no event queue capacity became available"
             );
-            return queue_full_response();
+            return unavailable_response();
         }
         Err(EventQueueError::Closed) => {
+            // Reached once the dispatcher has stopped, which is either a
+            // runtime that is shutting down or one that never started
+            // dispatching. Both are reasons to send the caller elsewhere
+            // rather than to report a fault in the application.
             error!(
                 handler_tag = %route.handler_tag,
-                "event queue is closed, no handlers executable is attached"
+                "event queue is closed, the runtime is not dispatching events"
             );
-            return (StatusCode::BAD_GATEWAY, "handlers are not available").into_response();
+            return unavailable_response();
         }
     };
 
-    match tokio::time::timeout_at(deadline, result_rx).await {
-        Ok(Ok((_event, result))) => render_result(route, result.data),
+    // Armed until this function returns through one of the branches below.
+    // Anything else that ends this future ends it by dropping it, which is the
+    // only signal there is that nobody is waiting for the response any more.
+    // A client disconnecting is the usual cause as hyper ends the connection task
+    // and the response future goes with it.
+    //
+    // Without this the handler keeps a worker slot, and whatever it called
+    // downstream, producing a response that will be discarded. That matters
+    // under load, because a caller that gave up usually retries, so the
+    // abandoned work and the retry pile up together.
+    let cancel_on_caller_gone = route.event_queue.cancel_on_drop(event_id);
+
+    let response = match tokio::time::timeout_at(deadline, result_rx).await {
+        Ok(Ok(EventOutcome::Completed(_event, result))) => render_result(route, result.data),
+        Ok(Ok(EventOutcome::Unservable(reason))) => {
+            warn!(
+                handler_tag = %route.handler_tag,
+                %reason,
+                "shedding request, the runtime will not dispatch it"
+            );
+            unavailable_response()
+        }
         // The sender was dropped, which happens when the cleanup task removes
         // the in-flight entry after its deadline passed, or when the handlers
         // executable went away mid-request.
@@ -172,7 +197,12 @@ async fn dispatch(route: &IpcHttpRoute, event: EventData) -> Response {
             );
             (StatusCode::GATEWAY_TIMEOUT, "handler timed out").into_response()
         }
-    }
+    };
+
+    // Every branch above is a reason the runtime already knows about, so none
+    // of them should be reported as the caller going away.
+    cancel_on_caller_gone.disarm();
+    response
 }
 
 /// Carries the body without losing anything.
@@ -204,10 +234,11 @@ fn is_length_limit(err: &axum::Error) -> bool {
     false
 }
 
-/// A shed request is a capacity signal rather than a fault, so it is reported
-/// as such and marked retryable. Rendering it as a 500 would make overload look
-/// like a bug in the application.
-fn queue_full_response() -> Response {
+/// A shed request is a capacity or availability signal rather than a fault, so
+/// it is reported as such and marked retryable. Rendering it as a 500 would
+/// make overload, or handlers that have not started yet, look like a bug in the
+/// application.
+fn unavailable_response() -> Response {
     (
         StatusCode::SERVICE_UNAVAILABLE,
         [(RETRY_AFTER, "1")],
@@ -421,7 +452,7 @@ mod tests {
 
     #[test]
     fn sheds_with_503_and_a_retry_after_header() {
-        let response = queue_full_response();
+        let response = unavailable_response();
 
         assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
         assert_eq!(response.headers().get(RETRY_AFTER).unwrap(), "1");

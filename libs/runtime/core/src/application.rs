@@ -59,7 +59,7 @@ use crate::{
     consumer_handler::{
         ConsumerEventHandler, EventQueueConsumerEventHandler, SharedConsumerEventHandler,
     },
-    dispatcher::{Dispatcher, DispatcherCommand},
+    dispatcher::{drain_timeout, Dispatcher, DispatcherCommand},
     errors::{ApplicationStartError, ConfigError},
     event_queue::{
         collect_handler_timeouts, http_handler_tag, timeout_from_seconds, websocket_handler_tag,
@@ -509,9 +509,17 @@ impl Application {
         let blueprint_tags = tags_from_runtime_config(&runtime_config);
         let (commands_tx, commands_rx) = mpsc::channel(DISPATCHER_COMMAND_BUFFER);
 
+        let handler_timeouts = collect_handler_timeouts(app_config);
+        let drain_timeout = drain_timeout(self.runtime_config.drain_timeout, &handler_timeouts);
+        info!(
+            ?drain_timeout,
+            "shutdown will wait this long for in-flight events"
+        );
+
         self.ipc_dispatcher = Some(Dispatcher::new(
             event_queue.in_flight.clone(),
-            collect_handler_timeouts(app_config),
+            handler_timeouts,
+            drain_timeout,
         ));
         self.ipc_commands_rx = Some(commands_rx);
         self.ipc_stream_context = Some(Arc::new(StreamContext {
@@ -541,6 +549,7 @@ impl Application {
         let (dispatcher_shutdown_tx, dispatcher_shutdown_rx) = tokio::sync::oneshot::channel();
         tokio::spawn(dispatcher.run(
             event_queue.receiver.clone(),
+            event_queue.cancellations.clone(),
             commands_rx,
             dispatcher_shutdown_rx,
         ));

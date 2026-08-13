@@ -25,10 +25,11 @@ use tracing::{debug, info, warn};
 
 use crate::{
     config::AppConfig,
-    dispatcher::{DispatcherCommand, StreamId, StreamRegistration},
+    dispatcher::{DispatcherCommand, StreamFrame, StreamId, StreamRegistration},
     event_queue::InFlightTable,
     ipc_frames::{dispatch_from_event, event_result_from_frame},
     ipc_proto as proto,
+    types::{CancelReason, EventOutcome},
 };
 
 /// How many frames may be queued towards a handler before the runtime waits.
@@ -297,13 +298,9 @@ pub async fn run_stream<I>(
 
     loop {
         tokio::select! {
-            dispatched = dispatch_rx.recv() => match dispatched {
-                Some(dispatched) => {
-                    let frame = frame_dispatch(dispatch_from_event(
-                        dispatched.event,
-                        dispatched.deadline_unix_ms,
-                    ));
-                    if send(&outbound, frame).await.is_err() {
+            frame = dispatch_rx.recv() => match frame {
+                Some(frame) => {
+                    if send(&outbound, runtime_frame(frame)).await.is_err() {
                         break;
                     }
                 }
@@ -401,28 +398,34 @@ async fn complete(stream_id: StreamId, context: &StreamContext, result: proto::R
     let event_id = result.id.clone();
     let credit_grant = result.credit_grant;
 
-    let Some(entry) = context.in_flight.remove(&event_id) else {
-        // Expected rather than exceptional: the deadline may have passed and
-        // the entry been released before the handler answered.
-        debug!(
+    match context.in_flight.remove(&event_id) {
+        Some(entry) => {
+            let event_result = event_result_from_frame(result);
+            if entry
+                .result_tx
+                .send(EventOutcome::Completed(Box::new(entry.event), event_result))
+                .is_err()
+            {
+                debug!(stream_id, %event_id, "the caller stopped waiting for this result");
+            }
+        }
+        // Expected rather than exceptional, the deadline may have passed, or
+        // the caller has gone away before the handler answered.
+        None => debug!(
             stream_id,
             %event_id,
             "discarding a result for an event that is no longer in flight"
-        );
-        return;
-    };
-
-    let handler_tag = entry.event.handler_tag.clone();
-    let event_result = event_result_from_frame(result);
-    if entry.result_tx.send((entry.event, event_result)).is_err() {
-        debug!(stream_id, %event_id, "the caller stopped waiting for this result");
+        ),
     }
 
+    // Sent whether or not anyone was still waiting. The event consumed credit
+    // when it was dispatched, so a result the caller can no longer use must
+    // still return it.
     let _ = context
         .commands
         .send(DispatcherCommand::Completed {
             stream_id,
-            handler_tag,
+            event_id,
             credit_grant,
         })
         .await;
@@ -447,9 +450,30 @@ fn frame_ready_ack(ack: proto::ReadyAck) -> proto::RuntimeMessage {
     }
 }
 
-fn frame_dispatch(dispatch: proto::Dispatch) -> proto::RuntimeMessage {
-    proto::RuntimeMessage {
-        frame: Some(proto::runtime_message::Frame::Dispatch(dispatch)),
+/// Renders what the dispatcher sends down a stream as a protocol frame.
+fn runtime_frame(frame: StreamFrame) -> proto::RuntimeMessage {
+    let frame = match frame {
+        StreamFrame::Dispatch(dispatched) => proto::runtime_message::Frame::Dispatch(
+            dispatch_from_event(dispatched.event, dispatched.deadline_unix_ms),
+        ),
+        StreamFrame::Cancel { event_id, reason } => {
+            proto::runtime_message::Frame::Cancel(proto::Cancel {
+                id: event_id,
+                reason: cancel_reason(reason) as i32,
+            })
+        }
+        StreamFrame::Drain { deadline_unix_ms } => {
+            proto::runtime_message::Frame::Drain(proto::Drain { deadline_unix_ms })
+        }
+    };
+    proto::RuntimeMessage { frame: Some(frame) }
+}
+
+fn cancel_reason(reason: CancelReason) -> proto::cancel::Reason {
+    match reason {
+        CancelReason::DeadlineExceeded => proto::cancel::Reason::DeadlineExceeded,
+        CancelReason::CallerGone => proto::cancel::Reason::CallerGone,
+        CancelReason::Shutdown => proto::cancel::Reason::Shutdown,
     }
 }
 
@@ -720,10 +744,13 @@ mod tests {
             .await
             .unwrap();
 
-        let (_event, result) = tokio::time::timeout(Duration::from_secs(2), result_rx)
+        let outcome = tokio::time::timeout(Duration::from_secs(2), result_rx)
             .await
             .expect("the caller should be woken")
             .expect("the result should arrive");
+        let EventOutcome::Completed(_event, result) = outcome else {
+            panic!("expected a completed outcome, got {outcome:?}");
+        };
         assert_eq!(result.event_id, "event-1");
 
         let command = harness.commands_rx.recv().await;

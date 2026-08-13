@@ -47,6 +47,15 @@ pub struct RuntimeConfig {
     /// `local_api_port`, so that platforms without Unix sockets are still
     /// serviceable.
     pub runtime_socket: String,
+    /// How long the runtime waits for in-flight events to come back once it
+    /// starts shutting down, in seconds.
+    ///
+    /// Leave unset to derive it from the longest handler timeout the blueprint
+    /// configures, bounded by
+    /// [`MAX_DERIVED_DRAIN_TIMEOUT_SECS`](crate::consts::MAX_DERIVED_DRAIN_TIMEOUT_SECS).
+    /// Set it when the deployment has its own grace period to respect,
+    /// which should be the larger of the two if in-flight work is to finish.
+    pub drain_timeout: Option<u64>,
     /// Set to true if one of your handlers defines a custom health check endpoint.
     ///
     /// Defaults to false.
@@ -198,6 +207,11 @@ impl RuntimeConfig {
             .var("CELERITY_RUNTIME_SOCKET")
             .unwrap_or_else(|_| DEFAULT_RUNTIME_SOCKET.to_string());
 
+        let drain_timeout = env.var("CELERITY_DRAIN_TIMEOUT").ok().map(|val| {
+            val.parse()
+                .expect("Invalid drain timeout, must be a whole number of seconds")
+        });
+
         let use_custom_health_check = env.var("CELERITY_USE_CUSTOM_HEALTH_CHECK").ok();
         let use_custom_health_check = use_custom_health_check.map(|val| {
             val.parse().expect(
@@ -294,6 +308,7 @@ impl RuntimeConfig {
             server_loopback_only,
             local_api_port,
             runtime_socket,
+            drain_timeout,
             use_custom_health_check,
             trace_otlp_collector_endpoint,
             runtime_max_diagnostics_level,
