@@ -629,14 +629,17 @@ fn cancel_reason(reason: CancelReason) -> proto::cancel::Reason {
 }
 
 /// Serves the handler protocol over gRPC.
-pub struct HandlerRuntimeService {
+///
+/// Named apart from the generated `HandlerRuntimeService` trait it implements,
+/// which carries the service's own name.
+pub struct HandlerStreamService {
     context: Arc<StreamContext>,
     stream_ids: Arc<StreamIds>,
 }
 
-impl HandlerRuntimeService {
+impl HandlerStreamService {
     pub fn new(context: Arc<StreamContext>) -> Self {
-        HandlerRuntimeService {
+        HandlerStreamService {
             context,
             stream_ids: Arc::new(StreamIds::default()),
         }
@@ -644,7 +647,7 @@ impl HandlerRuntimeService {
 }
 
 #[tonic::async_trait]
-impl proto::handler_runtime_server::HandlerRuntime for HandlerRuntimeService {
+impl proto::handler_runtime_service_server::HandlerRuntimeService for HandlerStreamService {
     type EventStreamStream =
         Pin<Box<dyn Stream<Item = Result<proto::RuntimeMessage, Status>> + Send + 'static>>;
 

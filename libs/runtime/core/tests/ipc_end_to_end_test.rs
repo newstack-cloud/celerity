@@ -15,8 +15,8 @@ use celerity_runtime_core::{
     application::Application,
     config::RuntimeConfig,
     ipc_proto::{
-        self as proto, handler_message, handler_runtime_client::HandlerRuntimeClient,
-        runtime_message,
+        self as proto, handler_message,
+        handler_runtime_service_client::HandlerRuntimeServiceClient, runtime_message,
     },
 };
 use futures::SinkExt;
@@ -120,7 +120,7 @@ impl HandlerStub {
             .await
             .expect("the runtime should be serving the handler stream");
 
-        let mut client = HandlerRuntimeClient::new(channel);
+        let mut client = HandlerRuntimeServiceClient::new(channel);
         let (handler_tx, handler_rx) = mpsc::channel::<proto::HandlerMessage>(16);
         let mut frames = client
             .event_stream(tokio_stream::wrappers::ReceiverStream::new(handler_rx))
