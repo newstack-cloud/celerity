@@ -121,6 +121,11 @@ pub struct CoreRuntimeConfig {
   /// The log output format. If not set, falls back to the `CELERITY_LOG_FORMAT`
   /// environment variable.
   pub log_format: Option<String>,
+  /// Whether to serve `POST /runtime/handlers/invoke`, which runs any handler
+  /// by name with a payload the caller supplies, bypassing whatever normally
+  /// triggers it and with no authentication. Defaults to `false`, and is only
+  /// served when the platform is `Local` or test mode is on.
+  pub enable_local_invoke: Option<bool>,
   /// Whether to enable metrics collection. Defaults to `false` when not set.
   pub metrics_enabled: Option<bool>,
   /// The trace sampling ratio (0.0–1.0). Defaults to `0.1` (10%) when not set.
@@ -147,6 +152,7 @@ impl From<RuntimeConfig> for CoreRuntimeConfig {
       resource_store_cleanup_interval: rc.resource_store_cleanup_interval,
       client_ip_source: Some(format!("{:?}", rc.client_ip_source)),
       log_format: rc.log_format,
+      enable_local_invoke: Some(rc.enable_local_invoke),
       metrics_enabled: Some(rc.metrics_enabled),
       trace_sample_ratio: Some(rc.trace_sample_ratio),
     }
@@ -1017,6 +1023,7 @@ pub struct CoreRuntimeConfigBuilder {
   resource_store_cleanup_interval: Option<i64>,
   client_ip_source: Option<String>,
   log_format: Option<String>,
+  enable_local_invoke: Option<bool>,
   metrics_enabled: Option<bool>,
   trace_sample_ratio: Option<f64>,
 }
@@ -1044,6 +1051,7 @@ impl CoreRuntimeConfigBuilder {
       resource_store_cleanup_interval: None,
       client_ip_source: None,
       log_format: None,
+      enable_local_invoke: None,
       metrics_enabled: None,
       trace_sample_ratio: None,
     }
@@ -1184,6 +1192,15 @@ impl CoreRuntimeConfigBuilder {
     self
   }
 
+  /// Sets whether to serve the local handler invoke endpoint. Defaults to
+  /// `false`, and is only served when the platform is `Local` or test mode
+  /// is on.
+  #[napi]
+  pub fn set_enable_local_invoke(&mut self, value: bool) -> &Self {
+    self.enable_local_invoke = Some(value);
+    self
+  }
+
   /// Sets whether to enable metrics collection. Defaults to `false`.
   #[napi]
   pub fn set_metrics_enabled(&mut self, value: bool) -> &Self {
@@ -1229,6 +1246,7 @@ impl CoreRuntimeConfigBuilder {
         .unwrap_or(DEFAULT_RESOURCE_STORE_CLEANUP_INTERVAL),
       client_ip_source: self.client_ip_source.clone(),
       log_format: self.log_format.clone(),
+      enable_local_invoke: self.enable_local_invoke,
       metrics_enabled: self.metrics_enabled,
       trace_sample_ratio: self.trace_sample_ratio,
     }
@@ -1291,6 +1309,7 @@ impl CoreRuntimeApplication {
       // Unused in the FFI call mode, where handlers run in-process.
       runtime_socket: String::new(),
       drain_timeout: None,
+      enable_local_invoke: runtime_config.enable_local_invoke.unwrap_or(false),
       use_custom_health_check: runtime_config.use_custom_health_check,
       trace_otlp_collector_endpoint: runtime_config.trace_otlp_collector_endpoint,
       runtime_max_diagnostics_level: diagnostics_level,

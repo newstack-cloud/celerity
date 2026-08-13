@@ -66,14 +66,14 @@ use crate::{
         EventCleanupTask, EventQueueHandles, EventQueueParts,
     },
     handler_invoke::{
-        invoke_handler as invoke_handler_fn, new_handler_invoke_registry, HandlerInvokeRegistry,
-        HandlerInvoker, InvokeHandlerState,
+        invoke_handler as invoke_handler_fn, invoke_handler_ipc, new_handler_invoke_registry,
+        HandlerInvokeRegistry, HandlerInvoker, InvokeHandlerState, IpcInvokeState,
     },
     ipc_http::{self, IpcHttpRoute},
     ipc_proto::handler_runtime_server::HandlerRuntimeServer,
     ipc_stream::{
-        runtime_config_from_app_config, tags_from_runtime_config, HandlerRuntimeService,
-        StreamContext,
+        handler_tags_by_name, runtime_config_from_app_config, tags_from_runtime_config,
+        HandlerRuntimeService, StreamContext,
     },
     ipc_websocket::IpcWebSocketHandler,
     request::request_id,
@@ -235,6 +235,11 @@ impl Application {
             self.setup_ipc_stream(&app_config);
         }
 
+        // Registered here rather than with the rest of the routes because it
+        // needs the custom handler definitions, which are only collected once
+        // every other kind of handler has been.
+        self.register_local_invoke_route(&app_config);
+
         // Store consumer/schedule configs for later creation in run() (async context required).
         if let Some(consumers_config) = &app_config.consumers {
             self.consumer_configs = consumers_config.consumers.clone();
@@ -385,20 +390,6 @@ impl Application {
             );
         }
 
-        {
-            use celerity_helpers::runtime_types::RuntimePlatform;
-            if self.runtime_config.platform == RuntimePlatform::Local
-                || self.runtime_config.test_mode
-            {
-                http_server_app = http_server_app.route(
-                    "/runtime/handlers/invoke",
-                    post(invoke_handler_fn).with_state(InvokeHandlerState {
-                        registry: self.handler_invoke_registry.clone(),
-                    }),
-                );
-            }
-        }
-
         if let Some(http_config) = &api_config.http {
             for handler in &http_config.handlers {
                 self.handler_names.insert(
@@ -491,12 +482,93 @@ impl Application {
         )
     }
 
+    /// Adds the endpoint that invokes a handler directly by name, which exists
+    /// so that a handler can be exercised while developing or testing.
+    ///
+    /// Served only when the switch is on and the runtime is on a local platform
+    /// or in test mode. Both are required, so the switch can turn this off
+    /// anywhere but cannot turn it on somewhere it does not belong. It runs a
+    /// handler with a payload the caller supplies, bypassing whatever normally
+    /// triggers it, and carries no auth of its own.
+    ///
+    /// An application with no HTTP API gets a server for this alone. That is
+    /// the case the endpoint is most useful in, since a queue, schedule or
+    /// custom handler has no other way to be triggered by hand, and skipping it
+    /// there would leave exactly those projects without the shortcut.
+    fn register_local_invoke_route(&mut self, app_config: &AppConfig) {
+        use celerity_helpers::runtime_types::RuntimePlatform;
+
+        if !self.runtime_config.enable_local_invoke {
+            return;
+        }
+        // Checked separately from the switch so that the switch can never turn
+        // this on somewhere it should not be. Turning it off is always allowed,
+        // turning it on is not enough on its own.
+        if self.runtime_config.platform != RuntimePlatform::Local && !self.runtime_config.test_mode
+        {
+            warn!(
+                "the local handler invoke endpoint is enabled but the platform is not local and \
+                 test mode is off, so it will not be served"
+            );
+            return;
+        }
+        // An application that declares no HTTP API has no router yet, so one is
+        // started to carry this endpoint alone.
+        let http_server_app = self.http_server_app.take().unwrap_or_default();
+
+        // Deliberately a warning rather than an informational line. It is the
+        // only signal in a running system that anything able to reach this
+        // server can run any declared handler with a payload of its choosing.
+        warn!(
+            "serving POST /runtime/handlers/invoke, which runs any handler the blueprint declares \
+             by name, bypassing whatever normally triggers it and with no authentication, this \
+             must not be reachable outside development"
+        );
+
+        // The IPC call mode has no in-process invokers to call, so an
+        // invocation becomes an event addressed to the handler's own tag and
+        // reaches the handlers executable over the stream, taking the same
+        // timeout, credit and cancellation handling as any other event.
+        //
+        // The name to tag mapping comes from the configuration the handler
+        // itself was sent, so the runtime cannot accept a name the handler was
+        // never told about.
+        let with_route = match (&self.event_queue, &self.ipc_stream_context) {
+            (Some(event_queue), Some(stream_context))
+                if self.runtime_config.runtime_call_mode == RuntimeCallMode::Ipc =>
+            {
+                http_server_app.route(
+                    "/runtime/handlers/invoke",
+                    post(invoke_handler_ipc).with_state(IpcInvokeState {
+                        event_queue: event_queue.queue.clone(),
+                        timeouts: collect_handler_timeouts(app_config),
+                        handler_tags: Arc::new(handler_tags_by_name(
+                            &stream_context.runtime_config,
+                        )),
+                    }),
+                )
+            }
+            _ => http_server_app.route(
+                "/runtime/handlers/invoke",
+                post(invoke_handler_fn).with_state(InvokeHandlerState {
+                    registry: self.handler_invoke_registry.clone(),
+                }),
+            ),
+        };
+        self.http_server_app = Some(with_route);
+    }
+
     /// Prepares the handler stream including the dispatcher that decides where events go,
     /// and the context each connected handler stream serves from.
     ///
     /// Nothing is spawned or bound here. The dispatcher and the server both need
     /// a runtime, so `run` starts them.
     fn setup_ipc_stream(&mut self, app_config: &AppConfig) {
+        // Taken before the queue is borrowed, since resolving it borrows self.
+        // The WebSocket API is set up before this runs, so a registry is
+        // already in place when the blueprint declares one.
+        let ws_registry = self.websocket_registry();
+
         let Some(event_queue) = &self.event_queue else {
             return;
         };
@@ -527,6 +599,7 @@ impl Application {
             blueprint_tags,
             commands: commands_tx,
             in_flight: event_queue.in_flight.clone(),
+            ws_registry,
         }));
     }
 

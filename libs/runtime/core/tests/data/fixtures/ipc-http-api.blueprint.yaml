@@ -67,3 +67,22 @@ resources:
       tracingEnabled: false
       environmentVariables:
         LOG_LEVEL: "${variables.logLevel}"
+
+  # No trigger annotations, so this is collected as a custom handler and is only
+  # reachable by name through the local invoke endpoint.
+  reindexHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Reindex Handler
+      labels:
+        application: "orders"
+    spec:
+      handlerName: Orders-ReindexHandler-v1
+      codeLocation: "./orders"
+      handler: "handlers.reindex"
+      runtime: "python3.12.x"
+      memory: 1024
+      timeout: 2
+      tracingEnabled: false
+      environmentVariables:
+        LOG_LEVEL: "${variables.logLevel}"

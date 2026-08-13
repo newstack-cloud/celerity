@@ -7,6 +7,14 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex as AsyncMutex;
 use tracing::{error, instrument};
 
+use crate::{
+    event_queue::{admission_wait, EventQueue, HandlerTimeouts},
+    types::{
+        CustomInvokeEventData, EventData, EventDataPayload, EventOutcome, EventResultData,
+        EventType,
+    },
+};
+
 /// Trait implemented by each handler type to allow invocation by name.
 ///
 /// SDKs register a `HandlerInvoker` for every handler during registration,
@@ -55,6 +63,11 @@ pub enum HandlerInvokeError {
     NotFound(String),
     BadRequest(String),
     InvocationFailed(String),
+    /// The runtime could not have the handler run at all, as opposed to running
+    /// it and having it fail.
+    Unavailable(String),
+    /// The handler ran but did not answer within its configured timeout.
+    Timeout(String),
 }
 
 impl std::fmt::Display for HandlerInvokeError {
@@ -63,6 +76,8 @@ impl std::fmt::Display for HandlerInvokeError {
             HandlerInvokeError::NotFound(msg) => write!(f, "handler not found: {msg}"),
             HandlerInvokeError::BadRequest(msg) => write!(f, "bad request: {msg}"),
             HandlerInvokeError::InvocationFailed(msg) => write!(f, "invocation failed: {msg}"),
+            HandlerInvokeError::Unavailable(msg) => write!(f, "handler unavailable: {msg}"),
+            HandlerInvokeError::Timeout(msg) => write!(f, "handler timed out: {msg}"),
         }
     }
 }
@@ -73,6 +88,10 @@ impl IntoResponse for HandlerInvokeError {
             HandlerInvokeError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
             HandlerInvokeError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             HandlerInvokeError::InvocationFailed(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
+            // Nothing ran, so this is a capacity or availability signal rather
+            // than a fault in the handler.
+            HandlerInvokeError::Unavailable(msg) => (StatusCode::SERVICE_UNAVAILABLE, msg),
+            HandlerInvokeError::Timeout(msg) => (StatusCode::GATEWAY_TIMEOUT, msg),
         };
         (status, Json(ResponseMessage { message })).into_response()
     }
@@ -135,6 +154,118 @@ pub async fn invoke_handler(
             }))
         }
     }
+}
+
+/// What the local invoke endpoint needs in order to reach handlers that run in
+/// a separate executable.
+#[derive(Clone)]
+pub struct IpcInvokeState {
+    pub event_queue: EventQueue,
+    pub timeouts: HandlerTimeouts,
+    /// The handler tag for each handler name the blueprint declares, covering
+    /// every kind of handler rather than only custom ones, since invoking by
+    /// name is a shortcut past whatever normally triggers a handler.
+    ///
+    /// Dispatch routes by tag, so a name that is not here could never be
+    /// served and is refused straight away rather than after the wait for a
+    /// handler stream to claim it.
+    pub handler_tags: Arc<HashMap<String, String>>,
+}
+
+/// Axum handler for `POST /runtime/handlers/invoke` in the IPC call mode.
+///
+/// Any handler can be reached this way, it is a shortcut past whatever
+/// normally triggers a handler, so an HTTP handler can be exercised without shaping a request.
+///
+/// The FFI version of this calls an in-process invoker registered by the SDK.
+/// There is no such thing here, so the invocation becomes an ordinary event
+/// addressed to the handler's own tag and travels the same path as a request or
+/// a queue message, which means it is subject to the same timeout, credit and
+/// cancellation handling rather than being a second way in. The payload reaches
+/// the handler untouched, so it is the caller's job to send whatever shape that
+/// handler expects.
+#[instrument(
+    name = "invoke_handler_ipc",
+    skip(state, request),
+    fields(
+        handler_name = %request.handler_name,
+        invocation_type = ?request.invocation_type,
+    )
+)]
+pub async fn invoke_handler_ipc(
+    State(state): State<IpcInvokeState>,
+    Json(request): Json<InvokeHandlerRequest>,
+) -> Result<Json<InvokeHandlerResponse>, HandlerInvokeError> {
+    let Some(handler_tag) = state.handler_tags.get(&request.handler_name).cloned() else {
+        return Err(HandlerInvokeError::NotFound(format!(
+            "handler '{}' is not declared by the blueprint",
+            request.handler_name
+        )));
+    };
+
+    let timeout = state.timeouts.for_tag(&handler_tag);
+    let event = EventData {
+        id: nanoid::nanoid!(),
+        event_type: EventType::CustomInvoke,
+        handler_tag,
+        timestamp: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs(),
+        data: EventDataPayload::CustomInvokeEventData(CustomInvokeEventData {
+            handler_name: request.handler_name.clone(),
+            input: request.payload,
+        }),
+    };
+
+    let deadline = tokio::time::Instant::now() + timeout;
+    let result_rx = state
+        .event_queue
+        .enqueue(event, admission_wait(timeout))
+        .await
+        .map_err(|err| HandlerInvokeError::Unavailable(err.to_string()))?;
+
+    if request.invocation_type == InvocationType::Async {
+        // The caller is not waiting, so the result is left to be discarded when
+        // it arrives. Dropping the receiver is deliberately not treated as the
+        // caller going away, the handler should still run to completion.
+        return Ok(Json(InvokeHandlerResponse {
+            message: "Handler invocation started".to_string(),
+            data: None,
+        }));
+    }
+
+    match tokio::time::timeout_at(deadline, result_rx).await {
+        Ok(Ok(EventOutcome::Completed(_event, result))) => invoke_response(result.data),
+        Ok(Ok(EventOutcome::Unservable(reason))) => {
+            Err(HandlerInvokeError::Unavailable(reason.to_string()))
+        }
+        Ok(Err(_)) => Err(HandlerInvokeError::InvocationFailed(
+            "the handler did not return a result".to_string(),
+        )),
+        Err(_) => Err(HandlerInvokeError::Timeout(format!(
+            "the handler did not respond within {timeout:?}"
+        ))),
+    }
+}
+
+fn invoke_response(
+    data: EventResultData,
+) -> Result<Json<InvokeHandlerResponse>, HandlerInvokeError> {
+    let EventResultData::CustomInvokeResponse(response) = data else {
+        return Err(HandlerInvokeError::InvocationFailed(
+            "the handler returned a result that is not a custom invocation response".to_string(),
+        ));
+    };
+
+    if let Some(error_message) = response.error_message {
+        return Err(HandlerInvokeError::InvocationFailed(error_message));
+    }
+
+    Ok(Json(InvokeHandlerResponse {
+        message: "Handler invoked successfully".to_string(),
+        data: Some(response.output),
+    }))
 }
 
 #[cfg(test)]

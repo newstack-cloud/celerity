@@ -17,8 +17,9 @@ use tracing::warn;
 use crate::{
     ipc_proto as proto,
     types::{
-        ConsumerEventData, EventData, EventDataPayload, EventMessageEventData, EventResult,
-        EventResultData, HttpRequestEventData, HttpResponseData, MessageProcessingFailure,
+        ConsumerEventData, CustomInvokeEventData, CustomInvokeResponseData, EventData,
+        EventDataPayload, EventMessageEventData, EventResult, EventResultData,
+        HttpRequestEventData, HttpResponseData, MessageProcessingFailure,
         MessageProcessingResponseData, ScheduleEventData, ScheduledEventResponseData,
         SimpleResponseData, WebSocketEventData,
     },
@@ -33,6 +34,35 @@ pub fn dispatch_from_event(event: EventData, deadline_unix_ms: i64) -> proto::Di
         deadline_unix_ms,
         trace_context: HashMap::new(),
         source: Some(source_from_payload(event.data)),
+    }
+}
+
+/// Carries a custom invocation's input to the handler.
+///
+/// The input is whatever the caller supplied, serialised as JSON, since the
+/// runtime does not interpret it and the handler is the only thing that knows
+/// what shape it should be. An absent input travels as no bytes at all rather
+/// than as the four bytes spelling `null`, so a handler can tell "nothing was
+/// sent" from "null was sent".
+fn custom_invoke(invoke: CustomInvokeEventData) -> proto::CustomInvoke {
+    proto::CustomInvoke {
+        handler_name: invoke.handler_name,
+        input: invoke
+            .input
+            .map(|input| input.to_string().into_bytes())
+            .unwrap_or_default(),
+    }
+}
+
+/// Reads back what a custom handler returned.
+///
+/// The output stays as text. It is on its way to a caller that will render it
+/// as JSON, so parsing it here only to serialise it again would be work that
+/// could also fail on a payload the handler considers valid.
+fn custom_invoke_response(custom: proto::CustomInvokeResult) -> CustomInvokeResponseData {
+    CustomInvokeResponseData {
+        output: String::from_utf8_lossy(&custom.output).into_owned(),
+        error_message: none_if_empty(custom.error_message),
     }
 }
 
@@ -56,6 +86,9 @@ fn source_from_payload(payload: EventDataPayload) -> proto::dispatch::Source {
         // a batch of one rather than as a source of its own.
         EventDataPayload::EventMessageEventData(message) => {
             proto::dispatch::Source::Consumer(event_message_batch(message))
+        }
+        EventDataPayload::CustomInvokeEventData(invoke) => {
+            proto::dispatch::Source::Custom(custom_invoke(invoke))
         }
     }
 }
@@ -165,10 +198,7 @@ pub fn event_result_from_frame(result: proto::Result) -> EventResult {
             EventResultData::MessageProcessingResponse(batch_result(batch))
         }
         Some(proto::result::Outcome::Custom(custom)) => {
-            EventResultData::EventResponse(SimpleResponseData {
-                success: custom.error_message.is_empty(),
-                error_message: none_if_empty(custom.error_message),
-            })
+            EventResultData::CustomInvokeResponse(custom_invoke_response(custom))
         }
         Some(proto::result::Outcome::Error(error)) => {
             EventResultData::HttpResponse(handler_error_response(&error))

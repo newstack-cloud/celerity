@@ -494,6 +494,7 @@ impl CoreRuntimeApplication {
       // Unused in the FFI call mode, where handlers run in-process.
       runtime_socket: String::new(),
       drain_timeout: None,
+      enable_local_invoke: runtime_config.enable_local_invoke,
       use_custom_health_check: runtime_config.use_custom_health_check,
       service_name: runtime_config.service_name.clone(),
       platform: runtime_config.platform.clone().into(),

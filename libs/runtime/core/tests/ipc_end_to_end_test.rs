@@ -28,24 +28,32 @@ use tonic::transport::{Endpoint, Uri};
 
 mod common;
 
-fn ipc_env(service_name: &str, fixture: &str, socket: &str) -> common::MockEnvVars<'static> {
-    common::MockEnvVars::new(Some(
-        vec![
-            ("CELERITY_BLUEPRINT", fixture.to_string()),
-            ("CELERITY_SERVICE_NAME", service_name.to_string()),
-            ("CELERITY_RUNTIME_PLATFORM", "local".to_string()),
-            ("CELERITY_RUNTIME_CALL_MODE", "ipc".to_string()),
-            ("CELERITY_SERVER_PORT", "0".to_string()),
-            ("CELERITY_LOCAL_API_PORT", "0".to_string()),
-            ("CELERITY_RUNTIME_SOCKET", socket.to_string()),
-            ("CELERITY_SERVER_LOOPBACK_ONLY", "true".to_string()),
-            ("CELERITY_TEST_MODE", "true".to_string()),
-            ("CELERITY_VARIABLE_logLevel", "DEBUG".to_string()),
-            ("CELERITY_CLIENT_IP_SOURCE", "ConnectInfo".to_string()),
-        ]
-        .into_iter()
-        .collect(),
-    ))
+fn ipc_env(
+    service_name: &str,
+    fixture: &str,
+    socket: &str,
+    overrides: &[(&'static str, &str)],
+) -> common::MockEnvVars<'static> {
+    let mut vars: std::collections::HashMap<&'static str, String> = vec![
+        ("CELERITY_BLUEPRINT", fixture.to_string()),
+        ("CELERITY_SERVICE_NAME", service_name.to_string()),
+        ("CELERITY_RUNTIME_PLATFORM", "local".to_string()),
+        ("CELERITY_RUNTIME_CALL_MODE", "ipc".to_string()),
+        ("CELERITY_SERVER_PORT", "0".to_string()),
+        ("CELERITY_LOCAL_API_PORT", "0".to_string()),
+        ("CELERITY_RUNTIME_SOCKET", socket.to_string()),
+        ("CELERITY_SERVER_LOOPBACK_ONLY", "true".to_string()),
+        ("CELERITY_TEST_MODE", "true".to_string()),
+        ("CELERITY_ENABLE_LOCAL_INVOKE", "true".to_string()),
+        ("CELERITY_VARIABLE_logLevel", "DEBUG".to_string()),
+        ("CELERITY_CLIENT_IP_SOURCE", "ConnectInfo".to_string()),
+    ]
+    .into_iter()
+    .collect();
+    for (key, value) in overrides {
+        vars.insert(key, value.to_string());
+    }
+    common::MockEnvVars::new(Some(vars))
 }
 
 /// A socket path unique to this test, so tests can run alongside each other.
@@ -59,8 +67,17 @@ fn socket_path(name: &str) -> String {
 /// Starts a runtime serving the given blueprint, returning its public address
 /// and the socket its handler stream is on.
 async fn start_runtime(name: &str, fixture: &str) -> (Application, std::net::SocketAddr, String) {
+    start_runtime_with(name, fixture, &[]).await
+}
+
+/// Starts a runtime with environment overrides applied on top of the defaults.
+async fn start_runtime_with(
+    name: &str,
+    fixture: &str,
+    overrides: &[(&'static str, &str)],
+) -> (Application, std::net::SocketAddr, String) {
     let socket = socket_path(name);
-    let env_vars = ipc_env(name, fixture, &socket);
+    let env_vars = ipc_env(name, fixture, &socket, overrides);
     let runtime_config = RuntimeConfig::from_env(&env_vars);
     let mut app = Application::new(runtime_config, Box::new(env_vars));
     app.setup().unwrap();
@@ -320,6 +337,237 @@ async fn returns_504_when_the_handler_never_answers() {
     .unwrap();
 
     assert_eq!(response.status(), 504);
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn invokes_a_custom_handler_by_name_over_the_stream() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-invoke",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+    )
+    .await;
+    let mut handler = HandlerStub::attach(&socket, |_| {
+        Some(proto::result::Outcome::Custom(proto::CustomInvokeResult {
+            output: br#"{"reindexed":12}"#.to_vec(),
+            error_message: String::new(),
+        }))
+    })
+    .await;
+
+    let response = tokio::time::timeout(
+        Duration::from_secs(10),
+        http_client().request(
+            Request::builder()
+                .method("POST")
+                .uri(format!("http://{addr}/runtime/handlers/invoke"))
+                .header("Host", "localhost")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"handlerName":"reindexHandler","invocationType":"requestResponse","payload":{"full":true}}"#,
+                ))
+                .unwrap(),
+        ),
+    )
+    .await
+    .expect("the invocation should be served rather than time out")
+    .unwrap();
+
+    let status = response.status();
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(status, 200, "body: {}", String::from_utf8_lossy(&body));
+    let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(body["data"], r#"{"reindexed":12}"#);
+
+    // The invocation reached the handlers executable as an ordinary event, on
+    // the custom tag, carrying the payload the caller sent.
+    let dispatch = handler
+        .next_dispatch()
+        .await
+        .expect("the handler should have been given the invocation");
+    assert_eq!(dispatch.handler_tag, "custom::reindexHandler");
+    let Some(proto::dispatch::Source::Custom(invoke)) = dispatch.source else {
+        panic!("expected a custom invocation source");
+    };
+    assert_eq!(invoke.handler_name, "reindexHandler");
+    assert_eq!(invoke.input, br#"{"full":true}"#);
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn invokes_an_http_handler_by_name_without_shaping_a_request() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-invoke-http",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+    )
+    .await;
+    let mut handler = HandlerStub::attach(&socket, |_| {
+        Some(proto::result::Outcome::Custom(proto::CustomInvokeResult {
+            output: br#"{"id":"order-1"}"#.to_vec(),
+            error_message: String::new(),
+        }))
+    })
+    .await;
+
+    let response = tokio::time::timeout(
+        Duration::from_secs(10),
+        http_client().request(
+            Request::builder()
+                .method("POST")
+                .uri(format!("http://{addr}/runtime/handlers/invoke"))
+                .header("Host", "localhost")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"handlerName":"getOrderHandler","invocationType":"requestResponse","payload":{"pathParams":{"orderId":"order-1"}}}"#,
+                ))
+                .unwrap(),
+        ),
+    )
+    .await
+    .expect("the invocation should be served rather than time out")
+    .unwrap();
+
+    let status = response.status();
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(status, 200, "body: {}", String::from_utf8_lossy(&body));
+
+    // Routed on the HTTP handler's own tag, since that is the tag the handler
+    // stream serves, and carrying the payload straight through rather than
+    // being dressed up as a request.
+    let dispatch = handler
+        .next_dispatch()
+        .await
+        .expect("the handler should have been given the invocation");
+    assert_eq!(dispatch.handler_tag, "GET::/orders/{orderId}");
+    let Some(proto::dispatch::Source::Custom(invoke)) = dispatch.source else {
+        panic!("expected a direct invocation source");
+    };
+    assert_eq!(invoke.handler_name, "getOrderHandler");
+    assert_eq!(invoke.input, br#"{"pathParams":{"orderId":"order-1"}}"#);
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn serves_the_invoke_endpoint_for_an_application_with_no_http_api() {
+    // The case the endpoint matters most in: nothing here can be triggered from
+    // outside, so without this there is no way to run these handlers by hand.
+    let (_app, addr, socket) = start_runtime(
+        "ipc-invoke-no-api",
+        "tests/data/fixtures/ipc-handlers-only.blueprint.yaml",
+    )
+    .await;
+    let mut handler = HandlerStub::attach(&socket, |_| {
+        Some(proto::result::Outcome::Custom(proto::CustomInvokeResult {
+            output: br#"{"reconciled":3}"#.to_vec(),
+            error_message: String::new(),
+        }))
+    })
+    .await;
+
+    let response = tokio::time::timeout(
+        Duration::from_secs(10),
+        http_client().request(
+            Request::builder()
+                .method("POST")
+                .uri(format!("http://{addr}/runtime/handlers/invoke"))
+                .header("Host", "localhost")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"handlerName":"reconcileHandler","invocationType":"requestResponse"}"#,
+                ))
+                .unwrap(),
+        ),
+    )
+    .await
+    .expect("the invocation should be served rather than time out")
+    .unwrap();
+
+    let status = response.status();
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(status, 200, "body: {}", String::from_utf8_lossy(&body));
+    let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(body["data"], r#"{"reconciled":3}"#);
+
+    let dispatch = handler
+        .next_dispatch()
+        .await
+        .expect("the handler should have been given the invocation");
+    assert_eq!(dispatch.handler_tag, "custom::reconcileHandler");
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn does_not_serve_the_invoke_endpoint_unless_it_is_enabled() {
+    // Test mode and a local platform are both still on, as they are for every
+    // other test here, so this pins the switch as a condition in its own right.
+    let (_app, addr, socket) = start_runtime_with(
+        "ipc-invoke-disabled",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+        &[("CELERITY_ENABLE_LOCAL_INVOKE", "false")],
+    )
+    .await;
+    let _handler = HandlerStub::attach(&socket, |_| None).await;
+
+    let response = tokio::time::timeout(
+        Duration::from_secs(10),
+        http_client().request(
+            Request::builder()
+                .method("POST")
+                .uri(format!("http://{addr}/runtime/handlers/invoke"))
+                .header("Host", "localhost")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"handlerName":"reindexHandler","invocationType":"requestResponse"}"#,
+                ))
+                .unwrap(),
+        ),
+    )
+    .await
+    .expect("the request should be answered rather than hang")
+    .unwrap();
+
+    // Not routed at all, as opposed to routed and refused.
+    assert_eq!(response.status(), 404);
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn refuses_to_invoke_a_handler_the_blueprint_does_not_declare() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-invoke-unknown",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+    )
+    .await;
+    let _handler = HandlerStub::attach(&socket, |_| None).await;
+
+    let started = tokio::time::Instant::now();
+    let response = tokio::time::timeout(
+        Duration::from_secs(10),
+        http_client().request(
+            Request::builder()
+                .method("POST")
+                .uri(format!("http://{addr}/runtime/handlers/invoke"))
+                .header("Host", "localhost")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"handlerName":"noSuchHandler","invocationType":"requestResponse"}"#,
+                ))
+                .unwrap(),
+        ),
+    )
+    .await
+    .expect("the invocation should be refused rather than time out")
+    .unwrap();
+
+    assert_eq!(response.status(), 404);
+    // Refused on the name, so the caller is not left waiting for a stream to
+    // claim a tag that is not in the blueprint at all.
+    assert!(started.elapsed() < Duration::from_secs(2));
 
     let _ = tokio::fs::remove_file(&socket).await;
 }
