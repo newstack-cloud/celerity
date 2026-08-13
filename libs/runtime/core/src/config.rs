@@ -36,11 +36,19 @@ pub struct RuntimeConfig {
     /// Defaults to true.
     pub server_loopback_only: Option<bool>,
     /// The loopback port the handler stream is served on when a Unix socket
+    /// cannot be bound and [`RuntimeConfig::runtime_socket_fallback_enabled`]
+    /// allows it.
+    pub runtime_socket_fallback_port: i32,
+    /// Whether to serve the handler stream over loopback TCP when a Unix socket
     /// cannot be bound.
     ///
-    /// Only used in the IPC runtime call mode, and only as a fallback, so that
-    /// a platform without Unix sockets is still serviceable.
-    pub runtime_socket_fallback_port: i32,
+    /// Off unless asked for, and the runtime refuses to start rather than
+    /// serving nothing. Falling back silently would widen who can register as a
+    /// handler, from the one user a socket's permissions allow to any process
+    /// that can reach loopback, and would do it at the moment something is
+    /// already wrong. It also hides the cause where a socket that cannot be bound is
+    /// usually a misconfiguration rather than a platform without Unix sockets.
+    pub runtime_socket_fallback_enabled: bool,
     /// The Unix socket the handler stream is served on in the IPC runtime call
     /// mode.
     ///
@@ -210,6 +218,15 @@ impl RuntimeConfig {
                 .expect("Invalid server loopback only value, must be either \"true\" or \"false\"")
         });
 
+        let runtime_socket_fallback_enabled = env
+            .var("CELERITY_RUNTIME_SOCKET_FALLBACK_ENABLED")
+            .map(|val| {
+                val.parse().expect(
+                    "Invalid runtime socket fallback enabled value, must be either \"true\" or \"false\"",
+                )
+            })
+            .unwrap_or(false);
+
         let runtime_socket_fallback_port = env
             .var("CELERITY_RUNTIME_SOCKET_FALLBACK_PORT")
             .unwrap_or_else(|_| DEFAULT_RUNTIME_SOCKET_FALLBACK_PORT.to_string())
@@ -329,6 +346,7 @@ impl RuntimeConfig {
             server_port,
             server_loopback_only,
             runtime_socket_fallback_port,
+            runtime_socket_fallback_enabled,
             runtime_socket,
             drain_timeout,
             enable_local_invoke,

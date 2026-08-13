@@ -1470,6 +1470,7 @@ mod tests {
             server_port: 8080,
             server_loopback_only: None,
             runtime_socket_fallback_port: 8592,
+            runtime_socket_fallback_enabled: false,
             runtime_socket: "/tmp/celerity-test.sock".to_string(),
             drain_timeout: None,
             enable_local_invoke: false,

@@ -489,6 +489,7 @@ impl CoreRuntimeApplication {
       server_port: runtime_config.server_port,
       // Unused in the FFI call mode, where handlers run in-process.
       runtime_socket_fallback_port: 0,
+      runtime_socket_fallback_enabled: false,
       // Unused in the FFI call mode, where handlers run in-process.
       runtime_socket: String::new(),
       drain_timeout: None,

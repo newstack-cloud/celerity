@@ -39,6 +39,8 @@ pub const DEFAULT_TRACING_ENABLED: bool = false;
 // call mode. A Unix socket is preferred over loopback TCP: it is consistently
 // faster on Linux, needs no port allocation, and its access control is
 // filesystem permissions rather than "anything that can reach localhost".
+// The runtime restricts it to its own user on bind, which is what makes that
+// last point true.
 pub const DEFAULT_RUNTIME_SOCKET: &str = "/var/run/celerity/runtime.sock";
 
 // The default port the handler stream falls back to when no Unix socket can be

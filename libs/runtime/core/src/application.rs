@@ -625,11 +625,31 @@ impl Application {
                     }
                 });
             }
+            Err(err) if !self.runtime_config.runtime_socket_fallback_enabled => {
+                // Refused rather than fallen back on. Serving the stream over
+                // loopback instead would widen who can register as a handler,
+                // from the one user the socket's permissions allow to any
+                // process that can reach loopback, and would do it silently at
+                // the moment something is already wrong.
+                error!(
+                    socket = %self.runtime_config.runtime_socket,
+                    "could not bind the handler stream socket: {err}"
+                );
+                return Err(ApplicationStartError::Environment(format!(
+                    "could not bind the handler stream socket at {}: {err}. Set \
+                     CELERITY_RUNTIME_SOCKET_FALLBACK_ENABLED to serve it over loopback TCP \
+                     instead, which lets any process that can reach loopback register as a \
+                     handler",
+                    self.runtime_config.runtime_socket
+                )));
+            }
             Err(err) => {
                 let port = self.runtime_config.runtime_socket_fallback_port;
                 warn!(
                     socket = %self.runtime_config.runtime_socket,
-                    "could not bind a unix socket ({err}), falling back to loopback tcp on {port}"
+                    "could not bind a unix socket ({err}), serving the handler stream over \
+                     loopback tcp on {port} as configured, which lets any process that can \
+                     reach loopback register as a handler and be given events"
                 );
                 let addr = SocketAddr::from((std::net::Ipv4Addr::LOCALHOST, port as u16));
                 tokio::spawn(async move {
@@ -1743,16 +1763,40 @@ fn register_ipc_http_route(
 
 /// Binds the Unix socket the handler stream is served on.
 ///
+/// The parent directory is created because the default path lives under
+/// `/var/run`, which a container image may not have.
+///
 /// A socket file left behind by a previous run would make binding fail, so a
-/// stale one is removed first. The parent directory is created because the
-/// default path lives under `/var/run`, which a container image may not have.
+/// stale one is removed. One that another instance is still listening on is
+/// not: removing it would leave that instance running on a socket nothing can
+/// reach any more, and two runtimes silently fighting over a path is worse than
+/// refusing to start.
 async fn bind_runtime_socket(path: &str) -> std::io::Result<tokio::net::UnixListener> {
     let path = std::path::Path::new(path);
     if let Some(parent) = path.parent() {
         tokio::fs::create_dir_all(parent).await?;
     }
+
     if tokio::fs::try_exists(path).await.unwrap_or(false) {
+        // Connecting is the only way to tell a live socket from a leftover
+        // file, a refused connection means nothing is listening.
+        if tokio::net::UnixStream::connect(path).await.is_ok() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::AddrInUse,
+                format!("another runtime is already listening on {}", path.display()),
+            ));
+        }
         tokio::fs::remove_file(path).await?;
     }
-    tokio::net::UnixListener::bind(path)
+
+    let listener = tokio::net::UnixListener::bind(path)?;
+    restrict_runtime_socket(path).await?;
+    Ok(listener)
+}
+
+/// Restricts the socket to the user the runtime runs as.
+async fn restrict_runtime_socket(path: &std::path::Path) -> std::io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+
+    tokio::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600)).await
 }
