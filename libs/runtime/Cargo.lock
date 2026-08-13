@@ -976,6 +976,8 @@ dependencies = [
 name = "celerity-proto-gen"
 version = "0.1.0"
 dependencies = [
+ "prost 0.14.4",
+ "prost-types",
  "tonic-prost-build",
 ]
 

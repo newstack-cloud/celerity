@@ -16,6 +16,39 @@ on:
     inputs: {}
 
 jobs:
+  protocol:
+    # The IPC handler protocol and the Rust stubs generated from it. Kept
+    # separate from the main job because it needs no Rust toolchain beyond
+    # building the generator, and it should fail on its own terms.
+    name: Protocol contract
+    runs-on: ubuntu-latest
+    env:
+      working-directory: ./libs/runtime
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Lint the protocol
+        run: buf lint
+        working-directory: ./libs/runtime/proto
+      - name: Install Rust
+        run: rustup update stable
+      - name: Regenerate the stubs
+        run: cargo run -p celerity-proto-gen
+        working-directory: ${{env.working-directory}}
+      # The stubs are checked in so that building the runtime needs no proto
+      # tooling, which only holds if they match the contract they came from.
+      # Regenerating and finding a change means the two have drifted apart.
+      - name: Fail if the stubs have drifted
+        run: |
+          if ! git diff --exit-code -- libs/runtime/core/src/generated; then
+            echo "::error::The checked-in stubs do not match the .proto. Run 'cargo run -p celerity-proto-gen' and commit the result."
+            exit 1
+          fi
+
   integrate:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
