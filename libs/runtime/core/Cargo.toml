@@ -12,7 +12,7 @@ axum-client-ip = "1.1.3"
 serde = "1.0.204"
 serde_json = "1.0.122"
 tokio = { version = "1.38.1", features = ["full"] }
-tokio-stream = "0.1"
+tokio-stream = { version = "0.1", features = ["net"] }
 tokio-util = { version = "0.7.12", features = ["time"] }
 tower = "0.4.13"
 tower-http = { version = "0.6.0", features = ["trace", "cors"] }
@@ -82,7 +82,7 @@ path = "../ws/ws-registry"
 # tonic 0.14 builds on tower 0.5 while the crate itself still uses 0.4, so
 # the test connector needs the newer one under a name that cannot collide.
 tower_tonic = { package = "tower", version = "0.5", features = ["util"] }
-tokio-stream = "0.1"
+tokio-stream = { version = "0.1", features = ["net"] }
 test-log = { version = "0.2.16", features = ["log", "trace"] }
 tokio = { version = "1.38.1", features = ["full", "test-util"] }
 pretty_assertions = "1.4.0"
