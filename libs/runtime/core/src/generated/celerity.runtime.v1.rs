@@ -110,13 +110,16 @@ pub struct ReadyAck {
 /// this frame exists for resizing the window,
 /// for grants not tied to a completion, and for resuming after a
 /// deliberate withhold.
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+///
+/// There is one credit window per stream, covering every tag it serves.
+/// Isolation between tags is expressed by the concurrency caps in Ready, not by
+/// separate credit pools, a cap is what stops one slow tag consuming the whole
+/// window. Granting credit for a single tag would be a second mechanism for the
+/// same concern, and would let one tag stall unnoticed while the others flow.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CreditGrant {
     #[prost(uint32, tag = "1")]
     pub additional: u32,
-    /// Absent means the global pool.
-    #[prost(string, optional, tag = "2")]
-    pub handler_tag: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Dispatch {
