@@ -734,7 +734,7 @@ mod tests {
     }
 
     fn start_with_registry(tags: &[&str], registry: RecordingWsRegistry) -> Harness {
-        let (handles, cleanup) = EventQueueParts::new(8).into_parts();
+        let (handles, _receivers, cleanup) = EventQueueParts::new(8).into_parts();
         let cleanup_shutdown = cleanup.spawn();
         let (commands_tx, commands_rx) = mpsc::channel(16);
         let (inbound_tx, inbound_rx) = mpsc::channel(16);

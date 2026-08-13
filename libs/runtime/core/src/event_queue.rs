@@ -419,31 +419,19 @@ impl InFlightTable {
     }
 }
 
-/// The receiving half of the bounded event queue.
+/// The receiving ends of the event path, which the dispatcher owns outright.
 ///
-/// The queue has exactly one consumer. Sharing it behind a mutex is a
-/// transitional measure for the polling local runtime API, whose endpoint can
-/// be called concurrently and which is currently the only thing draining the
-/// queue. That API is being replaced by a gRPC bidirectional stream, and the
-/// dispatcher that serves it will own the receiver outright — at which point
-/// the mutex has no remaining purpose and this alias should collapse to a
-/// plain `mpsc::Receiver`.
-///
-/// The local API is removed last, after the stream can carry consumer and
-/// schedule events, so this shape has to survive until then.
-pub type EventQueueReceiver = Arc<tokio::sync::Mutex<mpsc::Receiver<EventTuple>>>;
-
-/// The receiving half of the cancellation channel.
-///
-/// Wrapped the same way as [`EventQueueReceiver`] only so that the handles can
-/// stay cloneable while the local API still exists; the dispatcher is the sole
-/// consumer, and this collapses to a plain receiver with the rest of that
-/// transitional shape.
-pub type CancelReceiver = Arc<tokio::sync::Mutex<mpsc::UnboundedReceiver<CancelRequest>>>;
+/// Kept apart from [`EventQueueHandles`] because there is exactly one consumer
+/// of each, the handles are cloned freely by producers, these are moved once.
+pub struct EventQueueReceivers {
+    pub events: mpsc::Receiver<EventTuple>,
+    pub cancellations: mpsc::UnboundedReceiver<CancelRequest>,
+}
 
 /// Everything needed to run the event path in the IPC runtime call mode.
 pub struct EventQueueParts {
     handles: EventQueueHandles,
+    receivers: EventQueueReceivers,
     cleanup_task: EventCleanupTask,
 }
 
@@ -470,9 +458,11 @@ impl EventQueueParts {
                     tx,
                     cancel_tx: cancel_tx.clone(),
                 },
-                receiver: Arc::new(tokio::sync::Mutex::new(rx)),
-                cancellations: Arc::new(tokio::sync::Mutex::new(cancel_rx)),
                 in_flight: in_flight.clone(),
+            },
+            receivers: EventQueueReceivers {
+                events: rx,
+                cancellations: cancel_rx,
             },
             cleanup_task: EventCleanupTask {
                 in_flight,
@@ -490,8 +480,8 @@ impl EventQueueParts {
     /// application is being set up, because every HTTP route in this mode holds
     /// a producer, while the task can only be started once there is a runtime
     /// to spawn it on.
-    pub fn into_parts(self) -> (EventQueueHandles, EventCleanupTask) {
-        (self.handles, self.cleanup_task)
+    pub fn into_parts(self) -> (EventQueueHandles, EventQueueReceivers, EventCleanupTask) {
+        (self.handles, self.receivers, self.cleanup_task)
     }
 }
 
@@ -524,8 +514,6 @@ impl EventCleanupTask {
 #[derive(Debug, Clone)]
 pub struct EventQueueHandles {
     pub queue: EventQueue,
-    pub receiver: EventQueueReceiver,
-    pub cancellations: CancelReceiver,
     pub in_flight: Arc<InFlightTable>,
 }
 
@@ -650,8 +638,7 @@ mod tests {
 
     #[tokio::test]
     async fn enqueue_yields_the_event_to_the_receiver() {
-        let (handles, _cleanup) = EventQueueParts::new(4).into_parts();
-        let receiver = handles.receiver.clone();
+        let (handles, mut receivers, _cleanup) = EventQueueParts::new(4).into_parts();
         let queue = handles.queue.clone();
 
         let _rx = queue
@@ -659,13 +646,13 @@ mod tests {
             .await
             .unwrap();
 
-        let (_result_tx, event) = receiver.lock().await.recv().await.unwrap();
+        let (_result_tx, event) = receivers.events.recv().await.unwrap();
         assert_eq!(event.id, "event-1");
     }
 
     #[tokio::test(start_paused = true)]
     async fn enqueue_reports_queue_full_when_no_room_appears_within_the_admission_wait() {
-        let (handles, _cleanup) = EventQueueParts::new(1).into_parts();
+        let (handles, _receivers, _cleanup) = EventQueueParts::new(1).into_parts();
 
         handles
             .queue
@@ -682,8 +669,7 @@ mod tests {
 
     #[tokio::test]
     async fn enqueue_waits_for_capacity_rather_than_shedding_immediately() {
-        let (handles, _cleanup) = EventQueueParts::new(1).into_parts();
-        let receiver = handles.receiver.clone();
+        let (handles, mut receivers, _cleanup) = EventQueueParts::new(1).into_parts();
 
         handles
             .queue
@@ -693,18 +679,22 @@ mod tests {
 
         // Free a slot shortly after the second enqueue starts waiting. Without
         // the admission wait this would have been shed on the spot.
-        let drain = tokio::spawn(async move {
+        //
+        // Driven alongside the enqueue rather than in a spawned task, so the
+        // receiver outlives it. A task that took ownership would close the
+        // channel as it finished, which the waiting producer could observe as
+        // the queue closing rather than as the room it was waiting for.
+        let drain = async {
             tokio::time::sleep(Duration::from_millis(20)).await;
-            receiver.lock().await.recv().await
-        });
-
-        let result = handles
+            receivers.events.recv().await
+        };
+        let enqueue = handles
             .queue
-            .enqueue(test_event("event-2"), Duration::from_secs(5))
-            .await;
+            .enqueue(test_event("event-2"), Duration::from_secs(5));
+        let (drained, result) = tokio::join!(drain, enqueue);
 
         assert!(result.is_ok());
-        assert!(drain.await.unwrap().is_some());
+        assert!(drained.is_some());
     }
 
     #[test]
@@ -789,8 +779,11 @@ mod tests {
 
     #[tokio::test]
     async fn enqueue_reports_closed_when_the_receiver_is_dropped() {
-        let (handles, cleanup) = EventQueueParts::new(4).into_parts();
+        let (handles, receivers, cleanup) = EventQueueParts::new(4).into_parts();
         let queue = handles.queue.clone();
+        // The dispatcher owning the receiver is what keeps the queue open, so
+        // dropping it is what a stopped dispatcher looks like to a producer.
+        drop(receivers);
         drop(handles);
         drop(cleanup);
 
@@ -805,7 +798,7 @@ mod tests {
 
     #[tokio::test]
     async fn in_flight_entries_are_removed_by_a_matching_result() {
-        let (handles, cleanup) = EventQueueParts::new(4).into_parts();
+        let (handles, _receivers, cleanup) = EventQueueParts::new(4).into_parts();
         let _shutdown = cleanup.spawn();
 
         let (result_tx, _result_rx) = oneshot::channel();
@@ -824,7 +817,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_completed_event_stops_being_watched() {
-        let (handles, cleanup) = EventQueueParts::new(4).into_parts();
+        let (handles, _receivers, cleanup) = EventQueueParts::new(4).into_parts();
         let _shutdown = cleanup.spawn();
 
         let (result_tx, _result_rx) = oneshot::channel();
@@ -857,7 +850,7 @@ mod tests {
 
     #[tokio::test(start_paused = true)]
     async fn cleanup_removes_entries_whose_deadline_has_passed() {
-        let (handles, cleanup) = EventQueueParts::new(4).into_parts();
+        let (handles, _receivers, cleanup) = EventQueueParts::new(4).into_parts();
         let _shutdown = cleanup.spawn();
 
         let (result_tx, mut result_rx) = oneshot::channel();
@@ -880,7 +873,7 @@ mod tests {
 
     #[tokio::test(start_paused = true)]
     async fn cleanup_leaves_entries_that_are_still_within_their_deadline() {
-        let (handles, cleanup) = EventQueueParts::new(4).into_parts();
+        let (handles, _receivers, cleanup) = EventQueueParts::new(4).into_parts();
         let _shutdown = cleanup.spawn();
 
         let (result_tx, _result_rx) = oneshot::channel();

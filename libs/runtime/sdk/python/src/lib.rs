@@ -487,10 +487,8 @@ impl CoreRuntimeApplication {
       runtime_call_mode: RuntimeCallMode::Ffi,
       server_loopback_only: runtime_config.server_loopback_only,
       server_port: runtime_config.server_port,
-      // Local API port is not used for the Python runtime
-      // as the runtime mode for interaction with application handlers
-      // is FFI.
-      local_api_port: 0,
+      // Unused in the FFI call mode, where handlers run in-process.
+      runtime_socket_fallback_port: 0,
       // Unused in the FFI call mode, where handlers run in-process.
       runtime_socket: String::new(),
       drain_timeout: None,

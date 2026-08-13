@@ -956,8 +956,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_event_queue_handler() {
-        let (queue, _cleanup) = EventQueueParts::new(4).into_parts();
-        let receiver = queue.receiver.clone();
+        let (queue, receivers, _cleanup) = EventQueueParts::new(4).into_parts();
+        let mut receiver = receivers.events;
         let handler = EventQueueConsumerEventHandler::new(
             queue.queue.clone(),
             HandlerTimeouts::new(HashMap::new(), Duration::from_secs(60)),
@@ -985,12 +985,7 @@ mod tests {
                 .await
         });
 
-        let (tx, event) = receiver
-            .lock()
-            .await
-            .recv()
-            .await
-            .expect("event should be in queue");
+        let (tx, event) = receiver.recv().await.expect("event should be in queue");
         let result = success_event_result(&event.id);
         let result_event_id = result.event_id.clone();
         tx.send(EventOutcome::Completed(Box::new(event), result))
@@ -1003,8 +998,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_event_queue_handler_schedule() {
-        let (queue, _cleanup) = EventQueueParts::new(4).into_parts();
-        let receiver = queue.receiver.clone();
+        let (queue, receivers, _cleanup) = EventQueueParts::new(4).into_parts();
+        let mut receiver = receivers.events;
         let handler = EventQueueConsumerEventHandler::new(
             queue.queue.clone(),
             HandlerTimeouts::new(HashMap::new(), Duration::from_secs(60)),
@@ -1024,12 +1019,7 @@ mod tests {
                 .await
         });
 
-        let (tx, event) = receiver
-            .lock()
-            .await
-            .recv()
-            .await
-            .expect("event should be in queue");
+        let (tx, event) = receiver.recv().await.expect("event should be in queue");
         assert_eq!(event.event_type, EventType::ScheduleMessage);
 
         let result = success_event_result(&event.id);

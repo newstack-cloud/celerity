@@ -11,7 +11,7 @@ use celerity_helpers::{
 use serde_json::Value;
 use tracing::Level;
 
-use crate::consts::{DEFAULT_LOCAL_API_PORT, DEFAULT_RUNTIME_SOCKET};
+use crate::consts::{DEFAULT_RUNTIME_SOCKET, DEFAULT_RUNTIME_SOCKET_FALLBACK_PORT};
 
 /// Core runtime configuration
 /// that is used to locate blueprint files
@@ -35,17 +35,17 @@ pub struct RuntimeConfig {
     ///
     /// Defaults to true.
     pub server_loopback_only: Option<bool>,
-    /// The port on which the local HTTP API server
-    /// should run.
-    /// This is only used when the runtime call mode
-    /// is set to `RuntimeCallMode::Ipc`.
-    pub local_api_port: i32,
+    /// The loopback port the handler stream is served on when a Unix socket
+    /// cannot be bound.
+    ///
+    /// Only used in the IPC runtime call mode, and only as a fallback, so that
+    /// a platform without Unix sockets is still serviceable.
+    pub runtime_socket_fallback_port: i32,
     /// The Unix socket the handler stream is served on in the IPC runtime call
     /// mode.
     ///
     /// When this cannot be bound, the runtime falls back to loopback TCP on
-    /// `local_api_port`, so that platforms without Unix sockets are still
-    /// serviceable.
+    /// `runtime_socket_fallback_port`.
     pub runtime_socket: String,
     /// How long the runtime waits for in-flight events to come back once it
     /// starts shutting down, in seconds.
@@ -210,11 +210,11 @@ impl RuntimeConfig {
                 .expect("Invalid server loopback only value, must be either \"true\" or \"false\"")
         });
 
-        let local_api_port = env
-            .var("CELERITY_LOCAL_API_PORT")
-            .unwrap_or_else(|_| DEFAULT_LOCAL_API_PORT.to_string())
+        let runtime_socket_fallback_port = env
+            .var("CELERITY_RUNTIME_SOCKET_FALLBACK_PORT")
+            .unwrap_or_else(|_| DEFAULT_RUNTIME_SOCKET_FALLBACK_PORT.to_string())
             .parse()
-            .expect("Invalid local API port, must be a valid integer");
+            .expect("Invalid runtime socket fallback port, must be a valid integer");
 
         let runtime_socket = env
             .var("CELERITY_RUNTIME_SOCKET")
@@ -328,7 +328,7 @@ impl RuntimeConfig {
             service_name,
             server_port,
             server_loopback_only,
-            local_api_port,
+            runtime_socket_fallback_port,
             runtime_socket,
             drain_timeout,
             enable_local_invoke,

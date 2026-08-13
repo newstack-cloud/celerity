@@ -41,8 +41,9 @@ pub const DEFAULT_TRACING_ENABLED: bool = false;
 // filesystem permissions rather than "anything that can reach localhost".
 pub const DEFAULT_RUNTIME_SOCKET: &str = "/var/run/celerity/runtime.sock";
 
-// The default port that the local API runs on in the "ipc" runtime call mode.
-pub const DEFAULT_LOCAL_API_PORT: &str = "8592";
+// The default port the handler stream falls back to when no Unix socket can be
+// bound, which is the case on platforms without them.
+pub const DEFAULT_RUNTIME_SOCKET_FALLBACK_PORT: &str = "8592";
 
 // The longest a producer will wait for event queue capacity before shedding
 // the event. Bounds how long a consumer can be held off its source loop, and

@@ -16,6 +16,8 @@ paths:
         Allows direct invocation of Celerity handler running in the Celerity runtime.
 
         This endpoint is useful for local testing allowing developers to bypass API or queue layers that trigger handlers.
+
+        Where handlers run in a separate executable, the invocation is dispatched to that executable over the handler stream rather than being run in the runtime process. It is subject to the same timeout, capacity and cancellation handling as any other event, which is why the runtime may report that it could not be dispatched or did not complete in time.
       operationId: invokeHandler
       requestBody:
         $ref: "#/requestBodies/InvokeHandlerBody"
@@ -33,23 +35,38 @@ paths:
           description: |
             Invalid request parameters provided in payload, most likely an unsupported `invocationType`.
           content:
-            applicatoin/json:
+            application/json:
               schema:
                 $ref: "#/components/schemas/BadRequestResponse"
         "404":
           description: |
             The handler could not be found in the current runtime.
           content:
-            applicatoin/json:
+            application/json:
               schema:
                 $ref: "#/components/schemas/NotFoundResponse"
         "500":
           description: |
-            A server error occurred when trying to retrieve next event.
+            A server error occurred when trying to invoke the handler.
           content:
-            applicatoin/json:
+            application/json:
               schema:
                 $ref: "#/components/schemas/ServerErrorResponse"
+        "503":
+          description: |
+            The runtime could not have the handler run at all, as opposed to running it and having it fail.
+            No handlers executable is serving the handler, the runtime is at capacity, or it is shutting down.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnavailableResponse"
+        "504":
+          description: |
+            The handler was dispatched but did not return a result within its configured timeout.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeoutResponse"
 
 requestBodies:
   InvokeHandlerBody:
@@ -113,3 +130,17 @@ components:
         message:
           type: string
           examples: ["Invalid parameters in invoke payload"]
+
+    UnavailableResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          examples: ["no handler is attached for this event"]
+
+    TimeoutResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          examples: ["the handler did not respond within 60s"]

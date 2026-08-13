@@ -40,7 +40,7 @@ fn ipc_env(
         ("CELERITY_RUNTIME_PLATFORM", "local".to_string()),
         ("CELERITY_RUNTIME_CALL_MODE", "ipc".to_string()),
         ("CELERITY_SERVER_PORT", "0".to_string()),
-        ("CELERITY_LOCAL_API_PORT", "0".to_string()),
+        ("CELERITY_RUNTIME_SOCKET_FALLBACK_PORT", "0".to_string()),
         ("CELERITY_RUNTIME_SOCKET", socket.to_string()),
         ("CELERITY_SERVER_LOOPBACK_ONLY", "true".to_string()),
         ("CELERITY_TEST_MODE", "true".to_string()),
