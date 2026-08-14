@@ -16,6 +16,7 @@ use std::{
         atomic::{AtomicU64, Ordering},
         Arc,
     },
+    time::Duration,
 };
 
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
@@ -24,7 +25,10 @@ use celerity_ws_registry::{
     types::MessageType,
 };
 use futures::{Stream, StreamExt};
-use tokio::sync::{mpsc, oneshot};
+use tokio::{
+    sync::{mpsc, oneshot},
+    time::Instant,
+};
 use tonic::Status;
 use tracing::{debug, error, info, warn};
 
@@ -341,8 +345,16 @@ pub async fn run_stream<I>(
         "handler stream ready"
     );
 
+    // Set once the handler says it is finishing, after which the stream is
+    // only waiting for what it already has to come back.
+    let mut draining_until: Option<Instant> = None;
+
     loop {
         tokio::select! {
+            _ = sleep_until_or_never(draining_until) => {
+                info!(stream_id, "handler drain deadline passed");
+                break;
+            }
             frame = dispatch_rx.recv() => match frame {
                 Some(frame) => {
                     if send_frame(&outbound, runtime_frame(frame)).await.is_err() {
@@ -353,8 +365,9 @@ pub async fn run_stream<I>(
             },
             message = inbound.next() => match message {
                 Some(Ok(message)) => {
-                    if !handle_inbound(stream_id, &context, &outbound, message).await {
-                        break;
+                    match handle_inbound(stream_id, &context, &outbound, message).await {
+                        Inbound::Continue => {}
+                        Inbound::Draining(deadline) => draining_until = deadline,
                     }
                 }
                 Some(Err(status)) => {
@@ -397,13 +410,23 @@ where
     }
 }
 
-/// Applies one frame from the handler. Returns whether the stream continues.
+/// What a frame from the handler means for the rest of the stream.
+enum Inbound {
+    /// Carry on as before.
+    Continue,
+    /// The handler is finishing. It is sent no more work, but its results are
+    /// still taken until it closes or the deadline it gave passes. `None` means
+    /// it named no deadline, so only closing ends the stream.
+    Draining(Option<Instant>),
+}
+
+/// Applies one frame from the handler.
 async fn handle_inbound(
     stream_id: StreamId,
     context: &Arc<StreamContext>,
     outbound: &mpsc::Sender<Result<proto::RuntimeMessage, Status>>,
     message: proto::HandlerMessage,
-) -> bool {
+) -> Inbound {
     match message.frame {
         Some(proto::handler_message::Frame::WsSend(send)) => {
             // Spawned rather than awaited, because delivering to a slow or
@@ -415,11 +438,11 @@ async fn handle_inbound(
                 let ack = send_to_websockets(stream_id, &context, send).await;
                 let _ = send_frame(&outbound, frame_ws_ack(ack)).await;
             });
-            true
+            Inbound::Continue
         }
         Some(proto::handler_message::Frame::Result(result)) => {
             complete(stream_id, context, result).await;
-            true
+            Inbound::Continue
         }
         Some(proto::handler_message::Frame::Credit(grant)) => {
             let _ = context
@@ -429,24 +452,60 @@ async fn handle_inbound(
                     additional: grant.additional,
                 })
                 .await;
-            true
+            Inbound::Continue
         }
         Some(proto::handler_message::Frame::Draining(draining)) => {
+            // The stream stays open. This frame exists so a supervisor can roll
+            // handler processes without dropping work, and closing here would
+            // release everything the handler is still holding, which is exactly
+            // the work it is asking for time to finish.
             info!(
                 stream_id,
                 deadline_unix_ms = draining.deadline_unix_ms,
-                "handler is draining"
+                "handler is draining, taking its results until it closes"
             );
-            false
+            let _ = context
+                .commands
+                .send(DispatcherCommand::Draining { stream_id })
+                .await;
+            Inbound::Draining(deadline_from_unix_ms(draining.deadline_unix_ms))
         }
         Some(proto::handler_message::Frame::Ready(_)) => {
             warn!(stream_id, "handler declared itself twice, ignoring");
-            true
+            Inbound::Continue
         }
         other => {
             debug!(stream_id, "ignoring an unsupported frame: {other:?}");
-            true
+            Inbound::Continue
         }
+    }
+}
+
+/// Turns a wall-clock deadline into one this stream can wait on.
+///
+/// A deadline already behind us fires at once, which is a handler saying its
+/// time is up. A deadline of zero means it named none, and only the handler
+/// closing ends the stream.
+fn deadline_from_unix_ms(deadline_unix_ms: i64) -> Option<Instant> {
+    if deadline_unix_ms <= 0 {
+        return None;
+    }
+    let now_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as i64;
+
+    Some(
+        Instant::now()
+            + Duration::from_millis(deadline_unix_ms.saturating_sub(now_ms).max(0) as u64),
+    )
+}
+
+/// Waits until an instant, or forever when there is nothing to wait for.
+async fn sleep_until_or_never(deadline: Option<Instant>) {
+    match deadline {
+        Some(deadline) => tokio::time::sleep_until(deadline).await,
+        None => std::future::pending().await,
     }
 }
 
@@ -823,6 +882,22 @@ mod tests {
         registration
     }
 
+    fn schedule_event(id: &str) -> EventData {
+        EventData {
+            id: id.to_string(),
+            event_type: EventType::ScheduleMessage,
+            handler_tag: "schedule::a".to_string(),
+            timestamp: 0,
+            data: EventDataPayload::ScheduleMessageEventData(ScheduleEventData {
+                schedule_id: "schedule-1".to_string(),
+                message_id: "message-1".to_string(),
+                schedule: "rate(1 minute)".to_string(),
+                input: None,
+                vendor: json!({}),
+            }),
+        }
+    }
+
     fn ready(tags: &[&str]) -> proto::HandlerMessage {
         proto::HandlerMessage {
             frame: Some(proto::handler_message::Frame::Ready(proto::Ready {
@@ -1168,6 +1243,67 @@ mod tests {
             }
         }
         assert!(seen_ack && seen_drain);
+    }
+
+    #[tokio::test]
+    async fn keeps_taking_results_from_a_handler_that_is_draining() {
+        let mut harness = start(&["schedule::a"]);
+        let _registration = ready_stream(&mut harness).await;
+
+        // Stand in for the dispatcher having sent this event, so the handler
+        // has work outstanding when it says it is finishing.
+        let (result_tx, result_rx) = oneshot::channel();
+        harness.in_flight.insert(
+            crate::event_queue::InFlightEntry {
+                result_tx,
+                event: schedule_event("event-1"),
+            },
+            Duration::from_secs(60),
+        );
+
+        harness
+            .inbound_tx
+            .send(Ok(proto::HandlerMessage {
+                frame: Some(proto::handler_message::Frame::Draining(proto::Draining {
+                    deadline_unix_ms: 0,
+                })),
+            }))
+            .await
+            .unwrap();
+
+        // The dispatcher is told to stop sending work, and nothing is detached.
+        // Detaching would release the very work the handler asked for time to
+        // finish.
+        let command = tokio::time::timeout(Duration::from_secs(2), harness.commands_rx.recv())
+            .await
+            .expect("the dispatcher should be told")
+            .expect("the command channel should be open");
+        assert!(
+            matches!(command, DispatcherCommand::Draining { .. }),
+            "expected the stream to drain rather than detach, got {command:?}"
+        );
+
+        // The result of the outstanding event still reaches its caller.
+        harness
+            .inbound_tx
+            .send(Ok(proto::HandlerMessage {
+                frame: Some(proto::handler_message::Frame::Result(proto::Result {
+                    id: "event-1".to_string(),
+                    credit_grant: 1,
+                    outcome: Some(proto::result::Outcome::Schedule(proto::Ack {
+                        success: true,
+                        error_message: String::new(),
+                    })),
+                })),
+            }))
+            .await
+            .unwrap();
+
+        let outcome = tokio::time::timeout(Duration::from_secs(2), result_rx)
+            .await
+            .expect("the caller should be woken")
+            .expect("the result should arrive");
+        assert!(matches!(outcome, EventOutcome::Completed(_, _)));
     }
 
     #[tokio::test]
