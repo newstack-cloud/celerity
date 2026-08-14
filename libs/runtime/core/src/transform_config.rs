@@ -418,6 +418,7 @@ fn apply_http_handler_configurations(
 ) -> Result<HttpHandlerDefinition, ConfigError> {
     let handler_definition = HttpHandlerDefinition {
         name: handler_name.clone(),
+        published_name: handler_spec.handler_name.clone(),
         handler: handler_spec.handler.clone(),
         path: to_axum_path(route.path),
         method: route.method,
@@ -450,6 +451,7 @@ fn apply_websocket_handler_configurations(
 ) -> Result<WebSocketHandlerDefinition, ConfigError> {
     let handler_definition = WebSocketHandlerDefinition {
         name: handler_name.clone(),
+        published_name: handler_spec.handler_name.clone(),
         handler: handler_spec.handler.clone(),
         route,
         route_key,
@@ -874,6 +876,7 @@ fn build_event_handler_definition(
 ) -> Result<EventHandlerDefinition, ConfigError> {
     Ok(EventHandlerDefinition {
         name: handler_name.clone(),
+        published_name: handler_spec.handler_name.clone(),
         handler: handler_spec.handler.clone(),
         location: resolve_handler_location(
             handler_name,
@@ -1333,6 +1336,7 @@ pub(crate) fn collect_custom_handler_definitions(
             )?;
             handlers.push(CustomHandlerDefinition {
                 name: name.clone(),
+                published_name: handler_spec.handler_name.clone(),
                 handler: handler_spec.handler.clone(),
                 location,
                 timeout: resolve_handler_timeout(

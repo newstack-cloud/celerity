@@ -641,6 +641,56 @@ async fn does_not_serve_the_invoke_endpoint_unless_it_is_enabled() {
 }
 
 #[test_log::test(tokio::test)]
+async fn invokes_a_handler_by_the_name_the_blueprint_publishes_it_under() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-invoke-published",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+    )
+    .await;
+    let mut handler = HandlerStub::attach(&socket, |_| {
+        Some(proto::result::Outcome::Custom(proto::CustomInvokeResult {
+            output: br#"{"ok":true}"#.to_vec(),
+            error_message: String::new(),
+        }))
+    })
+    .await;
+
+    // `spec.handlerName`, which is what a deployment addresses this handler by
+    // and what the invoke API documents, rather than the blueprint resource it
+    // is declared as.
+    let response = tokio::time::timeout(
+        Duration::from_secs(10),
+        http_client().request(
+            Request::builder()
+                .method("POST")
+                .uri(format!("http://{addr}/runtime/handlers/invoke"))
+                .header("Host", "localhost")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"handlerName":"Orders-GetOrderHandler-v1","invocationType":"requestResponse"}"#,
+                ))
+                .unwrap(),
+        ),
+    )
+    .await
+    .expect("the invocation should be served rather than time out")
+    .unwrap();
+
+    let status = response.status();
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(status, 200, "body: {}", String::from_utf8_lossy(&body));
+
+    // It reaches the same handler the resource name would.
+    let dispatch = handler
+        .next_dispatch()
+        .await
+        .expect("the handler should have been given the invocation");
+    assert_eq!(dispatch.handler_tag, "GET::/orders/{orderId}");
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
 async fn refuses_to_invoke_a_handler_the_blueprint_does_not_declare() {
     let (_app, addr, socket) = start_runtime(
         "ipc-invoke-unknown",

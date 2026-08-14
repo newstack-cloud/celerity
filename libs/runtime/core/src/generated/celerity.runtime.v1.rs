@@ -480,6 +480,8 @@ pub struct RuntimeConfig {
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct HandlerConfig {
+    /// The blueprint resource this handler is declared as, which is what its
+    /// handler tag is built from.
     #[prost(string, tag = "1")]
     pub handler_name: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
@@ -488,6 +490,12 @@ pub struct HandlerConfig {
     pub timeout_ms: i64,
     #[prost(bool, tag = "4")]
     pub tracing_enabled: bool,
+    /// The name the blueprint publishes this handler under, from spec.handlerName.
+    /// Empty when the blueprint does not set one. A deployment addresses a handler
+    /// by this name, and the runtime's local invoke endpoint accepts it alongside
+    /// the resource name.
+    #[prost(string, tag = "5")]
+    pub published_name: ::prost::alloc::string::String,
 }
 /// Generated client implementations.
 pub mod handler_runtime_service_client {
