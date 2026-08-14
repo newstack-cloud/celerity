@@ -409,6 +409,21 @@ impl Dispatcher {
                     tags = registration.handler_tags.len(),
                     "handler stream attached"
                 );
+                // Credit is the handler's own statement of how much it can take
+                // at once, so it is not quietly reduced here. Past the channel's
+                // capacity it stops being the binding limit though, and events
+                // wait in their queues instead, which is worth saying rather
+                // than leaving someone to wonder why a large pool did not help.
+                let buffered = registration.dispatch_tx.max_capacity() as u32;
+                if registration.initial_credit > buffered {
+                    info!(
+                        stream_id,
+                        credit = registration.initial_credit,
+                        buffered,
+                        "declared credit is larger than the stream can buffer, \
+                         throughput will be bounded by the buffer"
+                    );
+                }
                 self.streams.insert(
                     stream_id,
                     StreamState {
@@ -638,6 +653,7 @@ impl Dispatcher {
         };
 
         let event_id = queued.event.id.clone();
+        let queued_at = queued.queued_at;
         let timeout = self.timeouts.for_tag(handler_tag);
         let deadline_unix_ms = unix_millis_from_now(timeout);
 
@@ -656,20 +672,44 @@ impl Dispatcher {
             .get_mut(&stream_id)
             .expect("the chosen stream should still be attached");
 
-        if let Err(err) =
-            stream
-                .dispatch_tx
-                .try_send(StreamFrame::Dispatch(Box::new(DispatchedEvent {
-                    event: queued.event,
-                    deadline_unix_ms,
-                })))
-        {
+        match stream
+            .dispatch_tx
+            .try_send(StreamFrame::Dispatch(Box::new(DispatchedEvent {
+                event: queued.event,
+                deadline_unix_ms,
+            }))) {
+            Ok(()) => {}
+            // The stream is behind, not gone. Putting the event back at the
+            // head of its queue keeps it in line ahead of anything newer, and
+            // the stream keeps everything it is already holding. Detaching here
+            // would throw away a working stream, and every event on it, over a
+            // buffer that is about to drain.
+            Err(mpsc::error::TrySendError::Full(_)) => {
+                debug!(
+                    stream_id,
+                    %handler_tag,
+                    "handler stream is not keeping up, holding the event back"
+                );
+                if let Some(entry) = self.in_flight.remove(&event_id) {
+                    self.queues
+                        .entry(handler_tag.to_string())
+                        .or_default()
+                        .push_front(QueuedEvent {
+                            result_tx: entry.result_tx,
+                            event: entry.event,
+                            queued_at,
+                        });
+                }
+                return false;
+            }
             // The stream went away between being chosen and being sent to.
             // Releasing the entry lets the caller fail now rather than wait.
-            warn!(stream_id, %handler_tag, "failed to send to handler stream: {err}");
-            self.in_flight.remove(&event_id);
-            self.detach(stream_id);
-            return false;
+            Err(mpsc::error::TrySendError::Closed(_)) => {
+                warn!(stream_id, %handler_tag, "handler stream closed before the event was sent");
+                self.in_flight.remove(&event_id);
+                self.detach(stream_id);
+                return false;
+            }
         }
 
         stream.credit = stream.credit.saturating_sub(1);
@@ -775,7 +815,18 @@ mod tests {
         credit: u32,
         limits: HashMap<String, u32>,
     ) -> mpsc::Receiver<StreamFrame> {
-        let (dispatch_tx, dispatch_rx) = mpsc::channel(64);
+        attach_with_buffer(harness, stream_id, tags, credit, limits, 64).await
+    }
+
+    async fn attach_with_buffer(
+        harness: &Harness,
+        stream_id: StreamId,
+        tags: &[&str],
+        credit: u32,
+        limits: HashMap<String, u32>,
+        buffer: usize,
+    ) -> mpsc::Receiver<StreamFrame> {
+        let (dispatch_tx, dispatch_rx) = mpsc::channel(buffer);
         let (registered_tx, registered_rx) = oneshot::channel();
         harness
             .commands
@@ -1221,6 +1272,61 @@ mod tests {
             .await
             .expect("the returned credit should let the next event through");
         assert_eq!(dispatched.event.id, "event-2");
+    }
+
+    #[tokio::test]
+    async fn holds_an_event_back_when_a_stream_is_behind_rather_than_dropping_it() {
+        let harness = start(16);
+        // One slot on the wire, more credit than that, so the second dispatch
+        // finds the channel full while the stream is perfectly healthy.
+        let mut stream =
+            attach_with_buffer(&harness, 1, &["schedule::a"], 4, HashMap::new(), 1).await;
+
+        let mut callers = Vec::new();
+        for index in 0..2 {
+            callers.push(
+                harness
+                    .queue
+                    .enqueue(
+                        event(&format!("event-{index}"), "schedule::a"),
+                        admission_wait(Duration::from_secs(60)),
+                    )
+                    .await
+                    .unwrap(),
+            );
+        }
+
+        // The first fills the buffer. The second must not take the stream down
+        // with it, nor be lost. A full channel is a stream that is behind, not
+        // one that has gone.
+        let first = recv_dispatch(&mut stream)
+            .await
+            .expect("the first event should be sent");
+        assert_eq!(first.event.id, "event-0");
+
+        // Room has appeared, so the held event goes out on the next pass. The
+        // command is only there to prompt one.
+        harness
+            .commands
+            .send(DispatcherCommand::Grant {
+                stream_id: 1,
+                additional: 0,
+            })
+            .await
+            .unwrap();
+
+        let second = recv_dispatch(&mut stream)
+            .await
+            .expect("the held event should be sent once there is room");
+        assert_eq!(second.event.id, "event-1");
+
+        // Neither caller was failed along the way.
+        for caller in &mut callers {
+            assert!(
+                caller.try_recv().is_err(),
+                "no caller should have been given an outcome yet"
+            );
+        }
     }
 
     #[tokio::test]
