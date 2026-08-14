@@ -263,6 +263,9 @@ pub struct HttpRequest {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct HttpResponse {
+    /// 100 to 999. The smallest integer protobuf offers is wider than a status can
+    /// be, so a value outside that range is a fault in the handler and the runtime
+    /// answers 500 rather than narrowing it, which would let 65736 arrive as 200.
     #[prost(uint32, tag = "1")]
     pub status: u32,
     /// Multi-valued, so a handler can emit two Set-Cookie headers, which RFC 9110

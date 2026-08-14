@@ -221,7 +221,7 @@ pub fn event_result_from_frame(result: proto::Result, waiting_for: &EventType) -
 
 fn http_response(response: proto::HttpResponse) -> HttpResponseData {
     HttpResponseData {
-        status: response.status as u16,
+        status: status_code(response.status),
         headers: response
             .headers
             .into_iter()
@@ -229,6 +229,24 @@ fn http_response(response: proto::HttpResponse) -> HttpResponseData {
             .collect(),
         body: Bytes::from(response.body),
     }
+}
+
+/// Narrows a status from the wire, where the smallest type protobuf offers is
+/// wider than a status can be.
+///
+/// Truncating instead would let a value wrap into a perfectly ordinary code:
+/// 65736 becomes 200, so a handler that sent nonsense would report success.
+/// Anything that cannot be a status is a fault in the handler, and reported as
+/// one. A value that fits but is still not a status, such as 4464, is caught
+/// again when the response is built.
+fn status_code(status: u32) -> u16 {
+    u16::try_from(status).unwrap_or_else(|_| {
+        warn!(
+            status,
+            "handler returned a status that cannot be one, answering 500"
+        );
+        500
+    })
 }
 
 /// Reports a failure in the shape the caller is waiting for.
@@ -305,10 +323,6 @@ fn batch_result(batch: proto::BatchResult) -> MessageProcessingResponseData {
     }
 }
 
-/// Recovers the bytes a body always was.
-///
-/// A body flagged as binary was base64 encoded to survive being carried as
-/// JSON. Anything else is text, and its UTF-8 bytes are the body.
 fn json_bytes(value: Option<Value>) -> Vec<u8> {
     match value {
         Some(value) => serde_json::to_vec(&value).unwrap_or_else(|err| {
@@ -604,6 +618,18 @@ mod tests {
             waiting_for,
         )
         .data
+    }
+
+    #[test]
+    fn refuses_a_status_that_cannot_be_one_rather_than_wrapping_it() {
+        assert_eq!(status_code(201), 201);
+        // Wraps to 200 when truncated, so a handler sending nonsense would be
+        // reported as having succeeded.
+        assert_eq!(status_code(65_736), 500);
+        assert_eq!(status_code(u32::MAX), 500);
+        // Fits in the narrower type but is still not a status. Left alone here
+        // and caught again when the response is built.
+        assert_eq!(status_code(4_464), 4_464);
     }
 
     #[test]
