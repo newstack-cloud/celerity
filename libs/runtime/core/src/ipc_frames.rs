@@ -61,7 +61,7 @@ fn custom_invoke(invoke: CustomInvokeEventData) -> proto::CustomInvoke {
 /// could also fail on a payload the handler considers valid.
 fn custom_invoke_response(custom: proto::CustomInvokeResult) -> CustomInvokeResponseData {
     CustomInvokeResponseData {
-        output: String::from_utf8_lossy(&custom.output).into_owned(),
+        output: Bytes::from(custom.output),
         error_message: none_if_empty(custom.error_message),
     }
 }
@@ -284,7 +284,7 @@ fn failure_for(waiting_for: &EventType, message: String) -> EventResultData {
         }
         EventType::CustomInvoke => {
             EventResultData::CustomInvokeResponse(CustomInvokeResponseData {
-                output: String::new(),
+                output: Bytes::new(),
                 error_message: Some(message),
             })
         }

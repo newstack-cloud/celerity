@@ -2,6 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use async_trait::async_trait;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use celerity_helpers::runtime_types::ResponseMessage;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex as AsyncMutex;
@@ -56,6 +57,13 @@ pub struct InvokeHandlerResponse {
     pub message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<String>,
+    /// How `data` is encoded, when it is not the handler's output as it stands.
+    /// Absent means the output was text and is in `data` unchanged.
+    ///
+    /// Decided by the runtime from the bytes a handler returned.
+    #[serde(rename = "dataEncoding")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data_encoding: Option<String>,
 }
 
 #[derive(Debug)]
@@ -136,6 +144,8 @@ pub async fn invoke_handler(
             Ok(Json(InvokeHandlerResponse {
                 message: "Handler invoked successfully".to_string(),
                 data: Some(result.to_string()),
+                // Always text, since an in-process invoker answers with JSON.
+                data_encoding: None,
             }))
         }
         InvocationType::Async => {
@@ -151,6 +161,7 @@ pub async fn invoke_handler(
             Ok(Json(InvokeHandlerResponse {
                 message: "Handler invocation started".to_string(),
                 data: None,
+                data_encoding: None,
             }))
         }
     }
@@ -236,6 +247,7 @@ pub async fn invoke_handler_ipc(
         return Ok(Json(InvokeHandlerResponse {
             message: "Handler invocation started".to_string(),
             data: None,
+            data_encoding: None,
         }));
     }
 
@@ -266,25 +278,75 @@ fn invoke_response(
         return Err(HandlerInvokeError::InvocationFailed(error_message));
     }
 
+    // The response is JSON, and a JSON string cannot carry arbitrary bytes, so
+    // output that is not text is encoded and said to be encoded. Reporting it
+    // as text would corrupt it.
+    //
+    // Which of the two applies is read from the bytes rather than declared, so
+    // a handler does nothing differently for this endpoint.
+    let (data, data_encoding) = match String::from_utf8(response.output.to_vec()) {
+        Ok(text) => (text, None),
+        Err(err) => (BASE64.encode(err.as_bytes()), Some("base64".to_string())),
+    };
+
     Ok(Json(InvokeHandlerResponse {
         message: "Handler invoked successfully".to_string(),
-        data: Some(response.output),
+        data: Some(data),
+        data_encoding,
     }))
 }
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn carries_a_handler_s_output_through_untouched() {
+        let response = invoke_response(EventResultData::CustomInvokeResponse(
+            CustomInvokeResponseData {
+                output: Bytes::from_static(br#"{"reindexed":12}"#),
+                error_message: None,
+            },
+        ))
+        .expect("the output should be returned");
+
+        assert_eq!(response.data.as_deref(), Some(r#"{"reindexed":12}"#));
+        // Text needs no encoding, so nothing is said about one.
+        assert!(response.data_encoding.is_none());
+    }
+
+    #[test]
+    fn encodes_output_this_endpoint_cannot_carry_as_it_stands() {
+        let raw = [0xff, 0xfe, 0x00, 0x80, 0x01];
+        let response = invoke_response(EventResultData::CustomInvokeResponse(
+            CustomInvokeResponseData {
+                output: Bytes::from_static(&[0xff, 0xfe, 0x00, 0x80, 0x01]),
+                error_message: None,
+            },
+        ))
+        .expect("binary output should still be returned");
+
+        // Said to be encoded rather than reported as text, which would corrupt
+        // it, and rather than refused, which would leave a handler returning an
+        // image or a protobuf with no way to be exercised here.
+        assert_eq!(response.data_encoding.as_deref(), Some("base64"));
+        let decoded = BASE64
+            .decode(response.data.as_deref().expect("output should be carried"))
+            .expect("the output should be base64");
+        assert_eq!(decoded, raw);
+    }
+
     use std::{
         net::{Ipv4Addr, SocketAddr},
         sync::atomic::{AtomicBool, Ordering},
     };
 
     use axum::{body::Body, http::Request, routing::post, Router};
+    use bytes::Bytes;
     use http_body_util::BodyExt;
     use pretty_assertions::assert_eq;
     use serde_json::json;
 
     use super::*;
+    use crate::types::CustomInvokeResponseData;
 
     struct MockInvoker {
         response: serde_json::Value,

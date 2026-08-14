@@ -242,9 +242,11 @@ pub enum EventResultData {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CustomInvokeResponseData {
-    /// Whatever the handler returned, as it was serialised. Carried as text
-    /// rather than parsed, since the runtime has no reason to look inside it.
-    pub output: String,
+    /// Whatever the handler returned, exactly as it sent it. Opaque to the
+    /// runtime, which has no reason to look inside it, so it is carried rather
+    /// than decoded. Whether it has to be text is a question for whoever asked
+    /// for the invocation.
+    pub output: Bytes,
     #[serde(rename = "errorMessage")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
