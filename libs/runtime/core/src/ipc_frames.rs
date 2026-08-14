@@ -18,7 +18,7 @@ use crate::{
     ipc_proto as proto,
     types::{
         ConsumerEventData, CustomInvokeEventData, CustomInvokeResponseData, EventData,
-        EventDataPayload, EventMessageEventData, EventResult, EventResultData,
+        EventDataPayload, EventMessageEventData, EventResult, EventResultData, EventType,
         HttpRequestEventData, HttpResponseData, MessageProcessingFailure,
         MessageProcessingResponseData, ScheduleEventData, ScheduledEventResponseData,
         SimpleResponseData, WebSocketEventData,
@@ -180,7 +180,7 @@ fn schedule_trigger(trigger: ScheduleEventData) -> proto::ScheduleTrigger {
 ///
 /// A frame with no outcome is a protocol error rather than a success, so it is
 /// reported as a failure of whatever kind the caller is waiting for.
-pub fn event_result_from_frame(result: proto::Result) -> EventResult {
+pub fn event_result_from_frame(result: proto::Result, waiting_for: &EventType) -> EventResult {
     let data = match result.outcome {
         Some(proto::result::Outcome::Http(response)) => {
             EventResultData::HttpResponse(http_response(response))
@@ -201,18 +201,14 @@ pub fn event_result_from_frame(result: proto::Result) -> EventResult {
             EventResultData::CustomInvokeResponse(custom_invoke_response(custom))
         }
         Some(proto::result::Outcome::Error(error)) => {
-            EventResultData::HttpResponse(handler_error_response(&error))
+            failure_for(waiting_for, handler_error_message(&error))
         }
         None => {
             warn!(
                 event_id = %result.id,
                 "handler returned a result with no outcome"
             );
-            EventResultData::HttpResponse(HttpResponseData {
-                status: 500,
-                headers: HashMap::new(),
-                body: Bytes::from_static(b"handler returned an empty result"),
-            })
+            failure_for(waiting_for, "handler returned an empty result".to_string())
         }
     };
 
@@ -235,11 +231,54 @@ fn http_response(response: proto::HttpResponse) -> HttpResponseData {
     }
 }
 
-fn handler_error_response(error: &proto::HandlerError) -> HttpResponseData {
-    HttpResponseData {
-        status: 500,
-        headers: HashMap::new(),
-        body: Bytes::from(error.message.clone()),
+/// Reports a failure in the shape the caller is waiting for.
+///
+/// A handler that fails with no outcome of its own, or with an unhandled error,
+/// still has to answer the caller in the shape that caller expects. Answering
+/// every one of them as an HTTP response means a WebSocket or a custom
+/// invocation sees a result it cannot read, and reports that instead of what
+/// actually went wrong, which is the one thing worth reporting.
+fn failure_for(waiting_for: &EventType, message: String) -> EventResultData {
+    match waiting_for {
+        EventType::HttpRequest => EventResultData::HttpResponse(HttpResponseData {
+            status: 500,
+            headers: HashMap::new(),
+            body: Bytes::from(message),
+        }),
+        EventType::WsMessage => EventResultData::WebSocketResponse(SimpleResponseData {
+            success: false,
+            error_message: Some(message),
+        }),
+        EventType::ScheduleMessage => {
+            EventResultData::ScheduledEventResponse(ScheduledEventResponseData {
+                success: false,
+                error_message: Some(message),
+            })
+        }
+        // The batch result has nowhere to put a message that belongs to no
+        // particular record, so it is logged rather than quietly dropped.
+        EventType::ConsumerMessage | EventType::EventMessage => {
+            warn!(%message, "handler failed to process a batch");
+            EventResultData::MessageProcessingResponse(MessageProcessingResponseData {
+                success: false,
+                failures: None,
+            })
+        }
+        EventType::CustomInvoke => {
+            EventResultData::CustomInvokeResponse(CustomInvokeResponseData {
+                output: String::new(),
+                error_message: Some(message),
+            })
+        }
+    }
+}
+
+/// The message an unhandled error carries, with its type when it has one.
+fn handler_error_message(error: &proto::HandlerError) -> String {
+    if error.r#type.is_empty() {
+        error.message.clone()
+    } else {
+        format!("{}: {}", error.r#type, error.message)
     }
 }
 
@@ -378,20 +417,23 @@ mod tests {
 
     #[test]
     fn keeps_every_value_of_a_repeated_response_header() {
-        let result = event_result_from_frame(proto::Result {
-            id: "event-1".to_string(),
-            credit_grant: 1,
-            outcome: Some(proto::result::Outcome::Http(proto::HttpResponse {
-                status: 200,
-                headers: HashMap::from([(
-                    "set-cookie".to_string(),
-                    proto::Values {
-                        values: vec!["a=1".to_string(), "b=2".to_string()],
-                    },
-                )]),
-                body: b"{}".to_vec(),
-            })),
-        });
+        let result = event_result_from_frame(
+            proto::Result {
+                id: "event-1".to_string(),
+                credit_grant: 1,
+                outcome: Some(proto::result::Outcome::Http(proto::HttpResponse {
+                    status: 200,
+                    headers: HashMap::from([(
+                        "set-cookie".to_string(),
+                        proto::Values {
+                            values: vec!["a=1".to_string(), "b=2".to_string()],
+                        },
+                    )]),
+                    body: b"{}".to_vec(),
+                })),
+            },
+            &EventType::HttpRequest,
+        );
 
         let EventResultData::HttpResponse(response) = result.data else {
             panic!("expected an HTTP response");
@@ -475,20 +517,23 @@ mod tests {
 
     #[test]
     fn returns_an_http_response_to_the_waiting_caller() {
-        let result = event_result_from_frame(proto::Result {
-            id: "event-1".to_string(),
-            credit_grant: 1,
-            outcome: Some(proto::result::Outcome::Http(proto::HttpResponse {
-                status: 201,
-                headers: HashMap::from([(
-                    "content-type".to_string(),
-                    proto::Values {
-                        values: vec!["application/json".to_string()],
-                    },
-                )]),
-                body: b"{\"id\":1}".to_vec(),
-            })),
-        });
+        let result = event_result_from_frame(
+            proto::Result {
+                id: "event-1".to_string(),
+                credit_grant: 1,
+                outcome: Some(proto::result::Outcome::Http(proto::HttpResponse {
+                    status: 201,
+                    headers: HashMap::from([(
+                        "content-type".to_string(),
+                        proto::Values {
+                            values: vec!["application/json".to_string()],
+                        },
+                    )]),
+                    body: b"{\"id\":1}".to_vec(),
+                })),
+            },
+            &EventType::HttpRequest,
+        );
 
         assert_eq!(result.event_id, "event-1");
         let EventResultData::HttpResponse(response) = result.data else {
@@ -504,17 +549,20 @@ mod tests {
 
     #[test]
     fn reports_partial_batch_failures() {
-        let result = event_result_from_frame(proto::Result {
-            id: "event-1".to_string(),
-            credit_grant: 1,
-            outcome: Some(proto::result::Outcome::Consumer(proto::BatchResult {
-                success: false,
-                failures: vec![proto::RecordFailure {
-                    message_id: "message-2".to_string(),
-                    error_message: "downstream rejected it".to_string(),
-                }],
-            })),
-        });
+        let result = event_result_from_frame(
+            proto::Result {
+                id: "event-1".to_string(),
+                credit_grant: 1,
+                outcome: Some(proto::result::Outcome::Consumer(proto::BatchResult {
+                    success: false,
+                    failures: vec![proto::RecordFailure {
+                        message_id: "message-2".to_string(),
+                        error_message: "downstream rejected it".to_string(),
+                    }],
+                })),
+            },
+            &EventType::ConsumerMessage,
+        );
 
         let EventResultData::MessageProcessingResponse(response) = result.data else {
             panic!("expected a message processing response");
@@ -527,15 +575,78 @@ mod tests {
 
     #[test]
     fn treats_a_result_with_no_outcome_as_a_failure() {
-        let result = event_result_from_frame(proto::Result {
-            id: "event-1".to_string(),
-            credit_grant: 1,
-            outcome: None,
-        });
+        let result = event_result_from_frame(
+            proto::Result {
+                id: "event-1".to_string(),
+                credit_grant: 1,
+                outcome: None,
+            },
+            &EventType::HttpRequest,
+        );
 
         let EventResultData::HttpResponse(response) = result.data else {
             panic!("expected a synthesised failure response");
         };
         assert_eq!(response.status, 500);
+    }
+
+    fn handler_error(waiting_for: &EventType) -> EventResultData {
+        event_result_from_frame(
+            proto::Result {
+                id: "event-1".to_string(),
+                credit_grant: 1,
+                outcome: Some(proto::result::Outcome::Error(proto::HandlerError {
+                    message: "connection reset".to_string(),
+                    r#type: "IOError".to_string(),
+                    stack: String::new(),
+                })),
+            },
+            waiting_for,
+        )
+        .data
+    }
+
+    #[test]
+    fn reports_a_handler_error_in_the_shape_the_caller_is_waiting_for() {
+        // Answering every caller with an HTTP response means a WebSocket or a
+        // custom invocation sees a result it cannot read, and reports that
+        // instead of what actually went wrong.
+        let EventResultData::WebSocketResponse(ws) = handler_error(&EventType::WsMessage) else {
+            panic!("expected a WebSocket response");
+        };
+        assert!(!ws.success);
+        assert_eq!(
+            ws.error_message.as_deref(),
+            Some("IOError: connection reset")
+        );
+
+        let EventResultData::CustomInvokeResponse(custom) = handler_error(&EventType::CustomInvoke)
+        else {
+            panic!("expected a custom invocation response");
+        };
+        assert_eq!(
+            custom.error_message.as_deref(),
+            Some("IOError: connection reset")
+        );
+
+        let EventResultData::ScheduledEventResponse(schedule) =
+            handler_error(&EventType::ScheduleMessage)
+        else {
+            panic!("expected a scheduled event response");
+        };
+        assert!(!schedule.success);
+
+        let EventResultData::MessageProcessingResponse(batch) =
+            handler_error(&EventType::ConsumerMessage)
+        else {
+            panic!("expected a message processing response");
+        };
+        assert!(!batch.success);
+
+        let EventResultData::HttpResponse(http) = handler_error(&EventType::HttpRequest) else {
+            panic!("expected an HTTP response");
+        };
+        assert_eq!(http.status, 500);
+        assert_eq!(http.body, &b"IOError: connection reset"[..]);
     }
 }

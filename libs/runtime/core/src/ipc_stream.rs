@@ -458,7 +458,7 @@ async fn complete(stream_id: StreamId, context: &StreamContext, result: proto::R
 
     match context.in_flight.remove(&event_id) {
         Some(entry) => {
-            let event_result = event_result_from_frame(result);
+            let event_result = event_result_from_frame(result, &entry.event.event_type);
             if entry
                 .result_tx
                 .send(EventOutcome::Completed(Box::new(entry.event), event_result))
