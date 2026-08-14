@@ -314,14 +314,24 @@ impl HandlerTimeouts {
             .unwrap_or(self.fallback)
     }
 
-    /// The longest any configured handler may run for.
+    /// The longest any handler may run for.
     ///
     /// Used to decide how long a shutdown should wait for in-flight work: a
     /// handler that was told it had ten minutes should not be abandoned after
-    /// thirty seconds. Falls back to the default timeout when no handler
-    /// configures one, which covers an application with no handlers at all.
+    /// thirty seconds.
+    ///
+    /// The default counts alongside the configured timeouts rather than only
+    /// standing in for them, because [`HandlerTimeouts::for_tag`] hands it to
+    /// any tag without an entry. Leaving it out would let this report less than
+    /// an event's own deadline, and a shutdown would then abandon work that was
+    /// still inside the time it had been given.
     pub fn longest(&self) -> Duration {
-        self.by_tag.values().copied().max().unwrap_or(self.fallback)
+        self.by_tag
+            .values()
+            .copied()
+            .chain(std::iter::once(self.fallback))
+            .max()
+            .unwrap_or(self.fallback)
     }
 }
 
