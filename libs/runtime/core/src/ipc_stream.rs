@@ -386,15 +386,30 @@ pub async fn run_stream<I>(
     debug!(stream_id, "handler stream closed");
 }
 
+/// How long a connection may stay open without declaring itself before the
+/// runtime gives up on it.
+///
+/// Generous enough for a handlers executable that connects while it is still
+/// starting up, short enough that a connection which never communicates cannot hold a
+/// task and an outbound channel indefinitely.
+const READY_TIMEOUT: Duration = Duration::from_secs(30);
+
 /// Waits for the handler to declare itself.
 ///
 /// Anything else arriving first is a protocol error: the runtime has nothing to
-/// dispatch to a stream that has not said what it serves.
+/// dispatch to a stream that has not said what it serves. Taking too long is
+/// treated the same way as closing, since neither leaves anything to dispatch
+/// to.
 async fn await_ready<I>(inbound: &mut I) -> Option<proto::Ready>
 where
     I: Stream<Item = Result<proto::HandlerMessage, Status>> + Unpin,
 {
-    match inbound.next().await {
+    let Ok(message) = tokio::time::timeout(READY_TIMEOUT, inbound.next()).await else {
+        warn!("handler stream did not declare itself within the handshake window");
+        return None;
+    };
+
+    match message {
         Some(Ok(message)) => match message.frame {
             Some(proto::handler_message::Frame::Ready(ready)) => Some(ready),
             other => {

@@ -788,6 +788,54 @@ async fn serves_a_binary_response_body_from_an_http_handler() {
 }
 
 #[test_log::test(tokio::test)]
+async fn lets_an_async_invocation_run_on_after_the_caller_has_been_answered() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-invoke-async",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+    )
+    .await;
+    // Withhold the result, so the handler is still working when the caller has
+    // already been answered and its receiver dropped.
+    let mut handler = HandlerStub::attach(&socket, |_| None).await;
+
+    let response = tokio::time::timeout(
+        Duration::from_secs(10),
+        http_client().request(
+            Request::builder()
+                .method("POST")
+                .uri(format!("http://{addr}/runtime/handlers/invoke"))
+                .header("Host", "localhost")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"handlerName":"reindexHandler","invocationType":"async"}"#,
+                ))
+                .unwrap(),
+        ),
+    )
+    .await
+    .expect("an async invocation should be answered without waiting for the handler")
+    .unwrap();
+    assert_eq!(response.status(), 200);
+
+    let dispatch = handler
+        .next_dispatch()
+        .await
+        .expect("the handler should have been given the invocation");
+    assert_eq!(dispatch.handler_tag, "custom::reindexHandler");
+
+    // The distinguishing property of an async invocation. Nobody is waiting for
+    // the result, but the work was asked for and should run to completion, so
+    // dropping the caller's receiver must not read as the caller going away.
+    let cancel = tokio::time::timeout(Duration::from_millis(500), handler.cancels.recv()).await;
+    assert!(
+        cancel.is_err(),
+        "an async invocation should not be cancelled once its caller has been answered"
+    );
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
 async fn refuses_to_invoke_a_handler_the_blueprint_does_not_declare() {
     let (_app, addr, socket) = start_runtime(
         "ipc-invoke-unknown",
