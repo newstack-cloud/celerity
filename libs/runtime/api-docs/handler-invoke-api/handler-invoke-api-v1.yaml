@@ -109,8 +109,18 @@ components:
           description: |
             An optional string containing the response data returned from the invoked handler.
             In most cases this will be a serialised JSON object.
+            Where the handler returned something that is not text, this holds its base64 encoding and `dataEncoding` says so.
           examples:
             - "{\"status\":200,\"headers\":{\"Content-Type\":\"application/json\"},\"body\":{\\\"id\\\":40392}}"
+        dataEncoding:
+          type: string
+          description: |
+            How `data` is encoded, when it is not the handler's output as it stands.
+            Absent means the output was text and `data` holds it unchanged.
+            The runtime decides this from the bytes the handler returned, so a handler does nothing differently to be invoked this way.
+          enum:
+            - base64
+          examples: ["base64"]
 
     ServerErrorResponse:
       type: object

@@ -691,6 +691,103 @@ async fn invokes_a_handler_by_the_name_the_blueprint_publishes_it_under() {
 }
 
 #[test_log::test(tokio::test)]
+async fn returns_binary_output_from_an_invoked_handler_without_corrupting_it() {
+    let raw: Vec<u8> = vec![0xff, 0xfe, 0x00, 0x80, 0x01];
+    let (_app, addr, socket) = start_runtime(
+        "ipc-invoke-binary",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+    )
+    .await;
+    let _handler = HandlerStub::attach(&socket, |_| {
+        Some(proto::result::Outcome::Custom(proto::CustomInvokeResult {
+            output: vec![0xff, 0xfe, 0x00, 0x80, 0x01],
+            error_message: String::new(),
+        }))
+    })
+    .await;
+
+    let response = tokio::time::timeout(
+        Duration::from_secs(10),
+        http_client().request(
+            Request::builder()
+                .method("POST")
+                .uri(format!("http://{addr}/runtime/handlers/invoke"))
+                .header("Host", "localhost")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"handlerName":"reindexHandler","invocationType":"requestResponse"}"#,
+                ))
+                .unwrap(),
+        ),
+    )
+    .await
+    .expect("the invocation should be served rather than time out")
+    .unwrap();
+
+    let status = response.status();
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(status, 200, "body: {}", String::from_utf8_lossy(&body));
+
+    // A handler returning an image or a protobuf can still be exercised here.
+    // The bytes come back encoded, and the response says they are encoded, so
+    // they cannot be mistaken for text.
+    let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(body["dataEncoding"], "base64");
+    let decoded = BASE64
+        .decode(body["data"].as_str().expect("output should be carried"))
+        .expect("the output should be base64");
+    assert_eq!(decoded, raw);
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn serves_a_binary_response_body_from_an_http_handler() {
+    let raw: Vec<u8> = vec![0x89, 0x50, 0x4e, 0x47, 0x00, 0xff];
+    let (_app, addr, socket) = start_runtime(
+        "ipc-http-binary-response",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+    )
+    .await;
+    let _handler = HandlerStub::attach(&socket, |_| {
+        Some(proto::result::Outcome::Http(proto::HttpResponse {
+            status: 200,
+            headers: HashMap::from([(
+                "content-type".to_string(),
+                proto::Values {
+                    values: vec!["image/png".to_string()],
+                },
+            )]),
+            body: vec![0x89, 0x50, 0x4e, 0x47, 0x00, 0xff],
+        }))
+    })
+    .await;
+
+    let response = tokio::time::timeout(
+        Duration::from_secs(10),
+        http_client().request(
+            Request::builder()
+                .uri(format!("http://{addr}/orders/order-1"))
+                .header("Host", "localhost")
+                .body(Body::empty())
+                .unwrap(),
+        ),
+    )
+    .await
+    .expect("the request should be served rather than time out")
+    .unwrap();
+
+    assert_eq!(response.status(), 200);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+
+    // The production response path carries bytes end to end, so a handler can
+    // answer with an image or a protobuf and nothing touches it.
+    assert_eq!(&body[..], &raw[..]);
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
 async fn refuses_to_invoke_a_handler_the_blueprint_does_not_declare() {
     let (_app, addr, socket) = start_runtime(
         "ipc-invoke-unknown",

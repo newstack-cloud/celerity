@@ -395,6 +395,10 @@ pub struct RecordFailure {
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CustomInvokeResult {
+    /// Opaque, and carried to whoever asked for the invocation exactly as sent.
+    /// Whether it has to be text is that caller's constraint rather than this
+    /// contract's. The runtime's local invoke endpoint answers in JSON, so it
+    /// refuses output that is not valid UTF-8 rather than altering it.
     #[prost(bytes = "vec", tag = "1")]
     pub output: ::prost::alloc::vec::Vec<u8>,
     #[prost(string, tag = "2")]
