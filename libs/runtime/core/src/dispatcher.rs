@@ -105,6 +105,9 @@ pub enum DispatcherCommand {
     },
     /// A handler stream went away. Anything it was still holding is released.
     Detach { stream_id: StreamId },
+    /// A handler stream is finishing. It takes no more work, but keeps
+    /// everything it already has, so results can still come back.
+    Draining { stream_id: StreamId },
     /// A result came back, freeing a slot and returning whatever credit the
     /// handler chose to give back.
     ///
@@ -140,13 +143,16 @@ struct StreamState {
     /// dispatched for, so that a result identifies which per-tag count to
     /// release and a departing stream releases everything it still holds.
     holding: HashMap<String, String>,
+    /// Whether the handler has said it is finishing. It keeps what it has and
+    /// its results are still taken, but nothing further is sent to it.
+    draining: bool,
     dispatch_tx: mpsc::Sender<StreamFrame>,
 }
 
 impl StreamState {
     /// Whether this stream could take an event for the given tag right now.
     fn can_take(&self, handler_tag: &str) -> bool {
-        if self.credit == 0 || !self.tags.contains(handler_tag) {
+        if self.draining || self.credit == 0 || !self.tags.contains(handler_tag) {
             return false;
         }
         match self.limits.get(handler_tag) {
@@ -432,6 +438,7 @@ impl Dispatcher {
                         limits: registration.limits,
                         in_flight: HashMap::new(),
                         holding: HashMap::new(),
+                        draining: false,
                         dispatch_tx: registration.dispatch_tx,
                     },
                 );
@@ -440,6 +447,16 @@ impl Dispatcher {
                 let _ = registered.send(());
             }
             DispatcherCommand::Detach { stream_id } => self.detach(stream_id),
+            DispatcherCommand::Draining { stream_id } => {
+                if let Some(stream) = self.streams.get_mut(&stream_id) {
+                    debug!(
+                        stream_id,
+                        in_flight = stream.holding.len(),
+                        "handler stream is draining, no more work will be sent to it"
+                    );
+                    stream.draining = true;
+                }
+            }
             DispatcherCommand::Completed {
                 stream_id,
                 event_id,
@@ -1343,6 +1360,51 @@ mod tests {
                 "no caller should have been given an outcome yet"
             );
         }
+    }
+
+    #[tokio::test]
+    async fn sends_no_more_work_to_a_draining_stream_but_keeps_what_it_holds() {
+        let harness = start(8);
+        let mut stream = attach(&harness, 1, &["schedule::a"], 4, HashMap::new()).await;
+
+        let held = harness
+            .queue
+            .enqueue(
+                event("event-1", "schedule::a"),
+                admission_wait(Duration::from_secs(60)),
+            )
+            .await
+            .unwrap();
+        assert!(recv_dispatch(&mut stream).await.is_some());
+
+        harness
+            .commands
+            .send(DispatcherCommand::Draining { stream_id: 1 })
+            .await
+            .unwrap();
+        // Commands and events arrive on separate channels, so the dispatcher is
+        // free to take either first. This waits for the command to have been
+        // applied, rather than racing the next event against it.
+        tokio::time::sleep(Duration::from_millis(50)).await;
+
+        let mut held = held;
+        harness
+            .queue
+            .enqueue(
+                event("event-2", "schedule::a"),
+                admission_wait(Duration::from_secs(60)),
+            )
+            .await
+            .unwrap();
+
+        // Nothing further is sent to it, even though it still has credit.
+        assert!(recv_dispatch(&mut stream).await.is_none());
+        // What it already has is untouched, so its caller is still waiting for
+        // a result rather than having been failed.
+        assert!(
+            held.try_recv().is_err(),
+            "the held event should not have been released"
+        );
     }
 
     #[tokio::test]
