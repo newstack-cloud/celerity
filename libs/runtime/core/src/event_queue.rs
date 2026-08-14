@@ -34,7 +34,7 @@ use tracing::{debug, info, warn};
 use crate::{
     config::{AppConfig, EventConfig},
     consts::{
-        DEFAULT_HANDLER_TIMEOUT, EVENT_QUEUE_ADMISSION_WAIT_DIVISOR,
+        CANCELLATION_BUFFER, DEFAULT_HANDLER_TIMEOUT, EVENT_QUEUE_ADMISSION_WAIT_DIVISOR,
         MAX_EVENT_QUEUE_ADMISSION_WAIT_SECS,
     },
     types::{CancelReason, CancelRequest, EventData, EventOutcome, EventTuple},
@@ -68,7 +68,7 @@ impl std::error::Error for EventQueueError {}
 #[derive(Debug, Clone)]
 pub struct EventQueue {
     tx: mpsc::Sender<EventTuple>,
-    cancel_tx: mpsc::UnboundedSender<CancelRequest>,
+    cancel_tx: mpsc::Sender<CancelRequest>,
 }
 
 impl EventQueue {
@@ -130,7 +130,7 @@ pub struct CancelOnDrop {
     /// Taken when the guard is disarmed, so that `Drop` can tell the two apart
     /// without a second field.
     event_id: Option<String>,
-    cancel_tx: mpsc::UnboundedSender<CancelRequest>,
+    cancel_tx: mpsc::Sender<CancelRequest>,
 }
 
 impl CancelOnDrop {
@@ -146,13 +146,20 @@ impl Drop for CancelOnDrop {
         let Some(event_id) = self.event_id.take() else {
             return;
         };
-        // Unbounded because this runs in `Drop`, which cannot wait, and because
-        // dropping a cancellation leaves a handler working on something nobody
-        // wants. A failed send means the dispatcher has already stopped.
-        let _ = self.cancel_tx.send(CancelRequest {
-            event_id,
-            reason: CancelReason::CallerGone,
-        });
+        // `try_send` because this runs in `Drop`, which cannot wait. A full
+        // channel means the dispatcher is behind on cancellations, and the
+        // handler works on until the event's deadline instead, which is the
+        // backstop cancellation was only ever shortening.
+        if self
+            .cancel_tx
+            .try_send(CancelRequest {
+                event_id,
+                reason: CancelReason::CallerGone,
+            })
+            .is_err()
+        {
+            debug!("could not deliver a cancellation, the deadline will end the event");
+        }
     }
 }
 
@@ -425,7 +432,7 @@ impl InFlightTable {
 /// of each, the handles are cloned freely by producers, these are moved once.
 pub struct EventQueueReceivers {
     pub events: mpsc::Receiver<EventTuple>,
-    pub cancellations: mpsc::UnboundedReceiver<CancelRequest>,
+    pub cancellations: mpsc::Receiver<CancelRequest>,
 }
 
 /// Everything needed to run the event path in the IPC runtime call mode.
@@ -444,7 +451,7 @@ impl EventQueueParts {
     pub fn new(capacity: usize) -> Self {
         let (tx, rx) = mpsc::channel(capacity);
         let (deadline_tx, deadline_rx) = mpsc::unbounded_channel();
-        let (cancel_tx, cancel_rx) = mpsc::unbounded_channel();
+        let (cancel_tx, cancel_rx) = mpsc::channel(CANCELLATION_BUFFER);
         let watched_deadlines = Arc::new(AtomicUsize::new(0));
         let in_flight = Arc::new(InFlightTable {
             entries: Mutex::new(HashMap::new()),
@@ -489,7 +496,7 @@ impl EventQueueParts {
 pub struct EventCleanupTask {
     in_flight: Arc<InFlightTable>,
     deadline_rx: mpsc::UnboundedReceiver<DeadlineMessage>,
-    cancel_tx: mpsc::UnboundedSender<CancelRequest>,
+    cancel_tx: mpsc::Sender<CancelRequest>,
     watched_deadlines: Arc<AtomicUsize>,
 }
 
@@ -526,7 +533,7 @@ pub struct EventQueueHandles {
 fn spawn_expired_event_cleanup_task(
     in_flight: Arc<InFlightTable>,
     mut deadline_rx: mpsc::UnboundedReceiver<DeadlineMessage>,
-    cancel_tx: mpsc::UnboundedSender<CancelRequest>,
+    cancel_tx: mpsc::Sender<CancelRequest>,
     watched_deadlines: Arc<AtomicUsize>,
     mut shutdown_rx: oneshot::Receiver<()>,
 ) {
@@ -600,7 +607,7 @@ fn spawn_expired_event_cleanup_task(
                 // Nobody is waiting for this any more, so tell whichever handler
                 // holds it to stop rather than leaving it to finish work whose
                 // result will be discarded.
-                let _ = cancel_tx.send(CancelRequest {
+                let _ = cancel_tx.try_send(CancelRequest {
                     event_id,
                     reason: CancelReason::DeadlineExceeded,
                 });
@@ -793,6 +800,31 @@ mod tests {
                 .await
                 .err(),
             Some(EventQueueError::Closed)
+        );
+    }
+
+    #[tokio::test]
+    async fn drops_cancellations_rather_than_growing_when_nothing_reads_them() {
+        // Nothing takes the receiver, standing in for a dispatcher that has
+        // fallen behind on cancellations.
+        let (handles, _receivers, _cleanup) = EventQueueParts::new(4).into_parts();
+
+        // Well past the buffer. Dropping a guard must never block or panic, one
+        // of them runs inside `Drop`, where neither is an option.
+        for index in 0..(CANCELLATION_BUFFER * 2) {
+            drop(handles.queue.cancel_on_drop(format!("event-{index}")));
+        }
+    }
+
+    #[tokio::test]
+    async fn a_disarmed_guard_sends_nothing() {
+        let (handles, mut receivers, _cleanup) = EventQueueParts::new(4).into_parts();
+
+        handles.queue.cancel_on_drop("event-1".to_string()).disarm();
+
+        assert!(
+            receivers.cancellations.try_recv().is_err(),
+            "a caller that stopped waiting for a known reason should not cancel"
         );
     }
 

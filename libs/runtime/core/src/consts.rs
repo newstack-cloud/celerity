@@ -87,6 +87,16 @@ pub const MAX_DERIVED_DRAIN_TIMEOUT_SECS: u64 = 300;
 // be resolved, which is the case for an application with no handlers at all.
 pub const DEFAULT_DRAIN_TIMEOUT_SECS: u64 = 30;
 
+// How many cancellations may be waiting for the dispatcher before further ones
+// are dropped.
+//
+// Cancellation is advisory: it saves a handler working on something nobody
+// wants, and the event's deadline ends it either way. So a bounded channel that
+// drops under saturation is the right trade, where blocking is impossible (one
+// sender runs in `Drop`) and growing without limit would spend memory to deliver
+// hints that arrive too late to be worth anything.
+pub const CANCELLATION_BUFFER: usize = 256;
+
 // How many dispatcher commands may be queued before a handler stream waits.
 // Commands are small and are drained by a single task, so this only needs to
 // absorb bursts of results arriving together.
