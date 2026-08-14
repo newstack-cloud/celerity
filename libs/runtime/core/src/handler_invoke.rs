@@ -162,9 +162,12 @@ pub async fn invoke_handler(
 pub struct IpcInvokeState {
     pub event_queue: EventQueue,
     pub timeouts: HandlerTimeouts,
-    /// The handler tag for each handler name the blueprint declares, covering
-    /// every kind of handler rather than only custom ones, since invoking by
-    /// name is a shortcut past whatever normally triggers a handler.
+    /// The handler tag for each name a handler answers to, covering every kind
+    /// of handler rather than only custom ones, since invoking by name is a
+    /// shortcut past whatever normally triggers a handler.
+    ///
+    /// A handler answers to the name the blueprint publishes it under and to
+    /// the resource it is declared as, so either can be typed.
     ///
     /// Dispatch routes by tag, so a name that is not here could never be
     /// served and is refused straight away rather than after the wait for a
@@ -198,7 +201,8 @@ pub async fn invoke_handler_ipc(
 ) -> Result<Json<InvokeHandlerResponse>, HandlerInvokeError> {
     let Some(handler_tag) = state.handler_tags.get(&request.handler_name).cloned() else {
         return Err(HandlerInvokeError::NotFound(format!(
-            "handler '{}' is not declared by the blueprint",
+            "no handler named '{}', which should be either the blueprint's \
+             spec.handlerName or the resource the handler is declared as",
             request.handler_name
         )));
     };

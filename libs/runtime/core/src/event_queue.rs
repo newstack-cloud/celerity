@@ -724,6 +724,7 @@ mod tests {
         fn handler(name: &str, timeout: i64) -> EventHandlerDefinition {
             EventHandlerDefinition {
                 name: name.to_string(),
+                published_name: None,
                 location: String::new(),
                 handler: String::new(),
                 timeout,

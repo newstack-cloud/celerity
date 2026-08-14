@@ -330,10 +330,17 @@ message RuntimeConfig {
 }
 
 message HandlerConfig {
+  // The blueprint resource this handler is declared as, which is what its
+  // handler tag is built from.
   string handler_name = 1;
   string handler_tag = 2;
   int64 timeout_ms = 3;
   bool tracing_enabled = 4;
+  // The name the blueprint publishes this handler under, from spec.handlerName.
+  // Empty when the blueprint does not set one. A deployment addresses a handler
+  // by this name, and the runtime's local invoke endpoint accepts it alongside
+  // the resource name.
+  string published_name = 5;
 }
 
 // One long-lived bidirectional stream carries everything: events, results,

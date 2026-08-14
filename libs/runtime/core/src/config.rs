@@ -438,6 +438,10 @@ pub struct HttpConfig {
 #[derive(Debug, Clone, Default)]
 pub struct HttpHandlerDefinition {
     pub name: String,
+    /// The name the blueprint publishes this handler under, from
+    /// `spec.handlerName`, as distinct from `name`, which is the blueprint
+    /// resource it is declared as.
+    pub published_name: Option<String>,
     pub path: String,
     pub method: String,
     pub location: String,
@@ -468,6 +472,10 @@ pub struct WebSocketConfig {
 #[derive(Debug, Default)]
 pub struct WebSocketHandlerDefinition {
     pub name: String,
+    /// The name the blueprint publishes this handler under, from
+    /// `spec.handlerName`, as distinct from `name`, which is the blueprint
+    /// resource it is declared as.
+    pub published_name: Option<String>,
     pub route_key: String,
     pub route: String,
     pub location: String,
@@ -527,6 +535,10 @@ pub struct ConsumerConfig {
 #[derive(Debug, Default, Clone)]
 pub struct EventHandlerDefinition {
     pub name: String,
+    /// The name the blueprint publishes this handler under, from
+    /// `spec.handlerName`, as distinct from `name`, which is the blueprint
+    /// resource it is declared as.
+    pub published_name: Option<String>,
     pub location: String,
     pub handler: String,
     // Timeout in seconds.
@@ -645,6 +657,10 @@ pub struct CustomHandlersConfig {
 #[derive(Debug)]
 pub struct CustomHandlerDefinition {
     pub name: String,
+    /// The name the blueprint publishes this handler under, from
+    /// `spec.handlerName`, as distinct from `name`, which is the blueprint
+    /// resource it is declared as.
+    pub published_name: Option<String>,
     pub location: String,
     pub handler: String,
     // Timeout in seconds.

@@ -110,20 +110,23 @@ pub fn runtime_config_from_app_config(
     };
 
     let mut handlers = Vec::new();
-    let mut push = |name: &str, tag: String, timeout: i64, tracing: bool| {
-        handlers.push(proto::HandlerConfig {
-            handler_name: name.to_string(),
-            handler_tag: tag,
-            timeout_ms: timeout_from_seconds(timeout).as_millis() as i64,
-            tracing_enabled: tracing,
-        });
-    };
+    let mut push =
+        |name: &str, published: Option<&String>, tag: String, timeout: i64, tracing: bool| {
+            handlers.push(proto::HandlerConfig {
+                handler_name: name.to_string(),
+                published_name: published.cloned().unwrap_or_default(),
+                handler_tag: tag,
+                timeout_ms: timeout_from_seconds(timeout).as_millis() as i64,
+                tracing_enabled: tracing,
+            });
+        };
 
     if let Some(api) = &app_config.api {
         if let Some(http) = &api.http {
             for handler in &http.handlers {
                 push(
                     &handler.name,
+                    handler.published_name.as_ref(),
                     http_handler_tag(&handler.method, &handler.path),
                     handler.timeout,
                     handler.tracing_enabled,
@@ -134,6 +137,7 @@ pub fn runtime_config_from_app_config(
             for handler in &websocket.handlers {
                 push(
                     &handler.name,
+                    handler.published_name.as_ref(),
                     websocket_handler_tag(&handler.route_key, &handler.route),
                     handler.timeout,
                     handler.tracing_enabled,
@@ -146,6 +150,7 @@ pub fn runtime_config_from_app_config(
             for handler in &consumer.handlers {
                 push(
                     &handler.name,
+                    handler.published_name.as_ref(),
                     source_handler_tag(&consumer.source_id, &handler.name),
                     handler.timeout,
                     handler.tracing_enabled,
@@ -158,6 +163,7 @@ pub fn runtime_config_from_app_config(
             for handler in &schedule.handlers {
                 push(
                     &handler.name,
+                    handler.published_name.as_ref(),
                     source_handler_tag(&schedule.schedule_id, &handler.name),
                     handler.timeout,
                     handler.tracing_enabled,
@@ -174,6 +180,7 @@ pub fn runtime_config_from_app_config(
             for handler in event_handlers {
                 push(
                     &handler.name,
+                    handler.published_name.as_ref(),
                     source_handler_tag(source_id, &handler.name),
                     handler.timeout,
                     handler.tracing_enabled,
@@ -185,6 +192,7 @@ pub fn runtime_config_from_app_config(
         for handler in &custom.handlers {
             push(
                 &handler.name,
+                handler.published_name.as_ref(),
                 custom_handler_tag(&handler.name),
                 handler.timeout,
                 handler.tracing_enabled,
@@ -208,11 +216,17 @@ pub fn runtime_config_from_app_config(
 pub fn handler_tags_by_name(config: &proto::RuntimeConfig) -> HashMap<String, String> {
     let mut by_name = HashMap::new();
     for handler in &config.handlers {
+        // Both names reach the same handler. A blueprint publishes one under
+        // `spec.handlerName`, which is what a deployment addresses it by, while
+        // the resource it is declared as is what the tag is built from, and
+        // either is a reasonable thing to type.
+        if !handler.published_name.is_empty() {
+            by_name.insert(handler.published_name.clone(), handler.handler_tag.clone());
+        }
         if let Some(existing) =
             by_name.insert(handler.handler_name.clone(), handler.handler_tag.clone())
         {
-            // Names come from blueprint resource names, so this means two
-            // resources share one. Direct invocation of that name is ambiguous
+            // Two resources share a name. Direct invocation of it is ambiguous
             // and whichever tag wins here is arbitrary.
             warn!(
                 handler_name = %handler.handler_name,

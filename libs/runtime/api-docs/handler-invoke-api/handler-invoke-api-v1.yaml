@@ -80,7 +80,9 @@ requestBodies:
           properties:
             handlerName:
               type: string
-              description: The unique name for the handler as defined in the `spec.handlerName` field of a handler definition in a blueprint specification.
+              description: |
+                The name for the handler as defined in the `spec.handlerName` field of a handler definition in a blueprint specification.
+                The name of the blueprint resource the handler is declared as is also accepted, which is useful when `spec.handlerName` is not set.
               examples: ["Orders-GetOrder-v1"]
             invocationType:
               type: string
