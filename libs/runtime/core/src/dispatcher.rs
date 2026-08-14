@@ -1135,6 +1135,22 @@ mod tests {
     }
 
     #[test]
+    fn a_derived_drain_timeout_covers_handlers_left_on_the_default() {
+        let timeouts = HandlerTimeouts::new(
+            HashMap::from([
+                ("health".to_string(), Duration::from_secs(1)),
+                ("quick".to_string(), Duration::from_secs(5)),
+            ]),
+            Duration::from_secs(60),
+        );
+
+        // A tag with no entry of its own is given the default, so an event can
+        // run for a minute even though every configured handler is quicker.
+        // Draining for five seconds would abandon it inside its own deadline.
+        assert_eq!(drain_timeout(None, &timeouts), Duration::from_secs(60));
+    }
+
+    #[test]
     fn a_derived_drain_timeout_is_bounded() {
         let timeouts = HandlerTimeouts::new(
             HashMap::from([("slow".to_string(), Duration::from_secs(3600))]),
