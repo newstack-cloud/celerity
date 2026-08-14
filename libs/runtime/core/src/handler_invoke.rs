@@ -105,6 +105,9 @@ impl IntoResponse for HandlerInvokeError {
     }
 }
 
+/// The path the handler invoke endpoint is served on, in both call modes.
+pub const INVOKE_HANDLER_ROUTE: &str = "/runtime/handlers/invoke";
+
 #[derive(Clone)]
 pub struct InvokeHandlerState {
     pub registry: HandlerInvokeRegistry,

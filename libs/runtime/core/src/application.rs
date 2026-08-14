@@ -68,6 +68,7 @@ use crate::{
     handler_invoke::{
         invoke_handler as invoke_handler_fn, invoke_handler_ipc, new_handler_invoke_registry,
         HandlerInvokeRegistry, HandlerInvoker, InvokeHandlerState, IpcInvokeState,
+        INVOKE_HANDLER_ROUTE,
     },
     ipc_http::{self, IpcHttpRoute},
     ipc_proto::handler_runtime_service_server::HandlerRuntimeServiceServer,
@@ -517,7 +518,7 @@ impl Application {
                 if self.runtime_config.runtime_call_mode == RuntimeCallMode::Ipc =>
             {
                 http_server_app.route(
-                    "/runtime/handlers/invoke",
+                    INVOKE_HANDLER_ROUTE,
                     post(invoke_handler_ipc).with_state(IpcInvokeState {
                         event_queue: event_queue.queue.clone(),
                         timeouts: collect_handler_timeouts(app_config),
@@ -528,7 +529,7 @@ impl Application {
                 )
             }
             _ => http_server_app.route(
-                "/runtime/handlers/invoke",
+                INVOKE_HANDLER_ROUTE,
                 post(invoke_handler_fn).with_state(InvokeHandlerState {
                     registry: self.handler_invoke_registry.clone(),
                 }),

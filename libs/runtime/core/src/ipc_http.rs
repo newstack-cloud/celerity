@@ -221,7 +221,7 @@ fn unavailable_response() -> Response {
     (
         StatusCode::SERVICE_UNAVAILABLE,
         [(RETRY_AFTER, "1")],
-        "the runtime is at capacity, retry shortly",
+        "the runtime cannot serve this request at the moment, retry shortly",
     )
         .into_response()
 }
