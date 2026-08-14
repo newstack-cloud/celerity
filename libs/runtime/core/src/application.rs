@@ -1775,7 +1775,11 @@ fn register_ipc_http_route(
 async fn bind_runtime_socket(path: &str) -> std::io::Result<tokio::net::UnixListener> {
     let path = std::path::Path::new(path);
     if let Some(parent) = path.parent() {
+        let existed = tokio::fs::try_exists(parent).await.unwrap_or(false);
         tokio::fs::create_dir_all(parent).await?;
+        if !existed {
+            restrict_runtime_socket_dir(parent).await?;
+        }
     }
 
     if tokio::fs::try_exists(path).await.unwrap_or(false) {
@@ -1800,4 +1804,12 @@ async fn restrict_runtime_socket(path: &std::path::Path) -> std::io::Result<()> 
     use std::os::unix::fs::PermissionsExt;
 
     tokio::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600)).await
+}
+
+/// Restricts a directory the runtime created for its socket to the user the
+/// runtime runs as.
+async fn restrict_runtime_socket_dir(path: &std::path::Path) -> std::io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+
+    tokio::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700)).await
 }

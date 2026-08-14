@@ -383,6 +383,35 @@ async fn restricts_the_handler_socket_to_the_runtime_user() {
 }
 
 #[test_log::test(tokio::test)]
+async fn restricts_a_socket_directory_it_creates_itself() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let dir = std::env::temp_dir().join(format!("celerity-ipc-dir-{}", std::process::id()));
+    let _ = tokio::fs::remove_dir_all(&dir).await;
+    let socket = dir.join("runtime.sock").to_string_lossy().into_owned();
+
+    let (_app, _addr, _) = start_runtime_with(
+        "ipc-socket-dir",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+        &[("CELERITY_RUNTIME_SOCKET", &socket)],
+    )
+    .await;
+
+    // The socket's own mode is not the whole story. Enforcing it on connect is
+    // a Linux behaviour rather than a portable one, and a permissive umask
+    // would leave a directory another user could replace the socket in.
+    let mode = tokio::fs::metadata(&dir)
+        .await
+        .expect("the runtime should have created the directory")
+        .permissions()
+        .mode()
+        & 0o777;
+    assert_eq!(mode, 0o700, "directory mode was {mode:o}");
+
+    let _ = tokio::fs::remove_dir_all(&dir).await;
+}
+
+#[test_log::test(tokio::test)]
 async fn refuses_to_take_over_a_socket_another_runtime_is_listening_on() {
     let (_app, _addr, socket) = start_runtime(
         "ipc-socket-contended",
