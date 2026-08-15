@@ -1225,6 +1225,90 @@ async fn reads_faster_than_one_message_every_ten_milliseconds() {
 }
 
 #[test_log::test(tokio::test)]
+async fn closes_a_connection_out_without_waiting_for_all_the_work_it_queued() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-drain",
+        "tests/data/fixtures/ipc-websocket-disconnect.blueprint.yaml",
+    )
+    .await;
+    // Answer nothing, so every queued message runs its timeout out in turn.
+    let mut handler = HandlerStub::attach(&socket, |_| None).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+
+    // Eight messages against a one second handler timeout, so draining every
+    // one of them would take longer than the connection is given to close.
+    for index in 0..8 {
+        socket_conn
+            .send(tokio_tungstenite::tungstenite::Message::Text(
+                json!({ "event": "sendMessage", "data": { "index": index } }).to_string(),
+            ))
+            .await
+            .unwrap();
+    }
+    handler
+        .next_dispatch()
+        .await
+        .expect("the first message should reach the handler");
+
+    let closed_at = tokio::time::Instant::now();
+    socket_conn
+        .close(None)
+        .await
+        .expect("the client should be able to close");
+
+    // The disconnect handler running is what says teardown finished, and until
+    // it does the connection is still in the registry and still counted. It
+    // must not wait for messages the client is no longer there to hear about.
+    let disconnected = tokio::time::timeout(Duration::from_secs(7), async {
+        while let Some(dispatch) = handler.next_dispatch().await {
+            if let Some(proto::dispatch::Source::Websocket(message)) = dispatch.source {
+                if message.route == "$disconnect" {
+                    return true;
+                }
+            }
+        }
+        false
+    })
+    .await;
+
+    assert_eq!(
+        disconnected,
+        Ok(true),
+        "the disconnect handler should run once the drain window passes"
+    );
+    assert!(
+        closed_at.elapsed() < Duration::from_secs(7),
+        "teardown took {:?}, which suggests it waited for the whole queue",
+        closed_at.elapsed()
+    );
+
+    // Teardown owns the disconnect handler outright. The worker used to fire it
+    // too, when it reached a close frame in sequence, which is a second one
+    // waiting to happen for any connection whose worker outlives its teardown.
+    let second = tokio::time::timeout(Duration::from_secs(2), async {
+        while let Some(dispatch) = handler.next_dispatch().await {
+            if let Some(proto::dispatch::Source::Websocket(message)) = dispatch.source {
+                if message.route == "$disconnect" {
+                    return true;
+                }
+            }
+        }
+        false
+    })
+    .await;
+    assert_ne!(
+        second,
+        Ok(true),
+        "the disconnect handler should run once, not once per path that can end a connection"
+    );
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
 async fn does_not_reorder_messages_when_handling_them_off_the_read_loop() {
     let (_app, addr, socket) = start_runtime(
         "ipc-ws-order",

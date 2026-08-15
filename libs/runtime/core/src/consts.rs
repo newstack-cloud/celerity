@@ -117,6 +117,16 @@ pub const WS_CONNECTION_WORK_BUFFER: usize = 64;
 // before it would have concluded the connection was gone.
 pub const WS_CONNECTION_WORK_SHED_GRACE_MS: u64 = 1_000;
 
+// How long a closing connection waits for the messages it already accepted to
+// finish before it abandons them and completes teardown.
+//
+// Until teardown completes the connection is still in the registry, still
+// counted by the connection gauge, and its disconnect handler has not run, so
+// this cannot wait on the queue draining at its own pace. Each queued message
+// waits on its own handler timeout, and those add up, whereas a few seconds is
+// enough for work that is nearly done to land.
+pub const WS_CONNECTION_DRAIN_GRACE_MS: u64 = 5_000;
+
 // The `retryAfter` hint sent in the close frame when a connection is shed for
 // outrunning its handlers.
 //
