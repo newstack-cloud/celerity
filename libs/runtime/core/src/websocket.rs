@@ -48,8 +48,8 @@ use crate::{
         CELERITY_WS_CAPABILITIES_SIGNAL, CELERITY_WS_CONNECT_HANDLER_ROUTE,
         CELERITY_WS_DEFAULT_MESSAGE_HANDLER_ROUTE, CELERITY_WS_DISCONNECT_HANDLER_ROUTE,
         CELERITY_WS_FORBIDDEN_ERROR_CODE, CELERITY_WS_UNAUTHORISED_ERROR_CODE,
-        WS_CONNECTION_SATURATED_RETRY_AFTER_MS, WS_CONNECTION_WORK_BUFFER,
-        WS_CONNECTION_WORK_SHED_GRACE_MS,
+        WS_CONNECTION_DRAIN_GRACE_MS, WS_CONNECTION_SATURATED_RETRY_AFTER_MS,
+        WS_CONNECTION_WORK_BUFFER, WS_CONNECTION_WORK_SHED_GRACE_MS,
     },
     errors::WebSocketsMessageError,
     request::{HttpProtocolVersion, RequestId},
@@ -334,6 +334,16 @@ async fn handle_socket(
         )
         .await
         {
+            // Registered above so the connect handler could send to it, so the
+            // registration has to be undone here. Left in place it would hold a
+            // sender for a connection that was refused and count towards the
+            // active connection gauge for the life of the process.
+            //
+            // No disconnect handler runs. The connect handler turned this
+            // connection down, so from the application's side it never
+            // connected.
+            state.connections.remove_connection(connection_id.clone());
+            ws_connections_counter().add(-1, &[]);
             return;
         }
 
@@ -353,7 +363,7 @@ async fn handle_socket(
         let (work_tx, work_rx) = mpsc::channel::<(Message, WebSocketRequestContext)>(
             WS_CONNECTION_WORK_BUFFER,
         );
-        let worker = spawn_message_worker(
+        let mut worker = spawn_message_worker(
             work_rx,
             socket_ref.clone(),
             connection_id.clone(),
@@ -455,12 +465,31 @@ async fn handle_socket(
         // Closing the channel ends the worker once it has finished whatever it
         // was given, so the disconnect handler runs after the messages that
         // preceded it rather than alongside them.
+        //
+        // The wait is bounded but the work is not cut short. Each message the
+        // worker still holds waits on its own handler timeout, and waiting for
+        // all of them in turn would leave a connection that has already gone
+        // sitting in the registry, counted by the gauge, with its disconnect
+        // handler unfired. So this stops waiting and lets the worker carry on
+        // in its own time. A message the client already sent is closer to a
+        // queue message than to a request, and a handler part way through
+        // persisting one should finish whether or not anyone is still there to
+        // hear about it.
         drop(work_tx);
-        let disconnect_handled = worker.await.unwrap_or(false);
-
-        if !disconnect_handled {
-            let _ = on_disconnect(connection_id.clone(), &state, &request_ctx).await;
+        if tokio::time::timeout(
+            Duration::from_millis(WS_CONNECTION_DRAIN_GRACE_MS),
+            &mut worker,
+        )
+        .await
+        .is_err()
+        {
+            warn!(
+                "client {connection_id} left work still running after the drain window, \
+                 closing the connection out while it finishes"
+            );
         }
+
+        let _ = on_disconnect(connection_id.clone(), &state, &request_ctx).await;
         state.connections.remove_connection(connection_id.clone());
         ws_connections_counter().add(-1, &[]);
     }
@@ -616,16 +645,12 @@ fn create_connect_message(
 }
 
 /// Runs a connection's messages, one at a time, off its read loop.
-///
-/// Returns whether the disconnect handler has already been fired, which happens
-/// when the client sent a close frame and the worker saw it in sequence. The
-/// read loop fires it otherwise, for a connection that simply went away.
 fn spawn_message_worker(
     mut work_rx: mpsc::Receiver<(Message, WebSocketRequestContext)>,
     socket_ref: Arc<Mutex<WebSocketConnSender>>,
     connection_id: String,
     state: WebSocketAppState,
-) -> JoinHandle<bool> {
+) -> JoinHandle<()> {
     tokio::spawn(async move {
         while let Some((message, request_ctx)) = work_rx.recv().await {
             if process_message(message, connection_id.clone(), request_ctx, &state)
@@ -636,10 +661,9 @@ fn spawn_message_worker(
                 // socket that may never produce anything again. Closing it is
                 // what wakes the loop so the connection can be torn down.
                 close_connection(socket_ref.clone()).await;
-                return true;
+                return;
             }
         }
-        false
     })
 }
 
@@ -1064,7 +1088,9 @@ async fn process_message(
                 }
             };
             info!(info_msg);
-            let _ = on_disconnect(connection_id.clone(), state, &request_ctx).await;
+            // The disconnect handler is fired by the connection's teardown
+            // rather than here, so that it runs exactly once however the
+            // connection ends and whether or not this worker is still going.
             return ControlFlow::Break(());
         }
         Message::Ping(_) | Message::Pong(_) => {

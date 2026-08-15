@@ -831,4 +831,77 @@ mod tests {
 
         assert_eq!(socket2_msg_received, "Hello, forward this to Connection 2!");
     }
+
+    /// A connection that is registered and then removed leaves nothing behind.
+    ///
+    /// The registry holds a sender for every connection in it, and callers
+    /// broadcast by walking that set, so an entry that outlives its connection
+    /// is a sender nothing can deliver through and a connection that still
+    /// counts as present. Every path that ends a connection has to reach
+    /// `remove_connection`, including the ones that refuse a connection after
+    /// registering it, which is why this covers the primitive they all rely on.
+    #[test_log::test(tokio::test)]
+    async fn test_ws_conn_registry_removes_connections() {
+        let (tx, _) = tokio::sync::mpsc::channel(1024);
+        let registry = Arc::new(WebSocketConnRegistry::new(
+            WebSocketConnRegistryConfig {
+                ack_worker_config: None,
+                server_node_name: "node1".to_string(),
+            },
+            Some(tx),
+        ));
+
+        let app: Router = Router::new()
+            .route("/ws", get(testable_handler))
+            .with_state(ConnectionInfo {
+                connection_id: None,
+                other_connection_id: None,
+                missing_connection_id: None,
+                registry: registry.clone(),
+            });
+
+        let listener = tokio::net::TcpListener::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0)))
+            .await
+            .unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+
+        let (mut socket1, _response) = tokio_tungstenite::connect_async(format!("ws://{addr}/ws"))
+            .await
+            .unwrap();
+        let (_socket2, _response) = tokio_tungstenite::connect_async(format!("ws://{addr}/ws"))
+            .await
+            .unwrap();
+
+        wait_for_connection_count(&registry, 2).await;
+
+        socket1.close(None).await.unwrap();
+
+        wait_for_connection_count(&registry, 1).await;
+
+        let remaining = registry.get_connections();
+        assert_eq!(
+            remaining.len(),
+            1,
+            "closing one connection should leave the other registered"
+        );
+    }
+
+    /// Waits for the registry to hold the given number of connections.
+    ///
+    /// Registration and removal happen on the connection's own task, so a test
+    /// that looks straight after connecting or closing races that task.
+    async fn wait_for_connection_count(registry: &Arc<WebSocketConnRegistry>, expected: usize) {
+        let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
+        while registry.get_connections().len() != expected {
+            assert!(
+                tokio::time::Instant::now() < deadline,
+                "expected {expected} connections, registry has {}",
+                registry.get_connections().len()
+            );
+            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+        }
+    }
 }
