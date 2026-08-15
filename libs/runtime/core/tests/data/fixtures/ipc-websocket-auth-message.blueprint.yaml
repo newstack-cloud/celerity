@@ -1,0 +1,60 @@
+version: 2025-11-02
+transform: celerity-2026-02-28
+variables:
+  logLevel:
+    type: string
+    description: "The log level to use for logging."
+    default: "INFO"
+    allowedValues:
+      - "DEBUG"
+      - "INFO"
+      - "WARNING"
+      - "ERROR"
+
+resources:
+  ordersWebSocketApi:
+    type: "celerity/api"
+    description: "A WebSocket API using the authMessage strategy, so the unauthenticated path can be exercised."
+    metadata:
+      displayName: Orders WebSocket API
+    linkSelector:
+      byLabel:
+        application: "orders"
+    spec:
+      protocols:
+        - websocketConfig:
+            routeKey: "event"
+            authStrategy: "authMessage"
+            authGuard: "jwt"
+      tracingEnabled: false
+      auth:
+        guards:
+          # Never reached by the case under test. A message that is not an
+          # authenticate message is refused before any guard runs, which is the
+          # whole point of the path being covered.
+          jwt:
+            type: jwt
+            issuer: "https://identity.newstack.cloud/oauth2/v1/"
+            tokenSource: "$.data.token"
+            audience:
+              - "https://identity.newstack.cloud/api/manage/v1/"
+
+  sendMessageHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Send Message Handler
+      labels:
+        application: "orders"
+      annotations:
+        celerity.handler.websocket: true
+        celerity.handler.websocket.route: "sendMessage"
+    spec:
+      handlerName: Orders-SendMessageHandler-v1
+      codeLocation: "./orders"
+      handler: "handlers.send_message"
+      runtime: "python3.12.x"
+      memory: 1024
+      timeout: 10
+      tracingEnabled: false
+      environmentVariables:
+        LOG_LEVEL: "${variables.logLevel}"

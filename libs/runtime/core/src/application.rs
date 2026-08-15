@@ -449,10 +449,15 @@ impl Application {
     ) -> HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>> {
         let mut guards = HashMap::new();
         if let Some(names) = guard_names {
-            // This is only called in the setup phase, so using a thread-blocking lock is safe
-            // as the setup http server method will be the only caller accessing
-            // the custom auth guards map at this point.
-            let all_guards = self.custom_auth_guards.blocking_lock();
+            // Taken without blocking. Setup is the only thing touching this map
+            // at this point, so the lock is always free, and a blocking take
+            // panics outright when setup is called from inside a runtime, which
+            // is how an application with connection auth guards is started from
+            // an async context.
+            let Ok(all_guards) = self.custom_auth_guards.try_lock() else {
+                error!("custom auth guards were unavailable while setting up the server");
+                return guards;
+            };
             for name in names {
                 if let Some(guard) = all_guards.get(name) {
                     guards.insert(name.clone(), guard.clone());
