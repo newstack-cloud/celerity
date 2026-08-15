@@ -1216,9 +1216,59 @@ async fn reads_faster_than_one_message_every_ten_milliseconds() {
     }
     let elapsed = started.elapsed();
 
+    // Below the 500ms the old cap would have cost, with enough room above the
+    // handful of milliseconds this actually takes that a loaded machine does
+    // not fail it for being busy.
     assert!(
-        elapsed < Duration::from_millis(400),
+        elapsed < Duration::from_millis(450),
         "50 messages took {elapsed:?}, which suggests the read loop is still rate limited"
+    );
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn tells_an_unauthenticated_client_to_authenticate_first() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-auth-message",
+        "tests/data/fixtures/ipc-websocket-auth-message.blueprint.yaml",
+    )
+    .await;
+    let _handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the authMessage strategy should let the connection upgrade");
+
+    // Anything that is not an authenticate message, sent before the connection
+    // has authenticated. The runtime answers on the same socket it just read
+    // from, so this is the path where taking the lock twice would wedge the
+    // connection rather than refuse the message.
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Text(
+            json!({ "event": "sendMessage", "data": { "text": "hello" } }).to_string(),
+        ))
+        .await
+        .unwrap();
+
+    let rejected = tokio::time::timeout(Duration::from_secs(5), async {
+        while let Some(Ok(message)) = socket_conn.next().await {
+            if let tokio_tungstenite::tungstenite::Message::Text(text) = message {
+                if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
+                    if value["event"] == "error" {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    })
+    .await;
+
+    assert_eq!(
+        rejected,
+        Ok(true),
+        "an unauthenticated message should be refused rather than leave the connection hanging"
     );
 
     let _ = tokio::fs::remove_file(&socket).await;

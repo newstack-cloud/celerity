@@ -384,15 +384,16 @@ async fn handle_socket(
                 if !is_authenticated {
                     // Connection is in unauthenticated state (authMessage strategy).
                     // Only accept an "authenticate" message; reject everything else.
-                    match handle_auth_message(
-                        &msg,
-                        &connection_id,
-                        &state,
-                        &request_ctx,
-                        &mut *socket_ref.lock().await,
-                    )
-                    .await
-                    {
+                    // Scoped so the guard is dropped before the arms run. A
+                    // guard taken in the arm lives until the end of the
+                    // match, and an arm below takes the same lock, which does
+                    // not nest.
+                    let auth_result = {
+                        let mut socket = socket_ref.lock().await;
+                        handle_auth_message(&msg, &connection_id, &state, &request_ctx, &mut socket)
+                            .await
+                    };
+                    match auth_result {
                         AuthMessageResult::Authenticated(data) => {
                             is_authenticated = true;
                             request_ctx.auth_data = Some(data);
