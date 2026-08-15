@@ -6,6 +6,7 @@ use std::{
 
 use async_trait::async_trait;
 use axum::extract::ws::{Message, WebSocket};
+use futures::{stream::SplitSink, SinkExt};
 use tokio::sync::{
     mpsc::{Receiver, Sender},
     Mutex,
@@ -20,6 +21,13 @@ use crate::{
         AckMessage, AckWorkerConfig, Message as RegistryMessage, MessageType, WebSocketMessage,
     },
 };
+
+/// The sending half of a connection, which is all a registry ever needs.
+///
+/// A connection's receiving half belongs to the task reading it, so that
+/// reading never waits on a lock a sender holds. Holding only this half here
+/// makes that ownership impossible to get wrong.
+pub type WebSocketConnSender = SplitSink<WebSocket, Message>;
 
 // Additional context for sending messages to a connection in a WebSocket registry.
 #[derive(Default)]
@@ -72,7 +80,7 @@ pub struct WebSocketConnRegistry {
     ack_worker_config: Option<AckWorkerConfig>,
     // WebSockets do not implement Sync so we need to wrap them in Arc<Mutex<...>>
     // to safely send messages to WebSocket connections from multiple threads.
-    connections: Arc<RwLock<HashMap<String, Arc<Mutex<WebSocket>>>>>,
+    connections: Arc<RwLock<HashMap<String, Arc<Mutex<WebSocketConnSender>>>>>,
     // A channel for sending messages to the ack worker.
     ack_sender: Mutex<Option<Sender<AckWorkerMessage>>>,
     // This is called "broadcaster" because it is used to send messages to all
@@ -245,7 +253,7 @@ impl WebSocketConnRegistry {
         });
     }
 
-    pub fn add_connection(&self, connection_id: String, ws: Arc<Mutex<WebSocket>>) {
+    pub fn add_connection(&self, connection_id: String, ws: Arc<Mutex<WebSocketConnSender>>) {
         self.connections.write().unwrap().insert(connection_id, ws);
     }
 
@@ -253,7 +261,7 @@ impl WebSocketConnRegistry {
         self.connections.write().unwrap().remove(&connection_id);
     }
 
-    fn get_connection(&self, connection_id: String) -> Option<Arc<Mutex<WebSocket>>> {
+    fn get_connection(&self, connection_id: String) -> Option<Arc<Mutex<WebSocketConnSender>>> {
         let conn = self
             .connections
             .read()
@@ -265,7 +273,7 @@ impl WebSocketConnRegistry {
 
     /// Returns an iterable vector of connections in the registry.
     #[allow(dead_code)]
-    pub fn get_connections(&self) -> Vec<(String, Arc<Mutex<WebSocket>>)> {
+    pub fn get_connections(&self) -> Vec<(String, Arc<Mutex<WebSocketConnSender>>)> {
         self.connections
             .read()
             .unwrap()
@@ -451,7 +459,6 @@ mod tests {
     use std::{
         future::Future,
         net::{Ipv4Addr, SocketAddr},
-        time::Duration,
     };
 
     use super::*;
@@ -465,7 +472,6 @@ mod tests {
     use futures::{FutureExt, SinkExt, StreamExt};
     use nanoid::nanoid;
     use serde::{Deserialize, Serialize};
-    use tokio::time::sleep;
     use tokio_tungstenite::tungstenite;
 
     #[derive(Clone)]
@@ -505,67 +511,73 @@ mod tests {
             let other_connection_id = conn_info.other_connection_id.clone();
             let missing_connection_id = conn_info.missing_connection_id.clone();
             async move {
-                let protected_socket = Arc::new(Mutex::new(socket));
+                // Split as the runtime does, so the registry holds only the
+                // sending half and reading never contends with a sender.
+                let (socket_tx, mut socket_rx) = socket.split();
+                let protected_socket = Arc::new(Mutex::new(socket_tx));
                 let protected_socket_clone = protected_socket.clone();
                 registry.add_connection(connection_id.clone(), protected_socket_clone);
 
                 let mut connection_alive = true;
                 while connection_alive {
-                    // Wait some time before acquiring the lock again to allow other tasks to write
-                    // to the socket. (i.e. a message received from another node in the cluster)
-                    sleep(Duration::from_millis(10)).await;
-                    let mut socket_lock = protected_socket.lock().await;
-                    tokio::select! {
-                        msg_wrapped = socket_lock.recv() => {
-                            if let Some(Ok(msg)) = msg_wrapped {
-                                if let Message::Text(msg) = msg {
-                                    // Broadcast received message to other connection or missing connection.
-                                    if let Some(other_connection_id) = &other_connection_id {
-                                        let _ = registry
-                                            .send_message(other_connection_id.clone(), nanoid!(), MessageType::Json, msg.to_string(), None)
-                                            .await;
-                                    } else if let Some(missing_connection_id) = &missing_connection_id {
-                                        let msg_payload = serde_json::from_str::<TestMessage>(&msg).unwrap();
-                                        let wait_result = registry
-                                            .send_message(
-                                                missing_connection_id.clone(),
-                                                msg_payload.message_id,
-                                                MessageType::Json,
-                                                msg.to_string(),
-                                                Some(SendContext {
-                                                    wait_for_ack: true,
-                                                    caller: None,
-                                                    inform_clients: vec![connection_id.clone()],
-                                                }),
-                                            )
-                                            .await;
-                                        if let Err(WebSocketConnError::MessageLost(message_id)) =
-                                            wait_result
-                                        {
-                                            // Message was lost, inform the client that sent the message
-                                            // to get full coverage on behaviour to manually wait for the ack.
-                                            socket_lock.send(Message::Text(format!("Custom message lost event: {message_id}").into())).await.unwrap();
-                                        }
-                                    } else {
-                                        // When "other connection" is not statically set,
-                                        // broadcast to all other connections.
-                                        for (id, conn) in registry.get_connections().iter() {
-                                            if *id != connection_id {
-                                                let mut conn = conn.lock().await;
-                                                conn.send(Message::Text(msg.clone())).await.unwrap();
-                                            }
-                                        }
-                                    }
+                    let msg_wrapped = socket_rx.next().await;
+                    if let Some(Ok(msg)) = msg_wrapped {
+                        if let Message::Text(msg) = msg {
+                            // Broadcast received message to other connection or missing connection.
+                            if let Some(other_connection_id) = &other_connection_id {
+                                let _ = registry
+                                    .send_message(
+                                        other_connection_id.clone(),
+                                        nanoid!(),
+                                        MessageType::Json,
+                                        msg.to_string(),
+                                        None,
+                                    )
+                                    .await;
+                            } else if let Some(missing_connection_id) = &missing_connection_id {
+                                let msg_payload =
+                                    serde_json::from_str::<TestMessage>(&msg).unwrap();
+                                let wait_result = registry
+                                    .send_message(
+                                        missing_connection_id.clone(),
+                                        msg_payload.message_id,
+                                        MessageType::Json,
+                                        msg.to_string(),
+                                        Some(SendContext {
+                                            wait_for_ack: true,
+                                            caller: None,
+                                            inform_clients: vec![connection_id.clone()],
+                                        }),
+                                    )
+                                    .await;
+                                if let Err(WebSocketConnError::MessageLost(message_id)) =
+                                    wait_result
+                                {
+                                    // Message was lost, inform the client that sent the message
+                                    // to get full coverage on behaviour to manually wait for the ack.
+                                    protected_socket
+                                        .lock()
+                                        .await
+                                        .send(Message::Text(
+                                            format!("Custom message lost event: {message_id}")
+                                                .into(),
+                                        ))
+                                        .await
+                                        .unwrap();
                                 }
                             } else {
-                                connection_alive = false;
+                                // When "other connection" is not statically set,
+                                // broadcast to all other connections.
+                                for (id, conn) in registry.get_connections().iter() {
+                                    if *id != connection_id {
+                                        let mut conn = conn.lock().await;
+                                        conn.send(Message::Text(msg.clone())).await.unwrap();
+                                    }
+                                }
                             }
                         }
-                        // Timeout to allow other tasks to write to the socket
-                        // at an interval.
-                        _ = sleep(Duration::from_secs(5)) => {
-                            // Skip to next iteration of the loop to release the lock.
-                        },
+                    } else {
+                        connection_alive = false;
                     }
                 }
                 registry.remove_connection(connection_id.clone());
@@ -737,26 +749,30 @@ mod tests {
             .await
             .unwrap();
 
-        // The custom message lost event should be received first as is called by the test handler
-        // while it holds a lock on the socket, when this is released, the protocol-level message lost
-        // message will be sent to the socket by the registry in response to ack worker events.
-        let node1_manual_wait_for_ack_msg_received = match socket1.next().await.unwrap().unwrap() {
-            tungstenite::Message::Text(msg) => msg,
-            other => panic!("Unexpected message but got {other:?}"),
-        };
+        // Both notifications arrive, one from the handler waiting on the ack
+        // itself and one from the registry acting on the ack worker's event.
+        // Their order is not guaranteed. They come from separate tasks, and
+        // nothing sequences them now that reading a connection no longer holds
+        // a lock the senders have to wait behind.
+        let mut manual_msg = None;
+        let mut lost_event = None;
+        for _ in 0..2 {
+            match socket1.next().await.unwrap().unwrap() {
+                tungstenite::Message::Text(msg) => manual_msg = Some(msg),
+                tungstenite::Message::Binary(msg) => lost_event = Some(msg),
+                other => panic!("Unexpected message but got {other:?}"),
+            }
+        }
 
         assert_eq!(
-            node1_manual_wait_for_ack_msg_received,
+            manual_msg.expect("the handler should report the lost message itself"),
             "Custom message lost event: test-message-1"
         );
 
-        let node1_msg_received = match socket1.next().await.unwrap().unwrap() {
-            tungstenite::Message::Binary(msg) => msg,
-            other => panic!("Unexpected message but got {other:?}"),
-        };
-
         // After a number of retry attempts, the message will be considered lost
         // and client should be informed with a message lost event.
+        let node1_msg_received =
+            lost_event.expect("the registry should send a protocol-level lost message event");
         assert_eq!(node1_msg_received[0], 0x1); // Route length should be 1
         assert_eq!(node1_msg_received[1], 0x3); // Route should be 0x3 (message lost)
         let json_msg = String::from_utf8(node1_msg_received[2..].to_vec()).unwrap();
