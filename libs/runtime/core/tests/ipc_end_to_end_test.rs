@@ -1312,6 +1312,11 @@ async fn closes_a_connection_out_without_waiting_for_all_the_work_it_queued() {
     // The disconnect handler running is what says teardown finished, and until
     // it does the connection is still in the registry and still counted. It
     // must not wait for messages the client is no longer there to hear about.
+    //
+    // That it runs exactly once is covered separately, by a client that sends
+    // a close frame outright. Closing the way this one does drives the whole
+    // handshake and never surfaces a frame to the application, so the second
+    // path that could fire a disconnect is not reached from here.
     let disconnected = tokio::time::timeout(Duration::from_secs(7), async {
         while let Some(dispatch) = handler.next_dispatch().await {
             if let Some(proto::dispatch::Source::Websocket(message)) = dispatch.source {
@@ -1333,26 +1338,6 @@ async fn closes_a_connection_out_without_waiting_for_all_the_work_it_queued() {
         closed_at.elapsed() < Duration::from_secs(7),
         "teardown took {:?}, which suggests it waited for the whole queue",
         closed_at.elapsed()
-    );
-
-    // Teardown owns the disconnect handler outright. The worker used to fire it
-    // too, when it reached a close frame in sequence, which is a second one
-    // waiting to happen for any connection whose worker outlives its teardown.
-    let second = tokio::time::timeout(Duration::from_secs(2), async {
-        while let Some(dispatch) = handler.next_dispatch().await {
-            if let Some(proto::dispatch::Source::Websocket(message)) = dispatch.source {
-                if message.route == "$disconnect" {
-                    return true;
-                }
-            }
-        }
-        false
-    })
-    .await;
-    assert_ne!(
-        second,
-        Ok(true),
-        "the disconnect handler should run once, not once per path that can end a connection"
     );
 
     let _ = tokio::fs::remove_file(&socket).await;
@@ -1448,5 +1433,47 @@ async fn carries_a_binary_websocket_frame_without_corrupting_it() {
     assert_ne!(message.message, BASE64.encode(&body).into_bytes());
 
     let _ = socket_conn.close(None).await;
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn fires_the_disconnect_handler_once_for_a_client_that_sends_a_close_frame() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-close-once",
+        "tests/data/fixtures/ipc-websocket-disconnect.blueprint.yaml",
+    )
+    .await;
+    let mut handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+
+    // Sent as an ordinary frame rather than through close(), which drives the
+    // whole handshake and never surfaces the frame to the application. Sent
+    // this way it reaches message processing, which is the path that could
+    // once fire a disconnect of its own alongside the one teardown fires.
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Close(None))
+        .await
+        .unwrap();
+
+    let mut disconnects = 0;
+    let _ = tokio::time::timeout(Duration::from_secs(4), async {
+        while let Some(dispatch) = handler.next_dispatch().await {
+            if let Some(proto::dispatch::Source::Websocket(message)) = dispatch.source {
+                if message.route == "$disconnect" {
+                    disconnects += 1;
+                }
+            }
+        }
+    })
+    .await;
+
+    assert_eq!(
+        disconnects, 1,
+        "the disconnect handler should run once, not once per path that can end a connection"
+    );
+
     let _ = tokio::fs::remove_file(&socket).await;
 }
