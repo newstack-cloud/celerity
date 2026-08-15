@@ -1122,7 +1122,110 @@ async fn answers_heartbeats_while_a_handler_is_still_running() {
 }
 
 #[test_log::test(tokio::test)]
-async fn keeps_messages_from_one_connection_in_order() {
+async fn sheds_a_connection_that_outruns_its_handlers_with_a_retry_hint() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-saturate",
+        "tests/data/fixtures/ipc-websocket-api.blueprint.yaml",
+    )
+    .await;
+    // Answer nothing, so the worker is stuck on the first message and every
+    // message after it piles up behind it.
+    let _handler = HandlerStub::attach(&socket, |_| None).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+
+    // Comfortably more than the buffer holds, so the read loop reaches the
+    // point where it would otherwise wait in silence.
+    for index in 0..256 {
+        if socket_conn
+            .send(tokio_tungstenite::tungstenite::Message::Text(
+                json!({ "event": "sendMessage", "data": { "index": index } }).to_string(),
+            ))
+            .await
+            .is_err()
+        {
+            // The runtime shed the connection part way through, which is the
+            // behaviour under test.
+            break;
+        }
+    }
+
+    // Stalling in silence is what makes a client give up on a connection it
+    // could have kept. Closing says the same thing in a way the client can act
+    // on, and the hint stops it returning straight into the same saturation.
+    let close = tokio::time::timeout(Duration::from_secs(10), async {
+        while let Some(Ok(message)) = socket_conn.next().await {
+            if let tokio_tungstenite::tungstenite::Message::Close(frame) = message {
+                return frame;
+            }
+        }
+        None
+    })
+    .await
+    .expect("the runtime should close the connection rather than stall in silence");
+
+    let frame = close.expect("the close should carry a frame rather than be bare");
+    assert_eq!(
+        u16::from(frame.code),
+        1013,
+        "expected a try again later code"
+    );
+    let reason: serde_json::Value =
+        serde_json::from_str(&frame.reason).expect("the reason should carry the retry hint");
+    assert!(
+        reason["retryAfter"].as_u64().is_some_and(|ms| ms > 0),
+        "expected a retryAfter hint, got {reason}"
+    );
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn reads_faster_than_one_message_every_ten_milliseconds() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-throughput",
+        "tests/data/fixtures/ipc-websocket-api.blueprint.yaml",
+    )
+    .await;
+    let mut handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+
+    // The read loop used to sleep 10ms per message to yield a lock it held
+    // across every read, capping one connection at about 100 messages a
+    // second whatever the handlers did. Reading no longer takes that lock, so
+    // 50 messages must not take the 500ms that cap would have cost.
+    let started = tokio::time::Instant::now();
+    for index in 0..50 {
+        socket_conn
+            .send(tokio_tungstenite::tungstenite::Message::Text(
+                json!({ "event": "sendMessage", "data": { "index": index } }).to_string(),
+            ))
+            .await
+            .unwrap();
+    }
+    for _ in 0..50 {
+        handler
+            .next_dispatch()
+            .await
+            .expect("every message should reach the handler");
+    }
+    let elapsed = started.elapsed();
+
+    assert!(
+        elapsed < Duration::from_millis(400),
+        "50 messages took {elapsed:?}, which suggests the read loop is still rate limited"
+    );
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn does_not_reorder_messages_when_handling_them_off_the_read_loop() {
     let (_app, addr, socket) = start_runtime(
         "ipc-ws-order",
         "tests/data/fixtures/ipc-websocket-api.blueprint.yaml",
@@ -1143,9 +1246,15 @@ async fn keeps_messages_from_one_connection_in_order() {
             .unwrap();
     }
 
-    // Handling messages off the read loop must not reorder them: a WebSocket
-    // delivers frames in order and an application may depend on being given
-    // them that way.
+    // Moving handling off the read loop must not reorder what was already in
+    // order, which is what pins the worker to one message at a time.
+    //
+    // This is the behaviour of this runtime rather than a promise the platform
+    // makes. The same API deployed to a serverless target invokes a function
+    // per message with no ordering between them, and a client resending after
+    // a lost acknowledgement reorders its own messages anyway. An application
+    // that needs ordering has to carry its own sequence. So this test exists to
+    // keep the runtime's behaviour deliberate, not to stop it ever changing.
     let mut seen = Vec::new();
     for _ in 0..5 {
         let dispatch = handler

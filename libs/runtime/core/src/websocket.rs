@@ -10,7 +10,7 @@ use std::{
 use async_trait::async_trait;
 use axum::{
     extract::{
-        ws::{CloseFrame, Message, WebSocket},
+        ws::{close_code, CloseFrame, Message, WebSocket},
         FromRequestParts, Request, State, WebSocketUpgrade,
     },
     http::{HeaderMap, StatusCode},
@@ -27,14 +27,14 @@ use celerity_helpers::{
     http::ResourceStore,
     request::{headers_to_hashmap, query_from_uri},
 };
-use celerity_ws_registry::registry::WebSocketConnRegistry;
+use celerity_ws_registry::registry::{WebSocketConnRegistry, WebSocketConnSender};
+use futures::{SinkExt, StreamExt};
 use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::{
-    sync::{mpsc, Mutex},
+    sync::{mpsc, mpsc::error::SendTimeoutError, Mutex},
     task::JoinHandle,
-    time::sleep,
 };
 use tracing::{debug, error, field, info, info_span, warn, Instrument};
 
@@ -48,7 +48,8 @@ use crate::{
         CELERITY_WS_CAPABILITIES_SIGNAL, CELERITY_WS_CONNECT_HANDLER_ROUTE,
         CELERITY_WS_DEFAULT_MESSAGE_HANDLER_ROUTE, CELERITY_WS_DISCONNECT_HANDLER_ROUTE,
         CELERITY_WS_FORBIDDEN_ERROR_CODE, CELERITY_WS_UNAUTHORISED_ERROR_CODE,
-        WS_CONNECTION_WORK_BUFFER,
+        WS_CONNECTION_SATURATED_RETRY_AFTER_MS, WS_CONNECTION_WORK_BUFFER,
+        WS_CONNECTION_WORK_SHED_GRACE_MS,
     },
     errors::WebSocketsMessageError,
     request::{HttpProtocolVersion, RequestId},
@@ -243,7 +244,13 @@ async fn handle_socket(
     mut request_ctx: WebSocketRequestContext,
     state: WebSocketAppState,
 ) {
-    let socket_ref = Arc::new(Mutex::new(socket));
+    // Split so that reading and writing are owned separately. Only the sending
+    // half is shared, which is all anything other than this task ever needs,
+    // and the receiving half stays here. Reading therefore never holds a lock,
+    // so a task sending to this connection cannot delay it and it cannot delay
+    // them.
+    let (socket_tx, mut socket_rx) = socket.split();
+    let socket_ref = Arc::new(Mutex::new(socket_tx));
     async {
         info!("websocket connection received: {}", connection_id);
 
@@ -331,9 +338,13 @@ async fn handle_socket(
         }
 
         // Messages are processed off this loop, one at a time, by a worker for
-        // this connection. Sequentially, because a WebSocket delivers frames in
-        // order and an application may depend on being given them that way;
-        // the point here is only that reading does not wait for handling.
+        // this connection. One at a time because that is how they were handled
+        // before, inline in this loop, and a fix for the loop stalling should
+        // not quietly start running an application's messages in parallel.
+        // Ordering is not something the platform promises, a serverless target
+        // runs a function per message with nothing between them, so this is
+        // about leaving behaviour alone rather than a guarantee being made.
+        // The point here is only that reading no longer waits for handling.
         //
         // Bounded, so a client that outruns its handlers is pushed back on
         // rather than growing a queue without limit. Once the buffer is full
@@ -351,17 +362,12 @@ async fn handle_socket(
 
         let mut connection_alive = true;
         while connection_alive {
-            // Wait some time before acquiring the lock again to allow other tasks to write
-            // to the socket. (i.e. a message received from another node in the cluster)
-            sleep(Duration::from_millis(10)).await;
-            let mut acquired_socket = socket_ref.lock().await;
-
-            if let Some(Ok(msg)) = acquired_socket.recv().await {
+            if let Some(Ok(msg)) = socket_rx.next().await {
                 // Handle Celerity application-level heartbeat pings before
                 // route resolution. These are distinct from WebSocket protocol-level
                 // Ping frames (handled by tungstenite automatically).
                 if let Some(pong) = detect_heartbeat_ping(&msg) {
-                    let _ = acquired_socket.send(pong).await;
+                    let _ = socket_ref.lock().await.send(pong).await;
                     continue;
                 }
 
@@ -373,7 +379,7 @@ async fn handle_socket(
                         &connection_id,
                         &state,
                         &request_ctx,
-                        &mut acquired_socket,
+                        &mut *socket_ref.lock().await,
                     )
                     .await
                     {
@@ -392,20 +398,49 @@ async fn handle_socket(
                                 }
                             })
                             .to_string();
-                            let _ = acquired_socket.send(Message::Text(reject.into())).await;
+                            let _ = socket_ref
+                                .lock()
+                                .await
+                                .send(Message::Text(reject.into()))
+                                .await;
                         }
                     }
                 } else {
-                    // Release the lock before handing the message on, so other
-                    // tasks (a cluster relay, say) can write to the socket.
-                    drop(acquired_socket);
                     // Handed to the worker rather than run here. A handler that
                     // takes a while must not stop this loop reading, or the
                     // heartbeat above goes unanswered and a close frame goes
                     // unnoticed, and the client concludes the connection is
                     // dead while its work is still in progress.
-                    if work_tx.send((msg, request_ctx.clone())).await.is_err() {
-                        connection_alive = false;
+                    //
+                    // The wait is bounded. A brief burst is absorbed by the
+                    // buffer and by this grace, but a client that stays ahead
+                    // of its handlers for longer than this is not going to be
+                    // served by waiting for it in silence, since waiting is
+                    // what stops the heartbeat being answered. It is shed
+                    // instead, with a hint for when to come back.
+                    match work_tx
+                        .send_timeout(
+                            (msg, request_ctx.clone()),
+                            Duration::from_millis(WS_CONNECTION_WORK_SHED_GRACE_MS),
+                        )
+                        .await
+                    {
+                        Ok(()) => {}
+                        Err(SendTimeoutError::Timeout(_)) => {
+                            warn!(
+                                "client {connection_id} is sending faster than its handlers can \
+                                 keep up, closing the connection with a retry hint"
+                            );
+                            close_with_retry_after(
+                                socket_ref.clone(),
+                                WS_CONNECTION_SATURATED_RETRY_AFTER_MS,
+                            )
+                            .await;
+                            connection_alive = false;
+                        }
+                        Err(SendTimeoutError::Closed(_)) => {
+                            connection_alive = false;
+                        }
                     }
                 }
             } else {
@@ -434,7 +469,7 @@ async fn handle_socket(
 }
 
 async fn authenticate_connection(
-    socket_ref: Arc<Mutex<WebSocket>>,
+    socket_ref: Arc<Mutex<WebSocketConnSender>>,
     state: &WebSocketAppState,
     request_ctx: &WebSocketRequestContext,
 ) -> ControlFlow<(), serde_json::Value> {
@@ -526,7 +561,7 @@ async fn authenticate_connection(
 }
 
 async fn on_connect(
-    socket_ref: Arc<Mutex<WebSocket>>,
+    socket_ref: Arc<Mutex<WebSocketConnSender>>,
     connection_id: String,
     state: &WebSocketAppState,
     request_ctx: &WebSocketRequestContext,
@@ -587,7 +622,7 @@ fn create_connect_message(
 /// read loop fires it otherwise, for a connection that simply went away.
 fn spawn_message_worker(
     mut work_rx: mpsc::Receiver<(Message, WebSocketRequestContext)>,
-    socket_ref: Arc<Mutex<WebSocket>>,
+    socket_ref: Arc<Mutex<WebSocketConnSender>>,
     connection_id: String,
     state: WebSocketAppState,
 ) -> JoinHandle<bool> {
@@ -699,7 +734,7 @@ impl Display for ValidateAuthError {
 }
 
 async fn handle_validate_auth_on_connect_error(
-    socket_ref: Arc<Mutex<WebSocket>>,
+    socket_ref: Arc<Mutex<WebSocketConnSender>>,
     validate_error: ValidateAuthError,
     token_type: &str,
 ) -> ControlFlow<(), serde_json::Value> {
@@ -774,7 +809,7 @@ async fn handle_auth_message(
     connection_id: &str,
     state: &WebSocketAppState,
     request_ctx: &WebSocketRequestContext,
-    socket: &mut WebSocket,
+    socket: &mut WebSocketConnSender,
 ) -> AuthMessageResult {
     let text = match msg {
         Message::Text(t) => t.to_string(),
@@ -1353,15 +1388,30 @@ fn check_cors_origin(
             // Per RFC 6455 §4.1, browser clients MUST send the Origin header
             // on WebSocket upgrade requests; non-browser clients MAY omit it.
             // A missing Origin header therefore indicates a server-side client
-            // (CLI tool, SDK, service-to-service) — allow the connection.
+            // (CLI tool, SDK, service-to-service) so allow the connection.
             Ok(())
         }
     }
 }
 
-async fn close_connection(socket_ref: Arc<Mutex<WebSocket>>) {
+async fn close_connection(socket_ref: Arc<Mutex<WebSocketConnSender>>) {
     let mut socket = socket_ref.lock().await;
     if let Err(err) = socket.send(Message::Close(None)).await {
+        error!("failed to send close frame to client: {err}");
+    }
+}
+
+/// Closes a connection with the protocol's server-initiated backoff hint, so
+/// the client waits before reconnecting rather than returning immediately into
+/// whatever made the runtime shed it.
+async fn close_with_retry_after(socket_ref: Arc<Mutex<WebSocketConnSender>>, retry_after_ms: u64) {
+    let reason = serde_json::json!({ "retryAfter": retry_after_ms }).to_string();
+    let frame = CloseFrame {
+        code: close_code::AGAIN,
+        reason: reason.into(),
+    };
+    let mut socket = socket_ref.lock().await;
+    if let Err(err) = socket.send(Message::Close(Some(frame))).await {
         error!("failed to send close frame to client: {err}");
     }
 }

@@ -107,6 +107,25 @@ pub const CANCELLATION_BUFFER: usize = 256;
 // backpressure.
 pub const WS_CONNECTION_WORK_BUFFER: usize = 64;
 
+// How long a connection's read loop waits for room in that buffer before it
+// gives up on the client and closes the connection.
+//
+// The read loop answers heartbeats, so any time spent waiting here is time the
+// connection appears dead to its client. The protocol's default heartbeat
+// timeout is 5 seconds, so this stays well inside it: a burst gets a moment to
+// drain, and a client that is genuinely outrunning its handlers is shed long
+// before it would have concluded the connection was gone.
+pub const WS_CONNECTION_WORK_SHED_GRACE_MS: u64 = 1_000;
+
+// The `retryAfter` hint sent in the close frame when a connection is shed for
+// outrunning its handlers.
+//
+// The protocol has a server-initiated backoff, so the client waits at least this
+// long before reconnecting rather than coming straight back into the same
+// saturation. Clients take the greater of this and their own backoff and add
+// their own jitter.
+pub const WS_CONNECTION_SATURATED_RETRY_AFTER_MS: u64 = 5_000;
+
 // How many dispatcher commands may be queued before a handler stream waits.
 // Commands are small and are drained by a single task, so this only needs to
 // absorb bursts of results arriving together.

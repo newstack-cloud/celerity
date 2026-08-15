@@ -12,6 +12,7 @@ jsonpath-rust = "0.7.1"
 async-trait = "0.1.88"
 tokio = { version = "1.45.1", features = ["full"] }
 axum = { version = "0.8.4", features = ["ws", "http2"] }
+futures = "0.3.30"
 tracing = "0.1.40"
 base64 = "0.22.1"
 
