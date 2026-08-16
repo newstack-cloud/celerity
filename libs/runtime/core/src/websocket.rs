@@ -381,6 +381,17 @@ async fn handle_socket(
                     continue;
                 }
 
+                // A client acknowledging something the runtime sent it. This is
+                // handled before routing, to avoid getting it confused with a routed message
+                // that would otherwise fallback to the default handler.
+                if let Some(acknowledged) = detect_client_ack(&msg) {
+                    debug!(
+                        "client {connection_id} acknowledged message {acknowledged}, \
+                         which nothing is waiting on yet"
+                    );
+                    continue;
+                }
+
                 if !is_authenticated {
                     // Connection is in unauthenticated state (authMessage strategy).
                     // Only accept an "authenticate" message; reject everything else.
@@ -1264,6 +1275,42 @@ enum AckFormat {
     Binary,
 }
 
+/// Recognises a client acknowledging something the runtime sent it, returning
+/// the id of the message being acknowledged.
+///
+/// Reads both encodings, the reserved `0x4` binary frame and the JSON form
+/// carrying `ack` as the value of `event`. That key is fixed by the protocol
+/// rather than being the API's configured route key, which is what makes these
+/// messages unroutable and why they have to be recognised here.
+fn detect_client_ack(msg: &Message) -> Option<String> {
+    let body = match msg {
+        Message::Binary(bytes) => {
+            if !bytes.starts_with(&CELERITY_WS_ACK_SIGNAL) {
+                return None;
+            }
+            let value: Value = serde_json::from_slice(bytes.get(4..)?).ok()?;
+            value
+        }
+        Message::Text(text) => {
+            // A reserved acknowledgement always names itself, so anything that
+            // does not mention it is passed over before it is parsed.
+            if !text.contains("\"ack\"") {
+                return None;
+            }
+            let value: Value = serde_json::from_str(text).ok()?;
+            if value.get("event").and_then(Value::as_str) != Some("ack") {
+                return None;
+            }
+            value.get("data")?.clone()
+        }
+        _ => return None,
+    };
+
+    body.get("messageId")
+        .and_then(Value::as_str)
+        .map(str::to_string)
+}
+
 /// Whether a JSON text carries `ack` as an object key.
 ///
 /// A prefilter, not a parser. It is allowed to say yes to a message that turns
@@ -1275,6 +1322,13 @@ fn has_ack_key(text: &str) -> bool {
         .any(|(index, matched)| text[index + matched.len()..].trim_start().starts_with(':'))
 }
 
+/// Recognises a message asking to be acknowledged, returning the id to
+/// acknowledge it by and the encoding to answer in.
+///
+/// Read off the frame rather than out of the routing, so a message can be
+/// answered as soon as it is taken in. Asking without a message id returns
+/// nothing, since an acknowledgement names the message it is for and there
+/// would be nothing to name.
 fn ack_request(msg: &Message) -> Option<(String, AckFormat)> {
     match msg {
         Message::Text(text) => {
@@ -1593,6 +1647,38 @@ async fn close_with_retry_after(socket_ref: Arc<Mutex<WebSocketConnSender>>, ret
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_detect_client_ack_reads_both_encodings() {
+        let mut frame = CELERITY_WS_ACK_SIGNAL.to_vec();
+        frame.extend_from_slice(br#"{"messageId":"m-1","timestamp":"1"}"#);
+        assert_eq!(
+            detect_client_ack(&Message::Binary(frame.into())),
+            Some("m-1".to_string())
+        );
+
+        let text = r#"{"event":"ack","data":{"messageId":"m-2","timestamp":"1"}}"#;
+        assert_eq!(
+            detect_client_ack(&Message::Text(text.into())),
+            Some("m-2".to_string())
+        );
+    }
+
+    #[test]
+    fn test_detect_client_ack_leaves_application_messages_alone() {
+        // Carries the word but is an ordinary message, and the runtime must not
+        // swallow it on the way to its handler.
+        let text = r#"{"event":"sendMessage","data":{"kind":"ack"}}"#;
+        assert!(detect_client_ack(&Message::Text(text.into())).is_none());
+
+        // An acknowledgement request, which travels the other way.
+        let text = r#"{"event":"sendMessage","ack":true,"messageId":"m-3"}"#;
+        assert!(detect_client_ack(&Message::Text(text.into())).is_none());
+
+        // A binary application message whose route happens to be one byte.
+        let frame = vec![0x1, 0x9, 0x0, 0x0, 0xff];
+        assert!(detect_client_ack(&Message::Binary(frame.into())).is_none());
+    }
 
     #[test]
     fn test_has_ack_key_ignores_ack_as_a_value() {
