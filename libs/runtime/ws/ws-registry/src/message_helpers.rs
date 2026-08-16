@@ -1,6 +1,6 @@
 use axum::extract::ws::Message;
 use base64::{prelude::BASE64_STANDARD, DecodeError, Engine};
-use serde_json::json;
+use serde_json::{json, Value};
 
 use crate::types::MessageType;
 
@@ -43,5 +43,86 @@ pub fn create_ws_message(
             let bytes = BASE64_STANDARD.decode(message.as_bytes())?;
             Ok(Message::Binary(bytes.into()))
         }
+    }
+}
+
+pub fn client_ack_request(message_type: &MessageType, message: &str) -> Option<String> {
+    match message_type {
+        MessageType::Json => {
+            let value: Value = serde_json::from_str(message).ok()?;
+            let object = value.as_object()?;
+            if object.get("ack").and_then(Value::as_bool) != Some(true) {
+                return None;
+            }
+            object
+                .get("messageId")
+                .and_then(Value::as_str)
+                .map(str::to_string)
+        }
+        MessageType::Binary => {
+            let bytes = BASE64_STANDARD.decode(message).ok()?;
+            // [routeLength][route][requireAck][messageIdLength][messageId]
+            let route_length = *bytes.first()? as usize;
+            if *bytes.get(1 + route_length)? != 0x1 {
+                return None;
+            }
+            let id_length = *bytes.get(route_length + 2)? as usize;
+            if id_length == 0 {
+                return None;
+            }
+            let start = route_length + 3;
+            let id = bytes.get(start..start + id_length)?;
+            std::str::from_utf8(id).ok().map(str::to_string)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn frame(route: &[u8], requires_ack: u8, message_id: &[u8], payload: &[u8]) -> String {
+        let mut bytes = vec![route.len() as u8];
+        bytes.extend_from_slice(route);
+        bytes.push(requires_ack);
+        bytes.push(message_id.len() as u8);
+        bytes.extend_from_slice(message_id);
+        bytes.extend_from_slice(payload);
+        BASE64_STANDARD.encode(bytes)
+    }
+
+    #[test]
+    fn test_client_ack_request_reads_the_opt_in_from_the_message() {
+        assert_eq!(
+            client_ack_request(
+                &MessageType::Json,
+                r#"{"event":"update","ack":true,"messageId":"m-1"}"#
+            ),
+            Some("m-1".to_string())
+        );
+        assert_eq!(
+            client_ack_request(
+                &MessageType::Binary,
+                &frame(b"updates", 0x1, b"m-2", &[0xff])
+            ),
+            Some("m-2".to_string())
+        );
+    }
+
+    #[test]
+    fn test_client_ack_request_ignores_messages_that_did_not_ask() {
+        // Carries an id but does not opt in.
+        assert!(client_ack_request(&MessageType::Json, r#"{"messageId":"m-1"}"#).is_none());
+        // Opts in with no id, so there is nothing an acknowledgement could name.
+        assert!(client_ack_request(&MessageType::Json, r#"{"ack":true}"#).is_none());
+        assert!(client_ack_request(
+            &MessageType::Binary,
+            &frame(b"updates", 0x0, b"m-2", &[0xff])
+        )
+        .is_none());
+        assert!(
+            client_ack_request(&MessageType::Binary, &frame(b"updates", 0x1, b"", &[0xff]))
+                .is_none()
+        );
     }
 }

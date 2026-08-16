@@ -385,10 +385,8 @@ async fn handle_socket(
                 // handled before routing, to avoid getting it confused with a routed message
                 // that would otherwise fallback to the default handler.
                 if let Some(acknowledged) = detect_client_ack(&msg) {
-                    debug!(
-                        "client {connection_id} acknowledged message {acknowledged}, \
-                         which nothing is waiting on yet"
-                    );
+                    debug!("client {connection_id} acknowledged message {acknowledged}");
+                    state.connections.record_client_ack(acknowledged).await;
                     continue;
                 }
 
