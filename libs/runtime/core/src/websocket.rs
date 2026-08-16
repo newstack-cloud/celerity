@@ -429,6 +429,10 @@ async fn handle_socket(
                     // served by waiting for it in silence, since waiting is
                     // what stops the heartbeat being answered. It is shed
                     // instead, with a hint for when to come back.
+                    // Read before the message is handed on, since handing it on
+                    // gives it away.
+                    let ack = ack_request(&msg);
+
                     match work_tx
                         .send_timeout(
                             (msg, request_ctx.clone()),
@@ -436,7 +440,19 @@ async fn handle_socket(
                         )
                         .await
                     {
-                        Ok(()) => {}
+                        Ok(()) => {
+                            // Answered as soon as the message is taken in, since
+                            // that is what an acknowledgement says. Anything
+                            // that happens to it afterwards, however long it
+                            // takes, is not what the client is waiting to hear.
+                            //
+                            // Sent once it is safely queued and not before, so
+                            // nothing is acknowledged that then gets shed to
+                            // process incoming messages.
+                            if let Some((message_id, format)) = ack {
+                                acknowledge(&socket_ref, &connection_id, &message_id, format).await;
+                            }
+                        }
                         Err(SendTimeoutError::Timeout(_)) => {
                             warn!(
                                 "client {connection_id} is sending faster than its handlers can \
@@ -654,15 +670,9 @@ fn spawn_message_worker(
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
         while let Some((message, request_ctx)) = work_rx.recv().await {
-            if process_message(
-                message,
-                connection_id.clone(),
-                request_ctx,
-                &state,
-                &socket_ref,
-            )
-            .await
-            .is_break()
+            if process_message(message, connection_id.clone(), request_ctx, &state)
+                .await
+                .is_break()
             {
                 // The connection is finished, and the read loop is waiting on a
                 // socket that may never produce anything again. Closing it is
@@ -1032,7 +1042,6 @@ async fn process_message(
     connection_id: String,
     request_ctx: WebSocketRequestContext,
     state: &WebSocketAppState,
-    socket_ref: &Arc<Mutex<WebSocketConnSender>>,
 ) -> ControlFlow<(), ()> {
     match msg {
         Message::Text(text) => {
@@ -1041,16 +1050,8 @@ async fn process_message(
                 connection_id.clone(),
                 state.route_key.clone(),
             )?;
-            if let Some((route, message_id, requires_ack, data)) = resolved {
+            if let Some((route, message_id, _requires_ack, data)) = resolved {
                 if let Some(handler) = get_message_route_handler(&route, state).await {
-                    acknowledge_if_asked(
-                        socket_ref,
-                        &connection_id,
-                        message_id.as_deref(),
-                        requires_ack,
-                        AckFormat::Json,
-                    )
-                    .await;
                     handle_json_message(
                         handler.clone(),
                         connection_id.clone(),
@@ -1070,16 +1071,8 @@ async fn process_message(
         }
         Message::Binary(bytes) => {
             let resolved = resolve_binary_route(&bytes, connection_id.clone())?;
-            if let Some((route, message_id, requires_ack, bytes_stripped)) = resolved {
+            if let Some((route, message_id, _requires_ack, bytes_stripped)) = resolved {
                 if let Some(handler) = get_message_route_handler(&route, state).await {
-                    acknowledge_if_asked(
-                        socket_ref,
-                        &connection_id,
-                        message_id.as_deref(),
-                        requires_ack,
-                        AckFormat::Binary,
-                    )
-                    .await;
                     handle_binary_message(
                         handler.clone(),
                         connection_id.clone(),
@@ -1265,30 +1258,71 @@ async fn handle_binary_message(
 /// It mirrors whatever the message being acknowledged arrived as. A client that
 /// can send binary can read it, and one that only has text, because its
 /// environment gave it no choice, gets text back.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum AckFormat {
     Json,
     Binary,
 }
 
-/// Tells the client its message arrived, when the message asked to be told.
+/// Whether a JSON text carries `ack` as an object key.
 ///
-/// Opting in without a message id does nothing, since an acknowledgement names
-/// the message it is for and there would be nothing to name.
-async fn acknowledge_if_asked(
+/// A prefilter, not a parser. It is allowed to say yes to a message that turns
+/// out not to opt in, which costs a parse that then finds nothing. It must not
+/// say no to one that does, which is why it looks for the key rather than for
+/// the word.
+fn has_ack_key(text: &str) -> bool {
+    text.match_indices("\"ack\"")
+        .any(|(index, matched)| text[index + matched.len()..].trim_start().starts_with(':'))
+}
+
+fn ack_request(msg: &Message) -> Option<(String, AckFormat)> {
+    match msg {
+        Message::Text(text) => {
+            // Parsing every text message twice to find out that almost none of
+            // them opt in is not worth it, so a message that does not carry the
+            // key is passed over before it is parsed at all.
+            //
+            // Matched as a key rather than anywhere in the text, since a
+            // message is free to carry "ack" as a value and many will.
+            if !has_ack_key(text) {
+                return None;
+            }
+            let value: Value = serde_json::from_str(text).ok()?;
+            let object = value.as_object()?;
+            if object.get("ack").and_then(Value::as_bool) != Some(true) {
+                return None;
+            }
+            let message_id = object.get("messageId").and_then(Value::as_str)?;
+            Some((message_id.to_string(), AckFormat::Json))
+        }
+        Message::Binary(bytes) => {
+            // `[routeLength][route][requireAck][messageIdLength][messageId]`,
+            // read far enough to answer and no further.
+            let route_length = *bytes.first()? as usize;
+            let requires_ack = *bytes.get(1 + route_length)? == 0x1;
+            if !requires_ack {
+                return None;
+            }
+            let message_id_length = *bytes.get(route_length + 2)? as usize;
+            let start = route_length + 3;
+            let message_id = bytes.get(start..start + message_id_length)?;
+            let message_id = std::str::from_utf8(message_id).ok()?;
+            if message_id.is_empty() {
+                return None;
+            }
+            Some((message_id.to_string(), AckFormat::Binary))
+        }
+        _ => None,
+    }
+}
+
+/// Tells the client its message arrived.
+async fn acknowledge(
     socket_ref: &Arc<Mutex<WebSocketConnSender>>,
     connection_id: &str,
-    message_id: Option<&str>,
-    requires_ack: bool,
+    message_id: &str,
     format: AckFormat,
 ) {
-    if !requires_ack {
-        return;
-    }
-    let Some(message_id) = message_id else {
-        return;
-    };
-
     let timestamp = get_epoch_seconds().to_string();
     let message = match format {
         AckFormat::Json => Message::Text(
@@ -1559,6 +1593,59 @@ async fn close_with_retry_after(socket_ref: Arc<Mutex<WebSocketConnSender>>, ret
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_has_ack_key_ignores_ack_as_a_value() {
+        // Reserved as an event value by the protocol itself, so a message
+        // carrying it is ordinary rather than an opt in.
+        assert!(!has_ack_key(r#"{"event":"ack","data":{}}"#));
+        assert!(!has_ack_key(r#"{"event":"send","data":{"type":"ack"}}"#));
+    }
+
+    #[test]
+    fn test_has_ack_key_finds_the_key() {
+        assert!(has_ack_key(r#"{"ack":true,"messageId":"1"}"#));
+        // Whitespace is legal JSON either side of the colon.
+        assert!(has_ack_key(r#"{"ack" : true}"#));
+        // Present as a value elsewhere as well as a key.
+        assert!(has_ack_key(r#"{"event":"ack","ack":true}"#));
+    }
+
+    #[test]
+    fn test_ack_request_reads_a_binary_frame() {
+        // [routeLength][route][requireAck][messageIdLength][messageId][payload]
+        let mut frame = vec![2u8];
+        frame.extend_from_slice(b"ab");
+        frame.push(0x1);
+        frame.push(3);
+        frame.extend_from_slice(b"m-1");
+        frame.extend_from_slice(&[0xff, 0x00]);
+
+        let request = ack_request(&Message::Binary(frame.into()));
+        let Some((message_id, AckFormat::Binary)) = request else {
+            panic!("expected a binary acknowledgement request, got {request:?}");
+        };
+        assert_eq!(message_id, "m-1");
+    }
+
+    #[test]
+    fn test_ack_request_ignores_a_binary_frame_that_did_not_ask() {
+        let mut frame = vec![2u8];
+        frame.extend_from_slice(b"ab");
+        frame.push(0x0);
+        frame.push(3);
+        frame.extend_from_slice(b"m-1");
+
+        assert!(ack_request(&Message::Binary(frame.into())).is_none());
+    }
+
+    #[test]
+    fn test_ack_request_refuses_a_frame_that_is_shorter_than_it_claims() {
+        // Claims a route longer than the bytes that follow it, so reading the
+        // acknowledgement flag would run off the end.
+        let frame = vec![9u8, b'a', b'b'];
+        assert!(ack_request(&Message::Binary(frame.into())).is_none());
+    }
 
     #[test]
     fn test_detect_json_ping() {
