@@ -341,6 +341,10 @@ impl Application {
             ));
             self.ws_connections = Some(conn_registry.clone());
 
+            // Tracks the messages that asked their client to acknowledge them,
+            // resending and eventually giving up on the ones that go unanswered.
+            conn_registry.clone().start_client_ack_worker();
+
             // As with HTTP routes, the FFI call mode has the SDK register these
             // as it binds each in-process handler. In the IPC call mode the
             // runtime registers one per blueprint handler, so that messages

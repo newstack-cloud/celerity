@@ -16,7 +16,7 @@ use tracing::{debug, error, info};
 use crate::{
     acks::{AckStatus, AckWorkerMessage, MessageAction, Worker},
     errors::WebSocketConnError,
-    message_helpers::{create_message_lost_event, create_ws_message},
+    message_helpers::{client_ack_request, create_message_lost_event, create_ws_message},
     types::{
         AckMessage, AckWorkerConfig, Message as RegistryMessage, MessageType, WebSocketMessage,
     },
@@ -83,6 +83,13 @@ pub struct WebSocketConnRegistry {
     connections: Arc<RwLock<HashMap<String, Arc<Mutex<WebSocketConnSender>>>>>,
     // A channel for sending messages to the ack worker.
     ack_sender: Mutex<Option<Sender<AckWorkerMessage>>>,
+    // A channel for the worker that tracks acknowledgements from clients, as
+    // distinct from the one above, which tracks them from other nodes.
+    //
+    // Held separately because the two answer different questions. A node
+    // confirming it took a message on is not a client confirming it received
+    // one, and only the node holding a connection can be told the second.
+    client_ack_sender: Mutex<Option<Sender<AckWorkerMessage>>>,
     // This is called "broadcaster" because it is used to send messages to all
     // other nodes in a cluster, however, it should not be confused with a broadcast::Sender
     // for in-process broadcasting. Typically, there will be a single receiver in the same process
@@ -104,8 +111,134 @@ impl WebSocketConnRegistry {
             ack_worker_config: config.ack_worker_config,
             connections: Arc::new(RwLock::new(HashMap::new())),
             ack_sender: Mutex::new(None),
+            client_ack_sender: Mutex::new(None),
             broadcaster,
             server_node_name: config.server_node_name,
+        }
+    }
+
+    /// Starts the worker that tracks acknowledgements from clients.
+    ///
+    /// Started whatever the deployment, unlike the worker for acknowledgements
+    /// between nodes, because a client acknowledges to the node holding its
+    /// connection and a single node has clients just the same as a cluster
+    /// does.
+    pub fn start_client_ack_worker(self: Arc<Self>) {
+        let (ack_tx, ack_rx) = tokio::sync::mpsc::channel(1024);
+        let (action_tx, mut action_rx) = tokio::sync::mpsc::channel(1024);
+        Worker::new(self.ack_worker_config.clone().unwrap_or_default()).start(ack_rx, action_tx);
+
+        tokio::spawn(async move {
+            {
+                let mut sender = self.client_ack_sender.lock().await;
+                sender.replace(ack_tx);
+            }
+
+            while let Some(action) = action_rx.recv().await {
+                match action {
+                    MessageAction::Resend(resend) => {
+                        let Some(connection) = self.get_connection(resend.client_id.clone()) else {
+                            debug!(
+                                connection_id = %resend.client_id,
+                                message_id = %resend.message_id,
+                                "client has gone, so a message waiting on it is left to be declared lost"
+                            );
+                            continue;
+                        };
+                        let message =
+                            match create_ws_message(resend.message_type, resend.message.clone()) {
+                                Ok(message) => message,
+                                Err(err) => {
+                                    error!(
+                                        message_id = %resend.message_id,
+                                        "could not rebuild a message to resend to a client: {err:?}"
+                                    );
+                                    continue;
+                                }
+                            };
+                        let mut sender = connection.lock().await;
+                        if let Err(err) = sender.send(message).await {
+                            debug!(
+                                connection_id = %resend.client_id,
+                                message_id = %resend.message_id,
+                                "failed to resend a message to a client: {err:?}"
+                            );
+                        }
+                    }
+                    MessageAction::Lost {
+                        message_id,
+                        inform_clients,
+                        caller,
+                    } => {
+                        info!(
+                            message_id = %message_id,
+                            "a client did not acknowledge a message, treating it as lost"
+                        );
+                        self.inform_clients_of_loss(message_id, inform_clients, caller)
+                            .await;
+                    }
+                }
+            }
+        });
+    }
+
+    /// Notes that a message is waiting on its client to acknowledge it.
+    async fn record_pending_client_ack(
+        &self,
+        connection_id: String,
+        message_id: String,
+        message_type: MessageType,
+        message: String,
+        inform_clients: Vec<String>,
+        caller: Option<String>,
+    ) {
+        if let Some(sender) = self.client_ack_sender.lock().await.as_ref() {
+            let _ = sender
+                .send(AckWorkerMessage::Status(
+                    message_id,
+                    AckStatus::Pending {
+                        connection_id,
+                        message,
+                        message_type,
+                        inform_clients,
+                        caller,
+                    },
+                ))
+                .await;
+        }
+    }
+
+    /// Records that a client acknowledged a message, so it stops being tracked.
+    pub async fn record_client_ack(&self, message_id: String) {
+        if let Some(sender) = self.client_ack_sender.lock().await.as_ref() {
+            let _ = sender
+                .send(AckWorkerMessage::Status(message_id, AckStatus::Received))
+                .await;
+        }
+    }
+
+    /// Tells the clients named by a send that its message may not have arrived.
+    ///
+    /// Only those connected to this node are reachable from here, which is the
+    /// best effort the protocol asks for.
+    async fn inform_clients_of_loss(
+        &self,
+        message_id: String,
+        inform_clients: Vec<String>,
+        caller: Option<String>,
+    ) {
+        for client_id in inform_clients {
+            let Some(connection) = self.get_connection(client_id.clone()) else {
+                continue;
+            };
+            let event = create_message_lost_event(message_id.clone(), caller.clone());
+            let mut sender = connection.lock().await;
+            if let Err(err) = sender.send(Message::Binary(event.into())).await {
+                debug!(
+                    connection_id = %client_id,
+                    "failed to tell a client about a lost message: {err:?}"
+                );
+            }
         }
     }
 
@@ -403,10 +536,27 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
                 "acquiring lock to send message to connection: {}",
                 connection_id
             );
+
+            let send_ctx = ctx.unwrap_or_default();
+            let awaiting_ack = client_ack_request(&message_type, &message);
+
             let mut connection = connection.lock().await;
             debug!(connection_id = %connection_id, "sending message to connection: {}", connection_id);
-            let ws_message = create_ws_message(message_type, message)?;
+            let ws_message = create_ws_message(message_type.clone(), message.clone())?;
             connection.send(ws_message).await?;
+            drop(connection);
+
+            if let Some(ack_id) = awaiting_ack {
+                self.record_pending_client_ack(
+                    connection_id,
+                    ack_id,
+                    message_type,
+                    message,
+                    send_ctx.inform_clients,
+                    send_ctx.caller,
+                )
+                .await;
+            }
         } else if let Some(broadcaster) = &self.broadcaster {
             let send_ctx = ctx.unwrap_or_default();
             debug!(connection_id = %connection_id, "connection not found locally, preparing to send message to broadcaster");
@@ -479,6 +629,7 @@ mod tests {
     use std::{
         future::Future,
         net::{Ipv4Addr, SocketAddr},
+        time::Duration,
     };
 
     use super::*;
@@ -489,6 +640,7 @@ mod tests {
         Router,
     };
 
+    use base64::Engine as _;
     use futures::{FutureExt, SinkExt, StreamExt};
     use nanoid::nanoid;
     use serde::{Deserialize, Serialize};
@@ -928,6 +1080,184 @@ mod tests {
             remaining,
             vec![second_id],
             "closing one connection should remove that one and leave the other"
+        );
+    }
+
+    /// Sets up a registry serving one client, with acknowledgement timings
+    /// short enough for a test to watch a resend happen.
+    async fn registry_with_one_client() -> (
+        Arc<WebSocketConnRegistry>,
+        String,
+        tokio_tungstenite::WebSocketStream<
+            tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
+        >,
+    ) {
+        let (tx, _) = tokio::sync::mpsc::channel(1024);
+        let registry = Arc::new(WebSocketConnRegistry::new(
+            WebSocketConnRegistryConfig {
+                ack_worker_config: Some(AckWorkerConfig {
+                    message_action_check_interval_ms: Some(50),
+                    message_timeout_ms: Some(100),
+                    max_attempts: Some(3),
+                }),
+                server_node_name: "node1".to_string(),
+            },
+            Some(tx),
+        ));
+        registry.clone().start_client_ack_worker();
+
+        let app: Router = Router::new()
+            .route("/ws", get(testable_handler))
+            .with_state(ConnectionInfo {
+                connection_id: None,
+                other_connection_id: None,
+                missing_connection_id: None,
+                registry: registry.clone(),
+            });
+
+        let listener = tokio::net::TcpListener::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0)))
+            .await
+            .unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+
+        let (socket, _response) = tokio_tungstenite::connect_async(format!("ws://{addr}/ws"))
+            .await
+            .unwrap();
+        wait_for_connection_count(&registry, 1).await;
+        let connection_id = registry.get_connections()[0].0.clone();
+
+        (registry, connection_id, socket)
+    }
+
+    /// A message that asks to be acknowledged is chased until the client
+    /// answers, and stops once it does.
+    #[test_log::test(tokio::test)]
+    async fn test_a_message_asking_to_be_acknowledged_is_settled_by_the_client() {
+        let (registry, connection_id, mut socket) = registry_with_one_client().await;
+
+        registry
+            .send_message(
+                connection_id,
+                "m-1".to_string(),
+                MessageType::Json,
+                r#"{"event":"update","data":{"value":1},"messageId":"m-1","ack":true}"#.to_string(),
+                Some(SendContext {
+                    wait_for_ack: false,
+                    caller: None,
+                    inform_clients: vec![],
+                }),
+            )
+            .await
+            .unwrap();
+
+        let received = match socket.next().await.unwrap().unwrap() {
+            tungstenite::Message::Text(msg) => msg,
+            other => panic!("Unexpected message but got {other:?}"),
+        };
+        let received: serde_json::Value = serde_json::from_str(&received).unwrap();
+        // Delivered as composed, opt in and all.
+        assert_eq!(received["data"]["value"], 1);
+        assert_eq!(received["messageId"], "m-1");
+        assert_eq!(received["ack"], true);
+
+        registry.record_client_ack("m-1".to_string()).await;
+
+        // Long enough for several rounds of the worker's checks, so a message
+        // still being chased would show up here.
+        let resent = tokio::time::timeout(Duration::from_millis(400), socket.next()).await;
+        assert!(
+            resent.is_err(),
+            "an acknowledged message should stop being resent, got {resent:?}"
+        );
+    }
+
+    /// Binary messages ask to be acknowledged the same way JSON ones do, by
+    /// saying so in the frame the application composed.
+    #[test_log::test(tokio::test)]
+    async fn test_a_binary_message_can_ask_to_be_acknowledged() {
+        let (registry, connection_id, mut socket) = registry_with_one_client().await;
+
+        // [routeLength][route][requireAck][messageIdLength][messageId][payload]
+        let mut original = vec![7u8];
+        original.extend_from_slice(b"updates");
+        original.push(0x1);
+        original.push(5);
+        original.extend_from_slice(b"m-bin");
+        original.extend_from_slice(&[0xde, 0xad, 0xbe, 0xef]);
+
+        registry
+            .send_message(
+                connection_id,
+                "m-bin".to_string(),
+                MessageType::Binary,
+                base64::prelude::BASE64_STANDARD.encode(&original),
+                Some(SendContext {
+                    wait_for_ack: false,
+                    caller: None,
+                    inform_clients: vec![],
+                }),
+            )
+            .await
+            .unwrap();
+
+        let received = match socket.next().await.unwrap().unwrap() {
+            tungstenite::Message::Binary(bytes) => bytes,
+            other => panic!("Unexpected message but got {other:?}"),
+        };
+
+        // Delivered exactly as the application framed it. The runtime reads the
+        // opt in, it does not add or change one.
+        assert_eq!(&received[..], original.as_slice());
+
+        registry.record_client_ack("m-bin".to_string()).await;
+        let resent = tokio::time::timeout(Duration::from_millis(400), socket.next()).await;
+        assert!(
+            resent.is_err(),
+            "an acknowledged message should not be resent"
+        );
+    }
+
+    /// A message the client never acknowledges is sent again.
+    #[test_log::test(tokio::test)]
+    async fn test_a_message_asking_to_be_acknowledged_is_resent_while_unanswered() {
+        let (registry, connection_id, mut socket) = registry_with_one_client().await;
+
+        registry
+            .send_message(
+                connection_id,
+                "m-2".to_string(),
+                MessageType::Json,
+                r#"{"event":"update","data":{"value":2},"messageId":"m-2","ack":true}"#.to_string(),
+                Some(SendContext {
+                    wait_for_ack: false,
+                    caller: None,
+                    inform_clients: vec![],
+                }),
+            )
+            .await
+            .unwrap();
+
+        let mut deliveries = 0;
+        while let Ok(Some(Ok(message))) =
+            tokio::time::timeout(Duration::from_millis(400), socket.next()).await
+        {
+            if let tungstenite::Message::Text(text) = message {
+                let value: serde_json::Value = serde_json::from_str(&text).unwrap();
+                if value["messageId"] == "m-2" {
+                    deliveries += 1;
+                }
+            }
+            if deliveries > 1 {
+                break;
+            }
+        }
+
+        assert!(
+            deliveries > 1,
+            "a message nobody acknowledged should be sent again, saw it {deliveries} time(s)"
         );
     }
 
