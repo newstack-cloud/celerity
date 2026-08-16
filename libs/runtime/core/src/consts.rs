@@ -189,6 +189,13 @@ pub const CELERITY_WS_FORBIDDEN_ERROR_CODE: u16 = 4002;
 // client to fall back to constrained capabilities (text-only).
 pub const CELERITY_WS_CAPABILITIES_SIGNAL: [u8; 4] = [0x1, 0x5, 0x0, 0x0];
 
+// The prefix of a binary acknowledgement, route key `0x4`, followed by the JSON
+// body naming the message being acknowledged.
+//
+// A reserved message requires no acknowledgement of its own and carries no
+// message id, which is what the two trailing zero bytes say.
+pub const CELERITY_WS_ACK_SIGNAL: [u8; 4] = [0x1, 0x4, 0x0, 0x0];
+
 // The route key for the connect handler for a WebSocket API.
 // A handler registered with this route key will be called when a client
 // connects to the WebSocket API server after authentication has been performed

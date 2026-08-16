@@ -115,6 +115,7 @@ fn websocket_message(message: WebSocketEventData) -> proto::WebSocketMessage {
         request_id: message.request_id.unwrap_or_default(),
         message: message.message.to_vec(),
         is_binary: message.is_binary,
+        message_id: message.message_id.unwrap_or_default(),
     }
 }
 

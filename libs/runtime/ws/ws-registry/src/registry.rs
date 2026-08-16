@@ -143,7 +143,7 @@ impl WebSocketConnRegistry {
                                     resend_message_info.message.clone(),
                                     Some(SendContext {
                                         wait_for_ack: false,
-                                        caller: None,
+                                        caller: resend_message_info.caller.clone(),
                                         inform_clients: resend_message_info.inform_clients_on_loss,
                                     }),
                                 )
@@ -156,7 +156,11 @@ impl WebSocketConnRegistry {
                                 );
                             }
                         }
-                        MessageAction::Lost(message_id, inform_clients) => {
+                        MessageAction::Lost {
+                            message_id,
+                            inform_clients,
+                            caller,
+                        } => {
                             for client_id in inform_clients {
                                 // Only inform clients that are connected to the current node.
                                 if let Some(connection) = self.get_connection(client_id.clone()) {
@@ -169,7 +173,11 @@ impl WebSocketConnRegistry {
                                     debug!(connection_id = %client_id, "sending message lost event to connection: {}", client_id);
                                     conn_lock
                                         .send(Message::Binary(
-                                            create_message_lost_event(message_id.clone()).into(),
+                                            create_message_lost_event(
+                                                message_id.clone(),
+                                                caller.clone(),
+                                            )
+                                            .into(),
                                         ))
                                         .await
                                         .unwrap();
@@ -313,12 +321,18 @@ impl WebSocketConnRegistry {
         message_type: MessageType,
         message: String,
         inform_clients: Vec<String>,
+        caller: Option<String>,
     ) {
         if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
             ack_sender
                 .send(AckWorkerMessage::Status(
                     message_id,
-                    AckStatus::Pending(message, message_type, inform_clients),
+                    AckStatus::Pending {
+                        message,
+                        message_type,
+                        inform_clients,
+                        caller,
+                    },
                 ))
                 .await
                 .expect("ack worker channel unexpectedly closed");
@@ -399,6 +413,7 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
                 message_type.clone(),
                 message.clone(),
                 send_ctx.inform_clients.clone(),
+                send_ctx.caller.clone(),
             )
             .await;
 
@@ -422,13 +437,15 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
             // (no broadcaster), then the message is lost and the provided clients connected to
             // the current node should be informed.
             let send_ctx = ctx.unwrap_or_default();
+            // Taken before the loop consumes the rest of the context.
+            let caller = send_ctx.caller;
             for client_id in send_ctx.inform_clients {
                 if let Some(connection) = self.get_connection(client_id.clone()) {
                     connection
                         .lock()
                         .await
                         .send(Message::Binary(
-                            create_message_lost_event(message_id.clone()).into(),
+                            create_message_lost_event(message_id.clone(), caller.clone()).into(),
                         ))
                         .await?;
                 }
@@ -486,6 +503,7 @@ mod tests {
     struct MessageLostBody {
         #[serde(rename = "messageId")]
         message_id: String,
+        caller: String,
     }
 
     #[derive(Deserialize, Debug, Serialize)]
@@ -545,7 +563,7 @@ mod tests {
                                         msg.to_string(),
                                         Some(SendContext {
                                             wait_for_ack: true,
-                                            caller: None,
+                                            caller: Some("test-caller".to_string()),
                                             inform_clients: vec![connection_id.clone()],
                                         }),
                                     )
@@ -773,11 +791,15 @@ mod tests {
         // and client should be informed with a message lost event.
         let node1_msg_received =
             lost_event.expect("the registry should send a protocol-level lost message event");
-        assert_eq!(node1_msg_received[0], 0x1); // Route length should be 1
-        assert_eq!(node1_msg_received[1], 0x3); // Route should be 0x3 (message lost)
-        let json_msg = String::from_utf8(node1_msg_received[2..].to_vec()).unwrap();
+        // `[routeLength][route][requireAck][messageIdLength]`, all four of which
+        // a client matches on before it will treat this as a lost message.
+        assert_eq!(node1_msg_received[..4], [0x1, 0x3, 0x0, 0x0]);
+        let json_msg = String::from_utf8(node1_msg_received[4..].to_vec()).unwrap();
         let message_lost_event: MessageLostBody = serde_json::from_str(&json_msg).unwrap();
         assert_eq!(message_lost_event.message_id, "test-message-1");
+        // Carried through from the send, so the client is told what the lost
+        // message was for and not only that one went missing.
+        assert_eq!(message_lost_event.caller, "test-caller");
     }
 
     #[test_log::test(tokio::test)]

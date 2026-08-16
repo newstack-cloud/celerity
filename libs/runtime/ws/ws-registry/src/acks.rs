@@ -27,7 +27,14 @@ pub const ACK_WAIT_CHECK_INTERVAL_MS: u64 = 20;
 pub enum AckStatus {
     // The message has been sent but no acknowledgement
     // has been received yet.
-    Pending(String, MessageType, Vec<String>),
+    Pending {
+        message: String,
+        message_type: MessageType,
+        inform_clients: Vec<String>,
+        // The context the message was sent from, carried so that a client told
+        // the message was lost is told what it was for.
+        caller: Option<String>,
+    },
     // The message has been received by the node that
     // has the connection that the message was sent for.
     Received,
@@ -42,6 +49,9 @@ pub struct ResendMessageInfo {
     pub message_type: MessageType,
     pub message: String,
     pub inform_clients_on_loss: Vec<String>,
+    // Carried through the resend so that it is still there if the message is
+    // eventually declared lost, rather than being dropped on the first retry.
+    pub caller: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -51,7 +61,11 @@ pub enum MessageAction {
     Resend(ResendMessageInfo),
     // The message should be considered lost and the caller should be informed that the message
     // was lost.
-    Lost(String, Vec<String>),
+    Lost {
+        message_id: String,
+        inform_clients: Vec<String>,
+        caller: Option<String>,
+    },
 }
 
 pub enum AckWorkerMessage {
@@ -187,7 +201,7 @@ impl Worker {
         let mut acks_guard = self.acks.lock().await;
         let existing_ack_status = acks_guard.get(&message_id).cloned();
 
-        let new_detailed_ack_status = if matches!(ack_status, AckStatus::Pending(_, _, _)) {
+        let new_detailed_ack_status = if matches!(ack_status, AckStatus::Pending { .. }) {
             // Only increment the attempts if the message is still pending.
             DetailedAckStatus {
                 status: ack_status,
@@ -221,12 +235,22 @@ async fn check_for_actions_periodic(
     let mut acks_guard = acks.lock().await;
 
     for (message_id, detailed_ack_status) in acks_guard.iter_mut() {
-        if let AckStatus::Pending(message, message_type, client_ids) = &detailed_ack_status.status {
+        if let AckStatus::Pending {
+            message,
+            message_type,
+            inform_clients: client_ids,
+            caller,
+        } = &detailed_ack_status.status
+        {
             if let Some(last_attempt_time) = detailed_ack_status.last_attempt_time {
                 if now.duration_since(last_attempt_time) > Duration::from_millis(message_timeout_ms)
                 {
                     let action = if detailed_ack_status.attempts >= max_attempts {
-                        MessageAction::Lost(message_id.clone(), client_ids.clone())
+                        MessageAction::Lost {
+                            message_id: message_id.clone(),
+                            inform_clients: client_ids.clone(),
+                            caller: caller.clone(),
+                        }
                     } else {
                         MessageAction::Resend(ResendMessageInfo {
                             client_id: message_id.clone(),
@@ -234,6 +258,7 @@ async fn check_for_actions_periodic(
                             message_type: message_type.clone(),
                             message: message.clone(),
                             inform_clients_on_loss: client_ids.clone(),
+                            caller: caller.clone(),
                         })
                     };
                     actions.push(action);
@@ -247,16 +272,10 @@ async fn check_for_actions_periodic(
 
     for action in actions {
         let message_id = match &action {
-            MessageAction::Resend(ResendMessageInfo {
-                message_id,
-                client_id: _,
-                message: _,
-                message_type: _,
-                inform_clients_on_loss: _,
-            }) => message_id.clone(),
-            MessageAction::Lost(message_id, _) => message_id.clone(),
+            MessageAction::Resend(ResendMessageInfo { message_id, .. }) => message_id.clone(),
+            MessageAction::Lost { message_id, .. } => message_id.clone(),
         };
-        let is_lost = matches!(action, MessageAction::Lost(_, _));
+        let is_lost = matches!(action, MessageAction::Lost { .. });
 
         if message_action_tx.send(action).await.is_err() {
             error!(
@@ -286,7 +305,7 @@ async fn handle_ack_wait(
         // Check if we have a status for this message
         let acks_guard = acks.lock().await;
         if let Some(detailed_ack_status) = acks_guard.get(&message_id) {
-            let is_pending = matches!(detailed_ack_status.status, AckStatus::Pending(_, _, _));
+            let is_pending = matches!(detailed_ack_status.status, AckStatus::Pending { .. });
             if !is_pending {
                 // Message is no longer pending, send the final status
                 if tx.send(detailed_ack_status.status.clone()).is_err() {

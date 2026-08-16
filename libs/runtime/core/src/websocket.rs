@@ -45,7 +45,7 @@ use crate::{
     },
     auth_jwt::{validate_jwt_on_ws_connect, ValidateJwtError},
     consts::{
-        CELERITY_WS_CAPABILITIES_SIGNAL, CELERITY_WS_CONNECT_HANDLER_ROUTE,
+        CELERITY_WS_ACK_SIGNAL, CELERITY_WS_CAPABILITIES_SIGNAL, CELERITY_WS_CONNECT_HANDLER_ROUTE,
         CELERITY_WS_DEFAULT_MESSAGE_HANDLER_ROUTE, CELERITY_WS_DISCONNECT_HANDLER_ROUTE,
         CELERITY_WS_FORBIDDEN_ERROR_CODE, CELERITY_WS_UNAUTHORISED_ERROR_CODE,
         WS_CONNECTION_DRAIN_GRACE_MS, WS_CONNECTION_SATURATED_RETRY_AFTER_MS,
@@ -654,9 +654,15 @@ fn spawn_message_worker(
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
         while let Some((message, request_ctx)) = work_rx.recv().await {
-            if process_message(message, connection_id.clone(), request_ctx, &state)
-                .await
-                .is_break()
+            if process_message(
+                message,
+                connection_id.clone(),
+                request_ctx,
+                &state,
+                &socket_ref,
+            )
+            .await
+            .is_break()
             {
                 // The connection is finished, and the read loop is waiting on a
                 // socket that may never produce anything again. Closing it is
@@ -1026,6 +1032,7 @@ async fn process_message(
     connection_id: String,
     request_ctx: WebSocketRequestContext,
     state: &WebSocketAppState,
+    socket_ref: &Arc<Mutex<WebSocketConnSender>>,
 ) -> ControlFlow<(), ()> {
     match msg {
         Message::Text(text) => {
@@ -1034,8 +1041,16 @@ async fn process_message(
                 connection_id.clone(),
                 state.route_key.clone(),
             )?;
-            if let Some((route, message_id, data)) = resolved {
+            if let Some((route, message_id, requires_ack, data)) = resolved {
                 if let Some(handler) = get_message_route_handler(&route, state).await {
+                    acknowledge_if_asked(
+                        socket_ref,
+                        &connection_id,
+                        message_id.as_deref(),
+                        requires_ack,
+                        AckFormat::Json,
+                    )
+                    .await;
                     handle_json_message(
                         handler.clone(),
                         connection_id.clone(),
@@ -1055,8 +1070,16 @@ async fn process_message(
         }
         Message::Binary(bytes) => {
             let resolved = resolve_binary_route(&bytes, connection_id.clone())?;
-            if let Some((route, message_id, bytes_stripped)) = resolved {
+            if let Some((route, message_id, requires_ack, bytes_stripped)) = resolved {
                 if let Some(handler) = get_message_route_handler(&route, state).await {
+                    acknowledge_if_asked(
+                        socket_ref,
+                        &connection_id,
+                        message_id.as_deref(),
+                        requires_ack,
+                        AckFormat::Binary,
+                    )
+                    .await;
                     handle_binary_message(
                         handler.clone(),
                         connection_id.clone(),
@@ -1237,7 +1260,62 @@ async fn handle_binary_message(
     .await;
 }
 
-type JsonRouteData = (String, Option<String>, Value);
+/// Which encoding an acknowledgement goes back in.
+///
+/// It mirrors whatever the message being acknowledged arrived as. A client that
+/// can send binary can read it, and one that only has text, because its
+/// environment gave it no choice, gets text back.
+#[derive(Clone, Copy)]
+enum AckFormat {
+    Json,
+    Binary,
+}
+
+/// Tells the client its message arrived, when the message asked to be told.
+///
+/// Opting in without a message id does nothing, since an acknowledgement names
+/// the message it is for and there would be nothing to name.
+async fn acknowledge_if_asked(
+    socket_ref: &Arc<Mutex<WebSocketConnSender>>,
+    connection_id: &str,
+    message_id: Option<&str>,
+    requires_ack: bool,
+    format: AckFormat,
+) {
+    if !requires_ack {
+        return;
+    }
+    let Some(message_id) = message_id else {
+        return;
+    };
+
+    let timestamp = get_epoch_seconds().to_string();
+    let message = match format {
+        AckFormat::Json => Message::Text(
+            serde_json::json!({
+                "event": "ack",
+                "data": { "messageId": message_id, "timestamp": timestamp },
+            })
+            .to_string()
+            .into(),
+        ),
+        AckFormat::Binary => {
+            let body =
+                serde_json::json!({ "messageId": message_id, "timestamp": timestamp }).to_string();
+            let mut frame = CELERITY_WS_ACK_SIGNAL.to_vec();
+            frame.extend_from_slice(body.as_bytes());
+            Message::Binary(frame.into())
+        }
+    };
+
+    if let Err(err) = socket_ref.lock().await.send(message).await {
+        error!("failed to acknowledge a message from client {connection_id}: {err}");
+    }
+}
+
+/// A JSON message's route, its message id, whether it asked to be acknowledged,
+/// and the body as it arrived.
+type JsonRouteData = (String, Option<String>, bool, Value);
 
 fn resolve_route(
     msg_text: String,
@@ -1264,10 +1342,22 @@ fn resolve_route(
             return ControlFlow::Continue(None);
         }
     };
+    // The id the application chose, which is what a lost message notification
+    // has to name for the application to act on it. The runtime falls back to
+    // one of its own only when a message carries none.
+    let message_id = data_obj
+        .get("messageId")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    // Opting in without an id is ignored, since an acknowledgement has nothing
+    // to name.
+    let requires_ack =
+        message_id.is_some() && data_obj.get("ack").and_then(Value::as_bool) == Some(true);
+
     let route_opt = data_obj.get(&route_key);
     if let Some(route_val) = route_opt {
         if let Value::String(route) = route_val {
-            ControlFlow::Continue(Some((route.clone(), None, data)))
+            ControlFlow::Continue(Some((route.clone(), message_id, requires_ack, data)))
         } else {
             error!(
                 "invalid JSON message from client {}, expected route value to be a string",
@@ -1284,29 +1374,44 @@ fn resolve_route(
         );
         ControlFlow::Continue(Some((
             CELERITY_WS_DEFAULT_MESSAGE_HANDLER_ROUTE.to_string(),
-            None,
+            message_id,
+            requires_ack,
             data,
         )))
     }
 }
 
-type BinaryRouteData<'a> = (String, Option<String>, &'a [u8]);
+/// A binary message's route, its message id, whether it asked to be
+/// acknowledged, and the payload left once the framing is stripped.
+type BinaryRouteData<'a> = (String, Option<String>, bool, &'a [u8]);
 
+/// Splits a binary message into its framing and its payload.
+///
+/// The format is `<routeLength><route><requireAck><messageIdLength><messageId><message>`.
+/// Every length is a single byte, so nothing here can read past a message that
+/// carries the bytes it says it does, and a message that does not is refused
+/// rather than trusted.
 fn resolve_binary_route<'a>(
     msg_bytes: &'a [u8],
     connection_id: String,
 ) -> ControlFlow<(), Option<BinaryRouteData<'a>>> {
-    let route_length = msg_bytes[0];
-    if route_length as usize > msg_bytes.len() - 1 {
+    let Some(&route_length) = msg_bytes.first() else {
+        error!("invalid binary message from client {connection_id}, message is empty");
+        return ControlFlow::Continue(None);
+    };
+    let route_end = 1 + route_length as usize;
+
+    // The route is followed by the acknowledgement flag and the message id
+    // length, so both have to be there for the message to be complete.
+    if msg_bytes.len() < route_end + 2 {
         error!(
-            "invalid binary message from client {}, route length exceeds message length",
+            "invalid binary message from client {}, message is shorter than its own framing",
             connection_id
         );
         return ControlFlow::Continue(None);
     }
 
-    let route_result = std::str::from_utf8(&msg_bytes[1..=route_length as usize]);
-    let route = match route_result {
+    let route = match std::str::from_utf8(&msg_bytes[1..route_end]) {
         Ok(route) => route,
         Err(e) => {
             error!(
@@ -1317,8 +1422,12 @@ fn resolve_binary_route<'a>(
         }
     };
 
-    let message_id_length = msg_bytes[route_length as usize + 1];
-    if message_id_length as usize > msg_bytes.len() - 1 {
+    let requires_ack = msg_bytes[route_end] == 0x1;
+
+    let message_id_length = msg_bytes[route_end + 1] as usize;
+    let message_id_start = route_end + 2;
+    let message_id_end = message_id_start + message_id_length;
+    if msg_bytes.len() < message_id_end {
         error!(
             "invalid binary message from client {}, message id length exceeds message length",
             connection_id
@@ -1327,21 +1436,25 @@ fn resolve_binary_route<'a>(
     }
 
     let message_id = if message_id_length > 0 {
-        let start_idx = route_length as usize + 2;
-        let end_idx = start_idx + message_id_length as usize;
-        let message_id_bytes = &msg_bytes[start_idx..end_idx];
-        let message_id_str = std::str::from_utf8(message_id_bytes).unwrap();
-        Some(message_id_str.to_string())
+        match std::str::from_utf8(&msg_bytes[message_id_start..message_id_end]) {
+            Ok(message_id) => Some(message_id.to_string()),
+            Err(e) => {
+                error!(
+                    "invalid binary message from client {}, failed to parse message id: {}",
+                    connection_id, e
+                );
+                return ControlFlow::Continue(None);
+            }
+        }
     } else {
         None
     };
 
-    let data_start_idx = route_length as usize + 2 + message_id_length as usize;
-
     ControlFlow::Continue(Some((
         route.to_string(),
         message_id,
-        &msg_bytes[data_start_idx..],
+        requires_ack,
+        &msg_bytes[message_id_end..],
     )))
 }
 

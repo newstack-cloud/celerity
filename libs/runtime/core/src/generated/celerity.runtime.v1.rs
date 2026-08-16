@@ -292,6 +292,15 @@ pub struct WebSocketMessage {
     /// the two frame types as distinct.
     #[prost(bool, tag = "6")]
     pub is_binary: bool,
+    /// The id this message is known by, which is the one the client gave it when
+    /// it gave one and a runtime generated one otherwise.
+    ///
+    /// Distinct from request_id, which identifies the delivery. This identifies
+    /// the message, so it is what an acknowledgement names and what a lost
+    /// message notification refers to, and a handler needs it to tie its own
+    /// instrumentation to what the client sees.
+    #[prost(string, tag = "7")]
+    pub message_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ConsumerBatch {
