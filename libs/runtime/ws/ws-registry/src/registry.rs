@@ -868,24 +868,41 @@ mod tests {
             axum::serve(listener, app).await.unwrap();
         });
 
+        // Connected one at a time, because the handler names each connection
+        // itself and reading the registry between the two is the only way to
+        // tell which id belongs to which socket.
         let (mut socket1, _response) = tokio_tungstenite::connect_async(format!("ws://{addr}/ws"))
             .await
             .unwrap();
+        wait_for_connection_count(&registry, 1).await;
+        let first_id = registry.get_connections()[0].0.clone();
+
         let (_socket2, _response) = tokio_tungstenite::connect_async(format!("ws://{addr}/ws"))
             .await
             .unwrap();
-
         wait_for_connection_count(&registry, 2).await;
+        let second_id = registry
+            .get_connections()
+            .into_iter()
+            .map(|(id, _)| id)
+            .find(|id| *id != first_id)
+            .expect("the second connection should have an id of its own");
 
         socket1.close(None).await.unwrap();
 
         wait_for_connection_count(&registry, 1).await;
 
-        let remaining = registry.get_connections();
+        // Named rather than counted. A registry that dropped the wrong
+        // connection would hold one either way.
+        let remaining: Vec<String> = registry
+            .get_connections()
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
         assert_eq!(
-            remaining.len(),
-            1,
-            "closing one connection should leave the other registered"
+            remaining,
+            vec![second_id],
+            "closing one connection should remove that one and leave the other"
         );
     }
 
