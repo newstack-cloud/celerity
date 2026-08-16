@@ -1,0 +1,70 @@
+version: 2025-11-02
+transform: celerity-2026-02-28
+variables:
+  logLevel:
+    type: string
+    description: "The log level to use for logging."
+    default: "INFO"
+    allowedValues:
+      - "DEBUG"
+      - "INFO"
+      - "WARNING"
+      - "ERROR"
+
+resources:
+  ordersWebSocketApi:
+    type: "celerity/api"
+    description: "A WebSocket API with a custom route key and a default handler, where anything the runtime does not take out of the way reaches the application."
+    metadata:
+      displayName: Orders WebSocket API
+    linkSelector:
+      byLabel:
+        application: "orders"
+    spec:
+      protocols:
+        - websocketConfig:
+            # Deliberately not the default. A reserved message names its route
+            # with `event`, so against a different route key it carries no route
+            # the runtime recognises and falls through to the default handler.
+            routeKey: "action"
+      tracingEnabled: false
+
+  sendMessageHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Send Message Handler
+      labels:
+        application: "orders"
+      annotations:
+        celerity.handler.websocket: true
+        celerity.handler.websocket.route: "sendMessage"
+    spec:
+      handlerName: Orders-SendMessageHandler-v1
+      codeLocation: "./orders"
+      handler: "handlers.send_message"
+      runtime: "python3.12.x"
+      memory: 1024
+      timeout: 10
+      tracingEnabled: false
+      environmentVariables:
+        LOG_LEVEL: "${variables.logLevel}"
+
+  defaultHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Default Handler
+      labels:
+        application: "orders"
+      annotations:
+        celerity.handler.websocket: true
+        celerity.handler.websocket.route: "$default"
+    spec:
+      handlerName: Orders-DefaultHandler-v1
+      codeLocation: "./orders"
+      handler: "handlers.default"
+      runtime: "python3.12.x"
+      memory: 1024
+      timeout: 10
+      tracingEnabled: false
+      environmentVariables:
+        LOG_LEVEL: "${variables.logLevel}"

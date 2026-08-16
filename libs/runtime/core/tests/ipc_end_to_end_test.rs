@@ -1570,6 +1570,65 @@ async fn acknowledges_a_message_queued_behind_a_handler_that_is_still_running() 
 }
 
 #[test_log::test(tokio::test)]
+async fn does_not_route_a_client_acknowledgement_to_a_handler() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-inbound-ack",
+        "tests/data/fixtures/ipc-websocket-default-route.blueprint.yaml",
+    )
+    .await;
+    let mut handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+
+    // What a client sends to acknowledge something the runtime sent it. A
+    // reserved message names its route with `event`, and this API routes on
+    // `action`, so left alone it carries no route the runtime knows and lands
+    // on the default handler as though the application had been sent it.
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Text(
+            json!({
+                "event": "ack",
+                "data": { "messageId": "m-1", "timestamp": "1" },
+            })
+            .to_string(),
+        ))
+        .await
+        .unwrap();
+    let mut binary = vec![0x1, 0x4, 0x0, 0x0];
+    binary.extend_from_slice(br#"{"messageId":"m-2","timestamp":"1"}"#);
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Binary(binary))
+        .await
+        .unwrap();
+
+    // Sent last and expected first, since anything the runtime failed to take
+    // out of the way would have reached the handler ahead of it.
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Text(
+            json!({ "action": "sendMessage", "data": { "text": "hello" } }).to_string(),
+        ))
+        .await
+        .unwrap();
+
+    let dispatch = handler
+        .next_dispatch()
+        .await
+        .expect("the ordinary message should reach the handler");
+    let Some(proto::dispatch::Source::Websocket(message)) = dispatch.source else {
+        panic!("expected a WebSocket source");
+    };
+    let body: serde_json::Value = serde_json::from_slice(&message.message).unwrap();
+    assert_eq!(
+        body["data"]["text"], "hello",
+        "an acknowledgement reached the handler ahead of the message that followed it"
+    );
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
 async fn does_not_acknowledge_a_message_that_did_not_ask() {
     let (_app, addr, socket) = start_runtime(
         "ipc-ws-ack-absent",
