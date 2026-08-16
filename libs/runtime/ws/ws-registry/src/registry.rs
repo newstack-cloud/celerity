@@ -317,6 +317,7 @@ impl WebSocketConnRegistry {
 
     async fn record_pending_ack(
         &self,
+        connection_id: String,
         message_id: String,
         message_type: MessageType,
         message: String,
@@ -328,6 +329,7 @@ impl WebSocketConnRegistry {
                 .send(AckWorkerMessage::Status(
                     message_id,
                     AckStatus::Pending {
+                        connection_id,
                         message,
                         message_type,
                         inform_clients,
@@ -409,6 +411,7 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
             let send_ctx = ctx.unwrap_or_default();
             debug!(connection_id = %connection_id, "connection not found locally, preparing to send message to broadcaster");
             self.record_pending_ack(
+                connection_id.to_string(),
                 message_id.clone(),
                 message_type.clone(),
                 message.clone(),
