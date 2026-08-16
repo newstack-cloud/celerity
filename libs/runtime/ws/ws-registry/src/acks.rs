@@ -28,6 +28,7 @@ pub enum AckStatus {
     // The message has been sent but no acknowledgement
     // has been received yet.
     Pending {
+        connection_id: String,
         message: String,
         message_type: MessageType,
         inform_clients: Vec<String>,
@@ -236,6 +237,7 @@ async fn check_for_actions_periodic(
 
     for (message_id, detailed_ack_status) in acks_guard.iter_mut() {
         if let AckStatus::Pending {
+            connection_id,
             message,
             message_type,
             inform_clients: client_ids,
@@ -253,7 +255,7 @@ async fn check_for_actions_periodic(
                         }
                     } else {
                         MessageAction::Resend(ResendMessageInfo {
-                            client_id: message_id.clone(),
+                            client_id: connection_id.clone(),
                             message_id: message_id.clone(),
                             message_type: message_type.clone(),
                             message: message.clone(),
@@ -328,5 +330,46 @@ async fn handle_ack_wait(
         }
         // Release the lock before the next iteration
         drop(acks_guard);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A resend has to go to the connection the message was for.
+    ///
+    /// Pending acknowledgements are keyed by message id, which says nothing
+    /// about where the message was headed, so the connection it was for is held
+    /// alongside. Sending a resend to the message id instead finds no
+    /// connection anywhere in the cluster and the message reaches nobody, while
+    /// still counting as an attempt until it is declared lost.
+    #[test_log::test(tokio::test)]
+    async fn test_resend_is_addressed_to_the_connection_not_the_message() {
+        let acks = Arc::new(Mutex::new(HashMap::from([(
+            "message-1".to_string(),
+            DetailedAckStatus {
+                status: AckStatus::Pending {
+                    connection_id: "connection-1".to_string(),
+                    message: "{}".to_string(),
+                    message_type: MessageType::Json,
+                    inform_clients: vec![],
+                    caller: None,
+                },
+                attempts: 0,
+                // Long enough ago that it is due to be retried.
+                last_attempt_time: Some(Instant::now() - Duration::from_secs(60)),
+            },
+        )])));
+
+        let (action_tx, mut action_rx) = tokio::sync::mpsc::channel(4);
+        check_for_actions_periodic(&acks, &action_tx, 1_000, 3).await;
+
+        let action = action_rx.recv().await.expect("a resend should be due");
+        let MessageAction::Resend(resend) = action else {
+            panic!("expected a resend, got {action:?}");
+        };
+        assert_eq!(resend.client_id, "connection-1");
+        assert_eq!(resend.message_id, "message-1");
     }
 }
