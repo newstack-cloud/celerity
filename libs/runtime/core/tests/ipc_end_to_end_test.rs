@@ -1510,6 +1510,66 @@ async fn acknowledges_a_json_message_that_asks_to_be_acknowledged() {
 }
 
 #[test_log::test(tokio::test)]
+async fn acknowledges_a_message_queued_behind_a_handler_that_is_still_running() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-ack-queued",
+        "tests/data/fixtures/ipc-websocket-api.blueprint.yaml",
+    )
+    .await;
+    // Answers nothing, so the first message is still being handled, for the
+    // whole of the ten second timeout this fixture sets, while the second
+    // arrives.
+    let _handler = HandlerStub::attach(&socket, |_| None).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Text(
+            json!({ "event": "sendMessage", "data": { "first": true } }).to_string(),
+        ))
+        .await
+        .unwrap();
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Text(
+            json!({
+                "event": "sendMessage",
+                "messageId": "queued-1",
+                "ack": true,
+                "data": { "second": true },
+            })
+            .to_string(),
+        ))
+        .await
+        .unwrap();
+
+    // Acknowledgement follows the message being taken in, not what happens to
+    // it after. Tying it to handling would leave this one waiting on the
+    // handler ahead of it, and a client that hears nothing sends it again for a
+    // message the runtime was holding the entire time.
+    let ack = tokio::time::timeout(Duration::from_secs(3), async {
+        while let Some(Ok(message)) = socket_conn.next().await {
+            if let tokio_tungstenite::tungstenite::Message::Text(text) = message {
+                if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
+                    if value["event"] == "ack" {
+                        return Some(value);
+                    }
+                }
+            }
+        }
+        None
+    })
+    .await
+    .expect("the acknowledgement should not wait for the handler ahead of it");
+
+    let ack = ack.expect("the queued message should be acknowledged");
+    assert_eq!(ack["data"]["messageId"], "queued-1");
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
 async fn does_not_acknowledge_a_message_that_did_not_ask() {
     let (_app, addr, socket) = start_runtime(
         "ipc-ws-ack-absent",
