@@ -60,6 +60,7 @@ impl IpcWebSocketHandler {
         &self,
         connection_id: String,
         request_id: Option<String>,
+        message_id: Option<String>,
         client_ip: String,
         message: Bytes,
         is_binary: bool,
@@ -77,6 +78,7 @@ impl IpcWebSocketHandler {
                 connection_id,
                 source_ip: client_ip,
                 request_id,
+                message_id,
                 message,
                 is_binary,
             }),
@@ -187,6 +189,7 @@ impl WebSocketMessageHandler for IpcWebSocketHandler {
                 .request_ctx
                 .as_ref()
                 .map(|ctx| ctx.request_id.clone()),
+            Some(message.message_id),
             message
                 .request_ctx
                 .as_ref()
@@ -212,6 +215,7 @@ impl WebSocketMessageHandler for IpcWebSocketHandler {
                 .request_ctx
                 .as_ref()
                 .map(|ctx| ctx.request_id.clone()),
+            Some(message.message_id),
             message
                 .request_ctx
                 .as_ref()

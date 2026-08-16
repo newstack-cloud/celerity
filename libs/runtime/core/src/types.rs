@@ -79,6 +79,11 @@ pub struct WebSocketEventData {
     #[serde(rename = "requestId")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
+    /// The id the client gave this message, as distinct from `request_id`,
+    /// which the runtime assigns so that every message can be traced.
+    #[serde(rename = "messageId")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message_id: Option<String>,
     /// The message exactly as it arrived.
     pub message: Bytes,
     /// Whether this arrived as a binary frame rather than a text one. Bytes

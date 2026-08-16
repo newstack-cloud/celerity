@@ -1393,6 +1393,173 @@ async fn does_not_reorder_messages_when_handling_them_off_the_read_loop() {
 }
 
 #[test_log::test(tokio::test)]
+async fn acknowledges_a_binary_message_that_asks_to_be_acknowledged() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-ack-binary",
+        "tests/data/fixtures/ipc-websocket-api.blueprint.yaml",
+    )
+    .await;
+    let mut handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+
+    // [routeLength][route][requireAck][messageIdLength][messageId][message],
+    // built the way the spec defines.
+    // The message id is what the acknowledgement has to name.
+    let route = b"sendMessage";
+    let message_id = b"msg-1";
+    let body: Vec<u8> = vec![0xde, 0xad, 0xbe, 0xef];
+    let mut payload = vec![route.len() as u8];
+    payload.extend_from_slice(route);
+    payload.push(0x1);
+    payload.push(message_id.len() as u8);
+    payload.extend_from_slice(message_id);
+    payload.extend_from_slice(&body);
+
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Binary(payload))
+        .await
+        .unwrap();
+
+    let ack = tokio::time::timeout(Duration::from_secs(5), async {
+        while let Some(Ok(message)) = socket_conn.next().await {
+            if let tokio_tungstenite::tungstenite::Message::Binary(bytes) = message {
+                if bytes.starts_with(&[0x1, 0x4, 0x0, 0x0]) {
+                    return Some(bytes[4..].to_vec());
+                }
+            }
+        }
+        None
+    })
+    .await
+    .expect("the acknowledgement should not take five seconds");
+
+    let ack = ack.expect("a message that asks to be acknowledged should be acknowledged");
+    let ack: serde_json::Value = serde_json::from_slice(&ack).unwrap();
+    assert_eq!(ack["messageId"], "msg-1");
+    assert!(
+        ack["timestamp"].is_string(),
+        "the acknowledgement should carry a timestamp, got {ack}"
+    );
+
+    let dispatch = handler
+        .next_dispatch()
+        .await
+        .expect("the message should still reach the handler");
+    let Some(proto::dispatch::Source::Websocket(message)) = dispatch.source else {
+        panic!("expected a WebSocket source");
+    };
+    assert_eq!(&message.message[..], &body[..]);
+    // The handler is told the id the client used, so instrumentation on its
+    // side can be tied to what the client saw acknowledged.
+    assert_eq!(message.message_id, "msg-1");
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn acknowledges_a_json_message_that_asks_to_be_acknowledged() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-ack-json",
+        "tests/data/fixtures/ipc-websocket-api.blueprint.yaml",
+    )
+    .await;
+    let _handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Text(
+            json!({
+                "event": "sendMessage",
+                "messageId": "msg-json-1",
+                "ack": true,
+                "data": { "text": "hello" },
+            })
+            .to_string(),
+        ))
+        .await
+        .unwrap();
+
+    // Answered in the encoding it arrived in, so a client that only has text
+    // because its environment gave it no choice can still read the reply.
+    let ack = tokio::time::timeout(Duration::from_secs(5), async {
+        while let Some(Ok(message)) = socket_conn.next().await {
+            if let tokio_tungstenite::tungstenite::Message::Text(text) = message {
+                if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
+                    if value["event"] == "ack" {
+                        return Some(value);
+                    }
+                }
+            }
+        }
+        None
+    })
+    .await
+    .expect("the acknowledgement should not take five seconds");
+
+    let ack = ack.expect("a message that asks to be acknowledged should be acknowledged");
+    assert_eq!(ack["data"]["messageId"], "msg-json-1");
+    assert!(ack["data"]["timestamp"].is_string());
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn does_not_acknowledge_a_message_that_did_not_ask() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-ack-absent",
+        "tests/data/fixtures/ipc-websocket-api.blueprint.yaml",
+    )
+    .await;
+    let _handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+
+    // Carries an id but does not opt in, and opting in without an id has
+    // nothing to name. Neither should be answered.
+    for message in [
+        json!({ "event": "sendMessage", "messageId": "msg-2", "data": {} }),
+        json!({ "event": "sendMessage", "ack": true, "data": {} }),
+    ] {
+        socket_conn
+            .send(tokio_tungstenite::tungstenite::Message::Text(
+                message.to_string(),
+            ))
+            .await
+            .unwrap();
+    }
+
+    let unexpected = tokio::time::timeout(Duration::from_secs(2), async {
+        while let Some(Ok(message)) = socket_conn.next().await {
+            if let tokio_tungstenite::tungstenite::Message::Text(text) = message {
+                if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
+                    if value["event"] == "ack" {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    })
+    .await;
+
+    assert_ne!(
+        unexpected,
+        Ok(true),
+        "acknowledgement is opt in, and an opt in without a message id is ignored"
+    );
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
 async fn carries_a_binary_websocket_frame_without_corrupting_it() {
     let (_app, addr, socket) = start_runtime(
         "ipc-ws-binary",
@@ -1405,11 +1572,13 @@ async fn carries_a_binary_websocket_frame_without_corrupting_it() {
         .await
         .expect("the WebSocket server should accept the connection");
 
-    // The binary framing is [route_len][route][msg_id_len][msg_id][body].
+    // [routeLength][route][requireAck][messageIdLength][messageId][message],
+    // here with no acknowledgement asked for and no message id.
     let route = b"sendMessage";
     let body: Vec<u8> = vec![0xff, 0xfe, 0x00, 0x80, 0x01, 0x02];
     let mut payload = vec![route.len() as u8];
     payload.extend_from_slice(route);
+    payload.push(0);
     payload.push(0);
     payload.extend_from_slice(&body);
 
