@@ -1,3 +1,5 @@
+pub mod ipc;
+
 use std::{collections::HashMap, env::VarError, sync::Arc};
 
 use celerity_helpers::env::EnvVars;
