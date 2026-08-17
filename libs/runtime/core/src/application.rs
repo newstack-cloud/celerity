@@ -86,6 +86,7 @@ use crate::{
     types::ApiAppState,
     utils::get_epoch_seconds,
     websocket::{self, WebSocketMessageHandler},
+    websocket_dedupe::{InMemoryMessageIdStore, DEFAULT_MESSAGE_ID_TTL_MS},
 };
 
 /// Shutdown signal for a consumer — either oneshot (SQS) or broadcast (Redis).
@@ -122,6 +123,10 @@ pub struct Application {
     // through, so that `run` can start the worker that waits on clients.
     // Taken when it does, since it is only started once.
     ws_conn_registry: Option<Arc<WebSocketConnRegistry>>,
+    // Kept for `run` to start its sweep, for the same reason as the registry
+    // above. The store itself is built in setup, since building it spawns
+    // nothing.
+    ws_seen_messages: Option<Arc<InMemoryMessageIdStore>>,
     ws_app_routes: Arc<AsyncMutex<HashMap<String, Arc<dyn WebSocketMessageHandler + Send + Sync>>>>,
     custom_auth_guards: Arc<AsyncMutex<HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>>>>,
     server_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
@@ -166,6 +171,7 @@ impl Application {
             ipc_server_shutdown_signal: None,
             ws_connections: None,
             ws_conn_registry: None,
+            ws_seen_messages: None,
             ws_app_routes: Arc::new(AsyncMutex::new(HashMap::new())),
             custom_auth_guards: Arc::new(AsyncMutex::new(HashMap::new())),
             resource_store: None,
@@ -350,6 +356,9 @@ impl Application {
             // mean spawning, and this runs outside the async runtime when in FFI mode.
             self.ws_conn_registry = Some(conn_registry.clone());
 
+            let seen_messages = Arc::new(InMemoryMessageIdStore::new(DEFAULT_MESSAGE_ID_TTL_MS));
+            self.ws_seen_messages = Some(seen_messages.clone());
+
             // As with HTTP routes, the FFI call mode has the SDK register these
             // as it binds each in-process handler. In the IPC call mode the
             // runtime registers one per blueprint handler, so that messages
@@ -382,6 +391,7 @@ impl Application {
                 websocket_base_path,
                 get(websocket::handler).with_state(websocket::WebSocketAppState {
                     connections: conn_registry,
+                    seen_messages: seen_messages.clone(),
                     routes: self.ws_app_routes.clone(),
                     route_key: websocket_config.route_key.clone(),
                     api_auth: api_config.auth.clone(),
@@ -706,6 +716,10 @@ impl Application {
         // before there is anything waiting to hear it was received.
         if let Some(conn_registry) = self.ws_conn_registry.take() {
             conn_registry.start_client_ack_worker();
+        }
+
+        if let Some(seen_messages) = self.ws_seen_messages.take() {
+            seen_messages.start_eviction();
         }
 
         self.run_ipc_stream_server().await?;

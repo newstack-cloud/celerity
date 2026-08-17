@@ -1225,6 +1225,85 @@ async fn refuses_a_binary_websocket_message_that_is_not_framed() {
     let _ = tokio::fs::remove_file(&socket).await;
 }
 
+/// A message the client sends twice is acted on once, and answered both times.
+///
+/// The two halves have to go together. A client resends because it did not hear
+/// an acknowledgement, and what went missing may have been the acknowledgement
+/// rather than the message, so a duplicate that is met with silence is one the
+/// client keeps sending. Acknowledging without deduplicating runs the handler
+/// twice; deduplicating without acknowledging never ends.
+#[test_log::test(tokio::test)]
+async fn acts_once_on_a_message_the_client_sent_twice_but_answers_both() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-dedupe",
+        "tests/data/fixtures/ipc-websocket-api.blueprint.yaml",
+    )
+    .await;
+    let mut handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+
+    let message = json!({
+        "event": "sendMessage",
+        "messageId": "m-1",
+        "ack": true,
+        "data": { "text": "hello" }
+    })
+    .to_string();
+
+    for _ in 0..2 {
+        socket_conn
+            .send(tokio_tungstenite::tungstenite::Message::Text(
+                message.clone(),
+            ))
+            .await
+            .unwrap();
+    }
+
+    let dispatch = handler
+        .next_dispatch()
+        .await
+        .expect("the first copy should reach the handler");
+    let Some(proto::dispatch::Source::Websocket(delivered)) = dispatch.source else {
+        panic!("expected a WebSocket source");
+    };
+    assert_eq!(delivered.message_id, "m-1");
+
+    // Both copies are answered, so the client stops resending.
+    let mut acknowledgements = 0;
+    let _ = tokio::time::timeout(Duration::from_millis(600), async {
+        while let Some(Ok(frame)) = socket_conn.next().await {
+            if let tokio_tungstenite::tungstenite::Message::Text(text) = frame {
+                let value: serde_json::Value = serde_json::from_str(&text).unwrap();
+                if value["event"] == "ack" && value["data"]["messageId"] == "m-1" {
+                    acknowledgements += 1;
+                    if acknowledgements == 2 {
+                        return;
+                    }
+                }
+            }
+        }
+    })
+    .await;
+    assert_eq!(
+        acknowledgements, 2,
+        "both copies should be acknowledged, or the client keeps resending"
+    );
+
+    // Only the first copy was acted on. Asked for after the acknowledgements,
+    // so the second copy has had every chance to arrive at the handler.
+    let second = tokio::time::timeout(Duration::from_millis(400), handler.next_dispatch()).await;
+    assert!(
+        second.is_err() || second.unwrap().is_none(),
+        "the same message should not reach the handler twice"
+    );
+
+    let _ = socket_conn.close(None).await;
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
 #[test_log::test(tokio::test)]
 async fn answers_heartbeats_while_a_handler_is_still_running() {
     let (_app, addr, socket) = start_runtime(
