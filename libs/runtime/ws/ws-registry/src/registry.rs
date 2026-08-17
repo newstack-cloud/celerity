@@ -549,23 +549,22 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
             let send_ctx = ctx.unwrap_or_default();
             let awaiting_ack = client_ack_request(&message_type, &message);
 
-            let mut connection = connection.lock().await;
-            debug!(connection_id = %connection_id, "sending message to connection: {}", connection_id);
-            let ws_message = create_ws_message(message_type.clone(), message.clone())?;
-            connection.send(ws_message).await?;
-            drop(connection);
-
             if let Some(ack_id) = awaiting_ack {
                 self.record_pending_client_ack(
-                    connection_id,
+                    connection_id.clone(),
                     ack_id,
-                    message_type,
-                    message,
+                    message_type.clone(),
+                    message.clone(),
                     send_ctx.inform_clients,
                     send_ctx.caller,
                 )
                 .await;
             }
+
+            let mut connection = connection.lock().await;
+            debug!(connection_id = %connection_id, "sending message to connection: {}", connection_id);
+            let ws_message = create_ws_message(message_type, message)?;
+            connection.send(ws_message).await?;
         } else if let Some(broadcaster) = &self.broadcaster {
             let send_ctx = ctx.unwrap_or_default();
             debug!(connection_id = %connection_id, "connection not found locally, preparing to send message to broadcaster");
