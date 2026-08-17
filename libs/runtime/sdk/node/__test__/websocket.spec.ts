@@ -57,17 +57,11 @@ function openWs(url: string): Promise<WebSocket> {
 /** The capabilities signal, which arrives on its own the moment a connection
  * opens and is not a message any test is waiting for. */
 function isCapabilitiesSignal(data: Buffer, isBinary: boolean): boolean {
-  return (
-    isBinary && data.length === 4 && data[0] === 0x01 && data[1] === 0x05
-  );
+  return isBinary && data.length === 4 && data[0] === 0x01 && data[1] === 0x05;
 }
 
 function nextWsMessage(ws: WebSocket, timeoutMs = 5000): Promise<string> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(
-      () => reject(new Error("timeout waiting for WS message")),
-      timeoutMs,
-    );
     // Passed over rather than taken as the first message. Whether the signal
     // lands before or after a listener is attached comes down to timing.
     const onMessage = (data: Buffer, isBinary: boolean) => {
@@ -78,6 +72,13 @@ function nextWsMessage(ws: WebSocket, timeoutMs = 5000): Promise<string> {
       clearTimeout(timer);
       resolve(data.toString());
     };
+    // Detached on the way out as well as on the way in, or a socket that goes
+    // quiet keeps the listener, and whatever it captured, for as long as it
+    // lives.
+    const timer = setTimeout(() => {
+      ws.off("message", onMessage);
+      reject(new Error("timeout waiting for WS message"));
+    }, timeoutMs);
     ws.on("message", onMessage);
   });
 }
@@ -124,7 +125,7 @@ test("WS connect triggers $connect handler", async (t) => {
         );
         break;
       default:
-        app.registerWebsocketHandler(handler.route, async (_err, _msg) => { });
+        app.registerWebsocketHandler(handler.route, async (_err, _msg) => {});
         break;
     }
   }
@@ -162,7 +163,6 @@ test("WS JSON message routes to echo handler", async (t) => {
   const app = new CoreRuntimeApplication(testConfig({ serverPort }));
   const config = app.setup();
 
-
   const echoReceived = deferred<JsWebSocketMessageInfo>();
 
   for (const handler of config.api?.websocket?.handlers ?? []) {
@@ -176,7 +176,7 @@ test("WS JSON message routes to echo handler", async (t) => {
         );
         break;
       default:
-        app.registerWebsocketHandler(handler.route, async (_err, _msg) => { });
+        app.registerWebsocketHandler(handler.route, async (_err, _msg) => {});
         break;
     }
   }
@@ -219,7 +219,6 @@ test("WS $default route handles unmatched action", async (t) => {
   const app = new CoreRuntimeApplication(testConfig({ serverPort }));
   const config = app.setup();
 
-
   const defaultReceived = deferred<JsWebSocketMessageInfo>();
 
   for (const handler of config.api?.websocket?.handlers ?? []) {
@@ -233,7 +232,7 @@ test("WS $default route handles unmatched action", async (t) => {
         );
         break;
       default:
-        app.registerWebsocketHandler(handler.route, async (_err, _msg) => { });
+        app.registerWebsocketHandler(handler.route, async (_err, _msg) => {});
         break;
     }
   }
@@ -274,7 +273,6 @@ test("WS disconnect triggers $disconnect handler", async (t) => {
   const app = new CoreRuntimeApplication(testConfig({ serverPort }));
   const config = app.setup();
 
-
   const disconnectReceived = deferred<JsWebSocketMessageInfo>();
 
   for (const handler of config.api?.websocket?.handlers ?? []) {
@@ -288,7 +286,7 @@ test("WS disconnect triggers $disconnect handler", async (t) => {
         );
         break;
       default:
-        app.registerWebsocketHandler(handler.route, async (_err, _msg) => { });
+        app.registerWebsocketHandler(handler.route, async (_err, _msg) => {});
         break;
     }
   }
@@ -324,7 +322,6 @@ test("websocketRegistry sendMessage sends to connected client", async (t) => {
   const app = new CoreRuntimeApplication(testConfig({ serverPort }));
   const config = app.setup();
 
-
   const registry = app.websocketRegistry();
   let capturedConnectionId = "";
   const connectDone = deferred<void>();
@@ -356,7 +353,7 @@ test("websocketRegistry sendMessage sends to connected client", async (t) => {
         );
         break;
       default:
-        app.registerWebsocketHandler(handler.route, async (_err, _msg) => { });
+        app.registerWebsocketHandler(handler.route, async (_err, _msg) => {});
         break;
     }
   }
@@ -402,7 +399,6 @@ test("WS request context includes connection metadata", async (t) => {
   const app = new CoreRuntimeApplication(testConfig({ serverPort }));
   const config = app.setup();
 
-
   const connectReceived = deferred<JsWebSocketMessageInfo>();
 
   for (const handler of config.api?.websocket?.handlers ?? []) {
@@ -416,7 +412,7 @@ test("WS request context includes connection metadata", async (t) => {
         );
         break;
       default:
-        app.registerWebsocketHandler(handler.route, async (_err, _msg) => { });
+        app.registerWebsocketHandler(handler.route, async (_err, _msg) => {});
         break;
     }
   }
@@ -425,7 +421,10 @@ test("WS request context includes connection metadata", async (t) => {
 
   try {
     const ws = new WebSocket(`ws://localhost:${serverPort}/ws?token=abc123`, {
-      headers: { "x-custom-header": "test-value", origin: "https://example.com" },
+      headers: {
+        "x-custom-header": "test-value",
+        origin: "https://example.com",
+      },
     });
 
     await new Promise<void>((resolve, reject) => {
@@ -471,10 +470,7 @@ test("encodeBinaryMessage lays out the Celerity Binary Message Format", (t) => {
   );
 
   // [routeLength][route][requireAck][messageIdLength][messageId][message]
-  t.deepEqual(
-    [...framed],
-    [0x02, 0x75, 0x70, 0x00, 0x02, 0x69, 0x64, 0xff],
-  );
+  t.deepEqual([...framed], [0x02, 0x75, 0x70, 0x00, 0x02, 0x69, 0x64, 0xff]);
 });
 
 test("encodeBinaryMessage refuses what it cannot represent", (t) => {
@@ -485,7 +481,10 @@ test("encodeBinaryMessage refuses what it cannot represent", (t) => {
 
   // A route longer than the single byte that measures it.
   t.throws(() =>
-    encodeBinaryMessage({ route: "r".repeat(256), message: Buffer.from([0x01]) }),
+    encodeBinaryMessage({
+      route: "r".repeat(256),
+      message: Buffer.from([0x01]),
+    }),
   );
 
   // Asking to be acknowledged with no id for the acknowledgement to name.
@@ -542,7 +541,7 @@ test("a framed binary message reaches the client exactly as composed", async (t)
         },
       );
     } else {
-      app.registerWebsocketHandler(handler.route, async (_err, _msg) => { });
+      app.registerWebsocketHandler(handler.route, async (_err, _msg) => {});
     }
   }
 
@@ -565,7 +564,8 @@ test("a framed binary message reaches the client exactly as composed", async (t)
       ws.send(JSON.stringify({ action: "echo", data: "ping" }));
 
       const timer = setTimeout(
-        () => received.reject(new Error("timeout waiting for the binary frame")),
+        () =>
+          received.reject(new Error("timeout waiting for the binary frame")),
         5000,
       );
       const frame = await received.promise;
@@ -574,7 +574,10 @@ test("a framed binary message reaches the client exactly as composed", async (t)
       t.truthy(refusedUnframed, "unframed bytes should have been refused");
       t.deepEqual([...frame], [...Buffer.from(framed, "base64")]);
       // The payload survives with the framing in front of it, untouched.
-      t.deepEqual([...frame.subarray(frame.length - payload.length)], [...payload]);
+      t.deepEqual(
+        [...frame.subarray(frame.length - payload.length)],
+        [...payload],
+      );
     } finally {
       ws.close();
     }
