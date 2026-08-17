@@ -20,6 +20,33 @@ pub enum BinaryRoute {
     Custom(String),
 }
 
+/// The routes the protocol keeps for itself.
+///
+/// An application's route is a name; these are a single byte, which is what
+/// makes them reserved rather than reachable.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ReservedRoute {
+    Ping = 0x1,
+    Pong = 0x2,
+    LostMessage = 0x3,
+    Ack = 0x4,
+    Capabilities = 0x5,
+}
+
+/// Frames one of the protocol's own messages.
+///
+/// Not a different format from an application's message, the same one with a
+/// route that is a single byte, asking for no acknowledgement and carrying no
+/// id of its own. Writing that header out by hand at each place one of these is
+/// built is how it came to be written with two bytes in one of them, leaving a
+/// message no client could recognise.
+pub fn encode_reserved_message(route: ReservedRoute, payload: &[u8]) -> Vec<u8> {
+    let mut framed = Vec::with_capacity(4 + payload.len());
+    framed.extend_from_slice(&[0x1, route as u8, 0x0, 0x0]);
+    framed.extend_from_slice(payload);
+    framed
+}
+
 /// The error type for parsing a binary message.
 #[derive(Debug, PartialEq)]
 pub enum BinaryMessageParseError {
@@ -569,6 +596,43 @@ mod tests {
             }),
             Err(BinaryMessageEncodeError::Invalid(_))
         ));
+    }
+
+    /// A reserved message is read back as the route it names, with the payload
+    /// whole. The parser is the client's side of this, so a round trip is what
+    /// says the two agree.
+    #[test]
+    fn test_encode_reserved_message_round_trips_through_the_parser() {
+        let framed = encode_reserved_message(ReservedRoute::LostMessage, br#"{"messageId":"m-1"}"#);
+
+        assert_eq!(
+            parse_binary_message(&framed).unwrap(),
+            BinaryMessageData {
+                route: BinaryRoute::Reserved(0x3),
+                message_id: None,
+                require_ack: false,
+                message: br#"{"messageId":"m-1"}"#.to_vec(),
+            }
+        );
+    }
+
+    /// The header is four bytes, not two. A short one is not a shorter version
+    /// of the message, it is one no client can recognise, which is what a
+    /// hand written header here produced before.
+    #[test]
+    fn test_encode_reserved_message_writes_the_whole_header() {
+        assert_eq!(
+            encode_reserved_message(ReservedRoute::Pong, &[]),
+            vec![0x1, 0x2, 0x0, 0x0]
+        );
+        assert_eq!(
+            encode_reserved_message(ReservedRoute::Capabilities, &[]),
+            vec![0x1, 0x5, 0x0, 0x0]
+        );
+        assert_eq!(
+            encode_reserved_message(ReservedRoute::Ack, &[0xff]),
+            vec![0x1, 0x4, 0x0, 0x0, 0xff]
+        );
     }
 
     /// Asking for an acknowledgement with no id is refused rather than framed

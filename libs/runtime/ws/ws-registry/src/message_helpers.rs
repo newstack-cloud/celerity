@@ -1,6 +1,6 @@
 use axum::extract::ws::Message;
 use base64::{prelude::BASE64_STANDARD, Engine};
-use celerity_helpers::websockets::parse_binary_message;
+use celerity_helpers::websockets::{encode_reserved_message, parse_binary_message, ReservedRoute};
 use serde_json::{json, Value};
 
 use crate::{errors::WebSocketConnError, types::MessageType};
@@ -17,17 +17,8 @@ pub fn create_message_lost_event(message_id: String, caller: Option<String>) -> 
         "caller": caller.unwrap_or_default(),
     })
     .to_string();
-    let payload_bytes = payload.as_bytes();
 
-    // `[routeLength][route][requireAck][messageIdLength]` then the payload. A
-    // reserved message needs no acknowledgement of its own and carries no
-    // message id of its own, which is what the two zero bytes say. Clients match
-    // on all four, so a short header is not a shorter version of this message,
-    // it is one they cannot recognise at all.
-    let mut message = Vec::with_capacity(payload_bytes.len() + 4);
-    message.extend_from_slice(&[0x1, 0x3, 0x0, 0x0]);
-    message.extend_from_slice(payload_bytes);
-    message
+    encode_reserved_message(ReservedRoute::LostMessage, payload.as_bytes())
 }
 
 /// Converts a message type and message received by a WebSocket registry
