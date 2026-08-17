@@ -1,12 +1,13 @@
 use axum::extract::ws::Message;
-use base64::{prelude::BASE64_STANDARD, DecodeError, Engine};
+use base64::{prelude::BASE64_STANDARD, Engine};
+use celerity_helpers::websockets::parse_binary_message;
 use serde_json::{json, Value};
 
-use crate::types::MessageType;
+use crate::{errors::WebSocketConnError, types::MessageType};
 
 /// Creates a message lost event to be sent to a WebSocket connection.
 /// This follows the Celerity Binary Message Format documented here:
-/// https://www.celerityframework.io/docs/applications/resources/celerity-api#celerity-binary-message-format
+/// https://celerityframework.io/docs/framework/applications/resources/celerity-api#celerity-binary-message-format
 pub fn create_message_lost_event(message_id: String, caller: Option<String>) -> Vec<u8> {
     let payload = json!({
         "messageId": message_id,
@@ -33,14 +34,29 @@ pub fn create_message_lost_event(message_id: String, caller: Option<String>) -> 
 /// into a message that can be sent to a WebSocket connection.
 /// Binary messages will be base64 encoded strings that can be stored in stores
 /// that back WebSocket registries.
+///
+/// A binary message must be in the Celerity Binary Message Format and is
+/// refused if it is not. A client reads every binary frame that is not a
+/// reserved one as a framed message, so there is no such thing as sending it
+/// raw bytes. Unframed bytes are read as a route length, a route and an id, and
+/// what reaches the application is a payload short by however many bytes that
+/// invented header consumed, delivered under a route nothing is listening on.
+/// Refusing here turns that silence into an error the sender can see.
 pub fn create_ws_message(
     message_type: MessageType,
     message: String,
-) -> Result<Message, DecodeError> {
+) -> Result<Message, WebSocketConnError> {
     match message_type {
         MessageType::Json => Ok(Message::Text(message.into())),
         MessageType::Binary => {
             let bytes = BASE64_STANDARD.decode(message.as_bytes())?;
+            // Read from the bytes that were about to be sent, so the check
+            // costs no second decode.
+            if let Err(err) = parse_binary_message(&bytes) {
+                return Err(WebSocketConnError::MalformedBinaryMessage(format!(
+                    "a binary message must be in the Celerity Binary Message Format, {err:?}"
+                )));
+            }
             Ok(Message::Binary(bytes.into()))
         }
     }
@@ -89,6 +105,45 @@ mod tests {
         bytes.extend_from_slice(message_id);
         bytes.extend_from_slice(payload);
         BASE64_STANDARD.encode(bytes)
+    }
+
+    /// Unframed bytes are refused rather than sent, since a client has no way
+    /// to read them as anything other than a framed message.
+    #[test]
+    fn test_create_ws_message_refuses_binary_that_is_not_framed() {
+        // A protobuf payload, which is the shape of thing an application
+        // reaches for. Field 1 as a length delimited string, then "price".
+        let raw = [0x0a, 0x05, b'p', b'r', b'i', b'c', b'e'];
+
+        let result = create_ws_message(MessageType::Binary, BASE64_STANDARD.encode(raw));
+
+        assert!(
+            matches!(result, Err(WebSocketConnError::MalformedBinaryMessage(_))),
+            "unframed bytes should be refused, got {result:?}"
+        );
+    }
+
+    #[test]
+    fn test_create_ws_message_passes_a_framed_binary_message_through_untouched() {
+        let framed = frame(b"price.tick", 0x1, b"m-1", &[0xde, 0xad]);
+
+        let message = create_ws_message(MessageType::Binary, framed.clone()).unwrap();
+
+        match message {
+            Message::Binary(bytes) => {
+                assert_eq!(bytes[..], BASE64_STANDARD.decode(framed).unwrap()[..])
+            }
+            other => panic!("a binary message should stay binary, got {other:?}"),
+        }
+    }
+
+    /// Text is not framed and is not checked, which is what the spec says and
+    /// what every JSON message on the wire relies on.
+    #[test]
+    fn test_create_ws_message_leaves_text_alone() {
+        let message = create_ws_message(MessageType::Json, "not json either".to_string()).unwrap();
+
+        assert!(matches!(message, Message::Text(_)));
     }
 
     #[test]

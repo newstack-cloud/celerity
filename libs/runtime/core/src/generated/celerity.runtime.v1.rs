@@ -433,6 +433,19 @@ pub struct WsSend {
 pub struct WsOutbound {
     #[prost(string, tag = "1")]
     pub connection_id: ::prost::alloc::string::String,
+    /// Sent to the socket exactly as given.
+    ///
+    /// When is_binary is set this must be in the Celerity Binary Message Format,
+    /// `<routeLength><route><requireAck><messageIdLength><messageId><message>`. A
+    /// client reads every binary frame that is not a reserved one as a framed
+    /// message, so raw bytes are not read as a payload, they are read as a route
+    /// length, a route and an id, leaving the application a short payload under a
+    /// route nothing serves. A message carrying no id sets both requireAck and
+    /// messageIdLength to zero. The runtime refuses a binary message it cannot
+    /// read as a frame rather than sending one no client can use, reporting it as
+    /// a WsSendFailure for that message.
+    ///
+    /// Text messages are unconstrained beyond the protocol's reserved keys.
     #[prost(bytes = "vec", tag = "2")]
     pub message: ::prost::alloc::vec::Vec<u8>,
     #[prost(bool, tag = "3")]

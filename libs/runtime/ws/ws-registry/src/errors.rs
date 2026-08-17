@@ -10,6 +10,9 @@ pub enum WebSocketConnError {
     MessageLost(String),
     AckCheckFailed(String),
     Base64DecodeError(String),
+    // A binary message that is not in the Celerity Binary Message Format, which
+    // a client has no way to read as anything other than a framed message.
+    MalformedBinaryMessage(String),
 }
 
 impl Display for WebSocketConnError {
@@ -22,6 +25,9 @@ impl Display for WebSocketConnError {
             WebSocketConnError::MessageLost(e) => write!(f, "MessageLost: {e}"),
             WebSocketConnError::AckCheckFailed(e) => write!(f, "AckCheckFailed: {e}"),
             WebSocketConnError::Base64DecodeError(e) => write!(f, "Base64DecodeError: {e}"),
+            WebSocketConnError::MalformedBinaryMessage(e) => {
+                write!(f, "MalformedBinaryMessage: {e}")
+            }
         }
     }
 }

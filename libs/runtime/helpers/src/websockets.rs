@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// The parsed data from a binary message in the
-/// [Celerity Binary Message Format](https://celerityframework.io/docs/applications/resources/celerity-api#celerity-binary-message-format)
+/// [Celerity Binary Message Format](https://celerityframework.io/docs/framework/applications/resources/celerity-api#celerity-binary-message-format)
 /// used for WebSocket APIs.
 #[derive(Debug, PartialEq)]
 pub struct BinaryMessageData {
@@ -27,7 +27,7 @@ pub enum BinaryMessageParseError {
 }
 
 /// Parses a binary message in the
-/// [Celerity Binary Message Format](https://celerityframework.io/docs/applications/resources/celerity-api#celerity-binary-message-format)
+/// [Celerity Binary Message Format](https://celerityframework.io/docs/framework/applications/resources/celerity-api#celerity-binary-message-format)
 /// used for WebSocket APIs.
 /// Empty payloads are allowed but all other fields are required.
 pub fn parse_binary_message(
@@ -103,6 +103,92 @@ pub fn parse_binary_message(
             message: message.to_vec(),
         })
     }
+}
+
+/// The parts of a binary message to be framed in the
+/// [Celerity Binary Message Format](https://celerityframework.io/docs/framework/applications/resources/celerity-api#celerity-binary-message-format).
+pub struct BinaryMessageParts<'a> {
+    /// The route the message is for, which a client uses to hand it to the
+    /// right handler. Reserved single byte routes are not built through here,
+    /// as those frames are fixed and are written out directly.
+    pub route: &'a str,
+    /// The id the message is known by, which is what an acknowledgement names,
+    /// what deduplication keys on and what a loss notification refers to.
+    pub message_id: Option<&'a str>,
+    /// Whether the receiver is being asked to acknowledge this message, which
+    /// only means anything alongside an id.
+    pub require_ack: bool,
+    /// The payload, carried without being read.
+    pub message: &'a [u8],
+}
+
+/// The error type for framing a binary message.
+#[derive(Debug, PartialEq)]
+pub enum BinaryMessageEncodeError {
+    Invalid(String),
+}
+
+/// Frames a binary message in the
+/// [Celerity Binary Message Format](https://celerityframework.io/docs/framework/applications/resources/celerity-api#celerity-binary-message-format).
+///
+/// The mirror of [`parse_binary_message`], and the reason a caller should not
+/// be laying out these bytes itself. Every field that cannot be represented is
+/// refused rather than truncated into a frame that would be read as something
+/// other than what was meant.
+pub fn encode_binary_message(
+    parts: BinaryMessageParts<'_>,
+) -> Result<Vec<u8>, BinaryMessageEncodeError> {
+    let route_bytes = parts.route.as_bytes();
+    if route_bytes.is_empty() {
+        return Err(BinaryMessageEncodeError::Invalid(
+            "a route is required, as it is what the message is delivered by".to_string(),
+        ));
+    }
+    if route_bytes.len() > u8::MAX as usize {
+        return Err(BinaryMessageEncodeError::Invalid(format!(
+            "a route can not be longer than {} bytes, this one is {}",
+            u8::MAX,
+            route_bytes.len()
+        )));
+    }
+    // A route is read as reserved when its first byte is one of the reserved
+    // values, so a custom route starting with one would come back as a ping or
+    // an acknowledgement rather than as itself.
+    if route_bytes[0] <= 0x4 {
+        return Err(BinaryMessageEncodeError::Invalid(format!(
+            "a route can not begin with the byte {:#x}, which is reserved",
+            route_bytes[0]
+        )));
+    }
+
+    let message_id_bytes = parts.message_id.unwrap_or_default().as_bytes();
+    if message_id_bytes.len() > u8::MAX as usize {
+        return Err(BinaryMessageEncodeError::Invalid(format!(
+            "a message id can not be longer than {} bytes, this one is {}",
+            u8::MAX,
+            message_id_bytes.len()
+        )));
+    }
+    // Asking to be acknowledged without an id is refused rather than quietly
+    // dropped, since the sender would otherwise wait for an answer that has
+    // nothing to name and can never come.
+    if parts.require_ack && message_id_bytes.is_empty() {
+        return Err(BinaryMessageEncodeError::Invalid(
+            "a message asking to be acknowledged needs an id for the acknowledgement to name"
+                .to_string(),
+        ));
+    }
+
+    let mut framed =
+        Vec::with_capacity(3 + route_bytes.len() + message_id_bytes.len() + parts.message.len());
+    framed.push(route_bytes.len() as u8);
+    framed.extend_from_slice(route_bytes);
+    framed.push(if parts.require_ack { 0x1 } else { 0x0 });
+    framed.push(message_id_bytes.len() as u8);
+    framed.extend_from_slice(message_id_bytes);
+    framed.extend_from_slice(parts.message);
+
+    Ok(framed)
 }
 
 /// The data for a lost message.
@@ -369,5 +455,135 @@ mod tests {
                 "message too short, missing bytes for message id".to_string(),
             )
         );
+    }
+
+    /// What is framed is what comes back out, which is the property every other
+    /// use of this depends on.
+    #[test]
+    fn test_encode_binary_message_round_trips_through_the_parser() {
+        let framed = encode_binary_message(BinaryMessageParts {
+            route: "price.tick",
+            message_id: Some("m-1"),
+            require_ack: true,
+            message: &[0xde, 0xad, 0xbe, 0xef],
+        })
+        .unwrap();
+
+        assert_eq!(
+            parse_binary_message(&framed).unwrap(),
+            BinaryMessageData {
+                route: BinaryRoute::Custom("price.tick".to_string()),
+                message_id: Some("m-1".to_string()),
+                require_ack: true,
+                message: vec![0xde, 0xad, 0xbe, 0xef],
+            }
+        );
+    }
+
+    #[test]
+    fn test_encode_binary_message_lays_the_fields_out_in_order() {
+        let framed = encode_binary_message(BinaryMessageParts {
+            route: "up",
+            message_id: Some("id"),
+            require_ack: false,
+            message: &[0xff],
+        })
+        .unwrap();
+
+        // [routeLength][route][requireAck][messageIdLength][messageId][message]
+        assert_eq!(framed, vec![0x2, b'u', b'p', 0x0, 0x2, b'i', b'd', 0xff]);
+    }
+
+    /// A message with nothing to say is still a message, and a message with no
+    /// id is the ordinary case for one that does not ask to be acknowledged.
+    #[test]
+    fn test_encode_binary_message_allows_an_empty_payload_and_no_id() {
+        let framed = encode_binary_message(BinaryMessageParts {
+            route: "up",
+            message_id: None,
+            require_ack: false,
+            message: &[],
+        })
+        .unwrap();
+
+        assert_eq!(framed, vec![0x2, b'u', b'p', 0x0, 0x0]);
+        assert_eq!(
+            parse_binary_message(&framed).unwrap(),
+            BinaryMessageData {
+                route: BinaryRoute::Custom("up".to_string()),
+                message_id: None,
+                require_ack: false,
+                message: Vec::new(),
+            }
+        );
+    }
+
+    #[test]
+    fn test_encode_binary_message_refuses_a_route_it_cannot_represent() {
+        assert!(matches!(
+            encode_binary_message(BinaryMessageParts {
+                route: "",
+                message_id: None,
+                require_ack: false,
+                message: &[],
+            }),
+            Err(BinaryMessageEncodeError::Invalid(_))
+        ));
+
+        let too_long = "r".repeat(256);
+        assert!(matches!(
+            encode_binary_message(BinaryMessageParts {
+                route: &too_long,
+                message_id: None,
+                require_ack: false,
+                message: &[],
+            }),
+            Err(BinaryMessageEncodeError::Invalid(_))
+        ));
+    }
+
+    /// A custom route beginning with a reserved byte would be read back as a
+    /// ping or an acknowledgement rather than as itself.
+    #[test]
+    fn test_encode_binary_message_refuses_a_route_that_would_read_as_reserved() {
+        assert!(matches!(
+            encode_binary_message(BinaryMessageParts {
+                route: "\u{4}route",
+                message_id: None,
+                require_ack: false,
+                message: &[],
+            }),
+            Err(BinaryMessageEncodeError::Invalid(_))
+        ));
+    }
+
+    #[test]
+    fn test_encode_binary_message_refuses_an_id_it_cannot_represent() {
+        let too_long = "i".repeat(256);
+        assert!(matches!(
+            encode_binary_message(BinaryMessageParts {
+                route: "up",
+                message_id: Some(&too_long),
+                require_ack: false,
+                message: &[],
+            }),
+            Err(BinaryMessageEncodeError::Invalid(_))
+        ));
+    }
+
+    /// Asking for an acknowledgement with no id is refused rather than framed
+    /// and ignored, since the sender would wait for an answer that has nothing
+    /// to name.
+    #[test]
+    fn test_encode_binary_message_refuses_an_ack_request_with_no_id() {
+        assert!(matches!(
+            encode_binary_message(BinaryMessageParts {
+                route: "up",
+                message_id: None,
+                require_ack: true,
+                message: &[],
+            }),
+            Err(BinaryMessageEncodeError::Invalid(_))
+        ));
     }
 }
