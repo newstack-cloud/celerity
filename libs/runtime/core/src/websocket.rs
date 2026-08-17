@@ -7,6 +7,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use crate::websocket_dedupe::MessageIdStore;
 use async_trait::async_trait;
 use axum::{
     extract::{
@@ -78,6 +79,9 @@ pub(crate) struct WebSocketAppState {
     pub connection_auth_guards: HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>>,
     pub cors: Option<CelerityApiCors>,
     pub resource_store: Arc<ResourceStore>,
+    // What the node has already seen from its clients, so a message resent
+    // because an acknowledgement went missing is not acted on twice.
+    pub seen_messages: Arc<dyn MessageIdStore>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1055,6 +1059,39 @@ async fn validate_auth_message_token_with_guards(
     Ok(serde_json::Value::Object(accumulated_claims))
 }
 
+/// Whether a message has already been acted on, so a resend of it is not acted
+/// on again.
+///
+/// Only asked of a message the client gave an id to. An id the runtime made up
+/// for one that carried none is unique by construction, so it would never match
+/// anything, and remembering it would fill the store with entries nothing can
+/// look up.
+///
+/// This runs after the acknowledgement has gone out, which is the order it has
+/// to be in. A client resends because it did not hear one, and the thing that
+/// went missing may have been the acknowledgement rather than the message.
+/// Staying silent about a duplicate would leave it resending the message the
+/// runtime is refusing to answer for.
+async fn already_acted_on(
+    message_id: &Option<String>,
+    connection_id: &str,
+    state: &WebSocketAppState,
+) -> bool {
+    let Some(message_id) = message_id else {
+        return false;
+    };
+
+    if state.seen_messages.record_and_check_seen(message_id).await {
+        debug!(
+            "client {connection_id} sent message {message_id} again, which has already been \
+             handled, so it is not handled a second time"
+        );
+        return true;
+    }
+
+    false
+}
+
 async fn process_message(
     msg: Message,
     connection_id: String,
@@ -1069,6 +1106,9 @@ async fn process_message(
                 state.route_key.clone(),
             )?;
             if let Some((route, message_id, _requires_ack, data)) = resolved {
+                if already_acted_on(&message_id, &connection_id, state).await {
+                    return ControlFlow::Continue(());
+                }
                 if let Some(handler) = get_message_route_handler(&route, state).await {
                     handle_json_message(
                         handler.clone(),
@@ -1090,6 +1130,9 @@ async fn process_message(
         Message::Binary(bytes) => {
             let resolved = resolve_binary_route(&bytes, connection_id.clone())?;
             if let Some((route, message_id, _requires_ack, bytes_stripped)) = resolved {
+                if already_acted_on(&message_id, &connection_id, state).await {
+                    return ControlFlow::Continue(());
+                }
                 if let Some(handler) = get_message_route_handler(&route, state).await {
                     handle_binary_message(
                         handler.clone(),

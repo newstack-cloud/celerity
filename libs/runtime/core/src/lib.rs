@@ -35,3 +35,4 @@ pub mod types;
 pub(crate) mod utils;
 mod value_sources;
 pub mod websocket;
+pub mod websocket_dedupe;
