@@ -118,6 +118,10 @@ pub struct Application {
     ipc_server_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     event_cleanup_task_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     ws_connections: Option<Arc<dyn WebSocketRegistrySend + 'static>>,
+    // The same registry as above, held as itself rather than as what it sends
+    // through, so that `run` can start the worker that waits on clients.
+    // Taken when it does, since it is only started once.
+    ws_conn_registry: Option<Arc<WebSocketConnRegistry>>,
     ws_app_routes: Arc<AsyncMutex<HashMap<String, Arc<dyn WebSocketMessageHandler + Send + Sync>>>>,
     custom_auth_guards: Arc<AsyncMutex<HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>>>>,
     server_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
@@ -161,6 +165,7 @@ impl Application {
             ipc_dispatcher_shutdown_signal: None,
             ipc_server_shutdown_signal: None,
             ws_connections: None,
+            ws_conn_registry: None,
             ws_app_routes: Arc::new(AsyncMutex::new(HashMap::new())),
             custom_auth_guards: Arc::new(AsyncMutex::new(HashMap::new())),
             resource_store: None,
@@ -340,10 +345,10 @@ impl Application {
                 None,
             ));
             self.ws_connections = Some(conn_registry.clone());
-
-            // Tracks the messages that asked their client to acknowledge them,
-            // resending and eventually giving up on the ones that go unanswered.
-            conn_registry.clone().start_client_ack_worker();
+            // Kept for `run` to start the worker that tracks the messages
+            // asking their client to acknowledge them. Starting one here would
+            // mean spawning, and this runs outside the async runtime when in FFI mode.
+            self.ws_conn_registry = Some(conn_registry.clone());
 
             // As with HTTP routes, the FFI call mode has the SDK register these
             // as it binds each in-process handler. In the IPC call mode the
@@ -693,6 +698,14 @@ impl Application {
         // dispatched before its deadline is being watched.
         if let Some(cleanup_task) = self.event_cleanup_task.take() {
             self.event_cleanup_task_shutdown_signal = Some(cleanup_task.spawn());
+        }
+
+        // Here rather than in `setup` for the same reason tracing and the
+        // consumers are, spawning needs a runtime and `setup` is called from
+        // outside one. Before anything serves, so that no message can go out
+        // before there is anything waiting to hear it was received.
+        if let Some(conn_registry) = self.ws_conn_registry.take() {
+            conn_registry.start_client_ack_worker();
         }
 
         self.run_ipc_stream_server().await?;

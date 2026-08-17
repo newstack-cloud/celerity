@@ -86,6 +86,30 @@ async fn start_runtime_with(
     (app, addr, socket)
 }
 
+/// Setting an application up must not need a runtime to be running.
+///
+/// Deliberately not a tokio test, which is the whole point. An SDK calls setup
+/// from wherever the host language happens to be, with no runtime on that
+/// thread, so anything here that spawns takes the process down rather than
+/// returning an error. That is what a websocket API did until the worker that
+/// waits on clients moved to `run`, and a tokio test cannot show it because a
+/// tokio test always has the runtime that is missing.
+#[test]
+fn sets_up_a_websocket_api_without_a_runtime_to_spawn_into() {
+    let socket = socket_path("ipc-ws-setup-sync");
+    let env_vars = ipc_env(
+        "ipc-ws-setup-sync",
+        "tests/data/fixtures/ipc-websocket-default-route.blueprint.yaml",
+        &socket,
+        &[],
+    );
+    let runtime_config = RuntimeConfig::from_env(&env_vars);
+    let mut app = Application::new(runtime_config, Box::new(env_vars));
+
+    app.setup()
+        .expect("setting up a websocket api should not need a runtime");
+}
+
 /// Stands in for a handlers executable.
 struct HandlerStub {
     /// The events the handler was asked to process.
