@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import shutil
@@ -8,7 +9,11 @@ import time
 import pytest
 from dotenv import dotenv_values
 from websocket import create_connection
-from celerity_runtime_sdk import CoreRuntimeApplication, CoreRuntimeConfigBuilder
+from celerity_runtime_sdk import (
+    CoreRuntimeApplication,
+    CoreRuntimeConfigBuilder,
+    encode_binary_message,
+)
 
 WS_SERVER_PORT = 22362
 WS_URL = f"ws://localhost:{WS_SERVER_PORT}/ws"
@@ -224,3 +229,26 @@ def test_ws_request_context(ws_server):
         assert msg["requestContext"]["path"] == "/ws"
     finally:
         ws.close()
+
+
+def test_encode_binary_message_lays_out_the_celerity_binary_message_format():
+    framed = base64.b64decode(
+        encode_binary_message("up", b"\xff", message_id="id")
+    )
+
+    # [routeLength][route][requireAck][messageIdLength][messageId][message]
+    assert framed == bytes([0x02, 0x75, 0x70, 0x00, 0x02, 0x69, 0x64, 0xFF])
+
+
+def test_encode_binary_message_refuses_what_it_cannot_represent():
+    # An empty route, which is what the message would be delivered by.
+    with pytest.raises(ValueError):
+        encode_binary_message("", b"\x01")
+
+    # A route longer than the single byte that measures it.
+    with pytest.raises(ValueError):
+        encode_binary_message("r" * 256, b"\x01")
+
+    # Asking to be acknowledged with no id for the acknowledgement to name.
+    with pytest.raises(ValueError):
+        encode_binary_message("up", b"\x01", require_ack=True)
