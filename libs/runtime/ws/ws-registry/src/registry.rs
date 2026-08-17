@@ -148,22 +148,45 @@ impl WebSocketConnRegistry {
                             );
                             continue;
                         };
-                        let message =
-                            match create_ws_message(resend.message_type, resend.message.clone()) {
-                                Ok(message) => message,
-                                Err(err) => {
-                                    error!(
-                                        message_id = %resend.message_id,
-                                        "could not rebuild a message to resend to a client: {err:?}"
-                                    );
-                                    continue;
-                                }
-                            };
+                        let message = match create_ws_message(
+                            resend.message_type.clone(),
+                            resend.message.clone(),
+                        ) {
+                            Ok(message) => message,
+                            Err(err) => {
+                                error!(
+                                    message_id = %resend.message_id,
+                                    "could not rebuild a message to resend to a client: {err:?}"
+                                );
+                                continue;
+                            }
+                        };
+
+                        // Noted again, which counts the attempt and restarts the
+                        // clock. Without it the attempt that has just been made
+                        // is never counted, so a message nobody answers is sent
+                        // again on every check and never reaches the point of
+                        // being declared lost. A message sent between nodes
+                        // gets this from being resent through the send path,
+                        // which records it on the way past, but a client's
+                        // resend goes straight to the socket.
+                        let client_id = resend.client_id.clone();
+                        let message_id = resend.message_id.clone();
+                        self.record_pending_client_ack(
+                            resend.client_id,
+                            resend.message_id,
+                            resend.message_type,
+                            resend.message,
+                            resend.inform_clients_on_loss,
+                            resend.caller,
+                        )
+                        .await;
+
                         let mut sender = connection.lock().await;
                         if let Err(err) = sender.send(message).await {
                             debug!(
-                                connection_id = %resend.client_id,
-                                message_id = %resend.message_id,
+                                connection_id = %client_id,
+                                message_id = %message_id,
                                 "failed to resend a message to a client: {err:?}"
                             );
                         }
@@ -1230,6 +1253,54 @@ mod tests {
             resent.is_err(),
             "an acknowledged message should not be resent"
         );
+    }
+
+    /// A message nobody ever acknowledges is eventually given up on.
+    ///
+    /// Each resend has to count as an attempt, or the message is sent again on
+    /// every check for as long as the connection lives and the clients waiting
+    /// to hear that it went missing never do.
+    #[test_log::test(tokio::test)]
+    async fn test_a_message_nobody_acknowledges_is_declared_lost() {
+        let (registry, connection_id, mut socket) = registry_with_one_client().await;
+
+        registry
+            .send_message(
+                connection_id.clone(),
+                "m-4".to_string(),
+                MessageType::Json,
+                r#"{"event":"update","data":{"value":4},"messageId":"m-4","ack":true}"#.to_string(),
+                Some(SendContext {
+                    wait_for_ack: false,
+                    caller: Some("caller-route".to_string()),
+                    // Told to itself, so the loss event lands somewhere this
+                    // test can watch.
+                    inform_clients: vec![connection_id],
+                }),
+            )
+            .await
+            .unwrap();
+
+        // Three attempts at 100ms apart, checked every 50ms, so a second or so
+        // covers the escalation with room for a loaded machine.
+        let lost = tokio::time::timeout(Duration::from_secs(3), async {
+            while let Some(Ok(message)) = socket.next().await {
+                if let tungstenite::Message::Binary(bytes) = message {
+                    if bytes.starts_with(&[0x1, 0x3, 0x0, 0x0]) {
+                        let payload: serde_json::Value =
+                            serde_json::from_slice(&bytes[4..]).unwrap();
+                        return Some(payload);
+                    }
+                }
+            }
+            None
+        })
+        .await
+        .expect("a message nobody acknowledges should be declared lost rather than resent forever");
+
+        let payload = lost.expect("the connection closed before the loss event arrived");
+        assert_eq!(payload["messageId"], "m-4");
+        assert_eq!(payload["caller"], "caller-route");
     }
 
     /// A message is only settled by the client it was sent to.
