@@ -114,6 +114,23 @@ mod tests {
         );
     }
 
+    /// A payload starting with a zero byte used to take the process down here,
+    /// since the parser read it as a route of no length and then indexed the
+    /// empty slice that left. Every binary message passes through this on its
+    /// way out, so that was reachable from any application.
+    #[test]
+    fn test_create_ws_message_refuses_binary_with_a_route_of_no_length() {
+        let result = create_ws_message(
+            MessageType::Binary,
+            BASE64_STANDARD.encode([0x00, 0x01, 0x02, 0x03]),
+        );
+
+        assert!(
+            matches!(result, Err(WebSocketConnError::MalformedBinaryMessage(_))),
+            "a route of no length should be refused rather than panic, got {result:?}"
+        );
+    }
+
     #[test]
     fn test_create_ws_message_passes_a_framed_binary_message_through_untouched() {
         let framed = frame(b"price.tick", 0x1, b"m-1", &[0xde, 0xad]);
