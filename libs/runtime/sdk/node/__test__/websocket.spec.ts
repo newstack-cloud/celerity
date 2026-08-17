@@ -2,6 +2,7 @@ import test from "ava";
 import {
   CoreRuntimeApplication,
   CoreRuntimePlatform,
+  encodeBinaryMessage,
   JsMessageType,
   type CoreRuntimeAppConfig,
   type CoreRuntimeConfig,
@@ -53,16 +54,31 @@ function openWs(url: string): Promise<WebSocket> {
 }
 
 /** Waits for the next message on a WebSocket. */
+/** The capabilities signal, which arrives on its own the moment a connection
+ * opens and is not a message any test is waiting for. */
+function isCapabilitiesSignal(data: Buffer, isBinary: boolean): boolean {
+  return (
+    isBinary && data.length === 4 && data[0] === 0x01 && data[1] === 0x05
+  );
+}
+
 function nextWsMessage(ws: WebSocket, timeoutMs = 5000): Promise<string> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(
       () => reject(new Error("timeout waiting for WS message")),
       timeoutMs,
     );
-    ws.once("message", (data) => {
+    // Passed over rather than taken as the first message. Whether the signal
+    // lands before or after a listener is attached comes down to timing.
+    const onMessage = (data: Buffer, isBinary: boolean) => {
+      if (isCapabilitiesSignal(data, isBinary)) {
+        return;
+      }
+      ws.off("message", onMessage);
       clearTimeout(timer);
       resolve(data.toString());
-    });
+    };
+    ws.on("message", onMessage);
   });
 }
 
@@ -430,6 +446,135 @@ test("WS request context includes connection metadata", async (t) => {
       t.truthy(ctx.requestId);
       t.truthy(ctx.path);
       t.truthy(ctx.clientIp);
+    } finally {
+      ws.close();
+    }
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    app.shutdown();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// 8. Binary message framing
+// ---------------------------------------------------------------------------
+
+test("encodeBinaryMessage lays out the Celerity Binary Message Format", (t) => {
+  const framed = Buffer.from(
+    encodeBinaryMessage({
+      route: "up",
+      messageId: "id",
+      requireAck: false,
+      message: Buffer.from([0xff]),
+    }),
+    "base64",
+  );
+
+  // [routeLength][route][requireAck][messageIdLength][messageId][message]
+  t.deepEqual(
+    [...framed],
+    [0x02, 0x75, 0x70, 0x00, 0x02, 0x69, 0x64, 0xff],
+  );
+});
+
+test("encodeBinaryMessage refuses what it cannot represent", (t) => {
+  // An empty route, which is what the message would be delivered by.
+  t.throws(() =>
+    encodeBinaryMessage({ route: "", message: Buffer.from([0x01]) }),
+  );
+
+  // A route longer than the single byte that measures it.
+  t.throws(() =>
+    encodeBinaryMessage({ route: "r".repeat(256), message: Buffer.from([0x01]) }),
+  );
+
+  // Asking to be acknowledged with no id for the acknowledgement to name.
+  t.throws(() =>
+    encodeBinaryMessage({
+      route: "up",
+      requireAck: true,
+      message: Buffer.from([0x01]),
+    }),
+  );
+});
+
+test("a framed binary message reaches the client exactly as composed", async (t) => {
+  const serverPort = PORT + 16;
+  const app = new CoreRuntimeApplication(testConfig({ serverPort }));
+  const config = app.setup();
+
+  const registry = app.websocketRegistry();
+  const payload = Buffer.from([0xde, 0xad, 0xbe, 0xef]);
+  const framed = encodeBinaryMessage({
+    route: "updates",
+    messageId: "m-1",
+    requireAck: false,
+    message: payload,
+  });
+  let refusedUnframed: unknown = null;
+
+  for (const handler of config.api?.websocket?.handlers ?? []) {
+    if (handler.route === "echo") {
+      app.registerWebsocketHandler(
+        handler.route,
+        async (_err: Error | null, msg: JsWebSocketMessageInfo) => {
+          // Raw bytes are refused, since a client would read them as a route
+          // and an id rather than as a payload.
+          try {
+            await registry.sendMessage(
+              msg.connectionId,
+              msg.messageId,
+              "binary" as JsMessageType,
+              payload.toString("base64"),
+              null,
+            );
+          } catch (err) {
+            refusedUnframed = err;
+          }
+
+          await registry.sendMessage(
+            msg.connectionId,
+            msg.messageId,
+            "binary" as JsMessageType,
+            framed,
+            null,
+          );
+        },
+      );
+    } else {
+      app.registerWebsocketHandler(handler.route, async (_err, _msg) => { });
+    }
+  }
+
+  await app.run(false);
+
+  try {
+    const ws = await openWs(`ws://localhost:${serverPort}/ws`);
+    try {
+      const received = deferred<Buffer>();
+      ws.on("message", (data: Buffer, isBinary: boolean) => {
+        if (!isBinary) {
+          return;
+        }
+        if (isCapabilitiesSignal(data, isBinary)) {
+          return;
+        }
+        received.resolve(Buffer.from(data));
+      });
+
+      ws.send(JSON.stringify({ action: "echo", data: "ping" }));
+
+      const timer = setTimeout(
+        () => received.reject(new Error("timeout waiting for the binary frame")),
+        5000,
+      );
+      const frame = await received.promise;
+      clearTimeout(timer);
+
+      t.truthy(refusedUnframed, "unframed bytes should have been refused");
+      t.deepEqual([...frame], [...Buffer.from(framed, "base64")]);
+      // The payload survives with the framing in front of it, untouched.
+      t.deepEqual([...frame.subarray(frame.length - payload.length)], [...payload]);
     } finally {
       ws.close();
     }

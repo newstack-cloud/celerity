@@ -16,6 +16,7 @@ napi = { version = "3.8", default-features = false, features = [
 ] }
 napi-derive = "3"
 async-trait = "0.1.88"
+base64 = "0.22.1"
 tokio = "1.39.2"
 axum = "0.8.4"
 axum-extra = { version = "0.10.1", features = ["cookie"] }

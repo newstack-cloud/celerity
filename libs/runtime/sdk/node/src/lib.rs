@@ -5,6 +5,11 @@ mod consumer;
 mod invoke;
 mod websocket;
 
+// Re-exported so that the framing helper is reachable from outside the crate.
+// The other bindings in that module are reached through code here, but this one
+// is only ever called from JavaScript, which is not a use the compiler can see.
+pub use websocket::{encode_binary_message, JsBinaryMessageParts};
+
 use std::{collections::HashMap, str::FromStr, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
