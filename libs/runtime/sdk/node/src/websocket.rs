@@ -1,6 +1,11 @@
 use std::{collections::HashMap, sync::Arc};
 
 use async_trait::async_trait;
+use base64::{prelude::BASE64_STANDARD, Engine};
+use celerity_helpers::websockets::{
+  encode_binary_message as encode_binary_message_inner, BinaryMessageEncodeError,
+  BinaryMessageParts,
+};
 use celerity_runtime_core::{
   errors::WebSocketsMessageError,
   websocket::{
@@ -250,6 +255,53 @@ impl From<JsSendContext> for SendContext {
       inform_clients: ctx.inform_clients,
     }
   }
+}
+
+/// The parts of a binary message to be framed for a WebSocket client.
+#[napi(object)]
+pub struct JsBinaryMessageParts {
+  /// The route the message is for, which is how a client hands it to the right
+  /// handler. No longer than 255 bytes, and it can not begin with one of the
+  /// bytes the protocol reserves for its own frames.
+  pub route: String,
+  /// The id the message is known by, which is what an acknowledgement names,
+  /// what deduplication keys on and what a loss notification refers to. No
+  /// longer than 255 bytes.
+  pub message_id: Option<String>,
+  /// Whether the client is being asked to acknowledge this message, which only
+  /// means anything alongside an id.
+  pub require_ack: Option<bool>,
+  /// The payload, carried to the client without being read.
+  pub message: Buffer,
+}
+
+/// Frames a binary message in the Celerity Binary Message Format.
+///
+/// A client reads every binary frame that is not a reserved one as a framed
+/// message, so a payload sent without this is not read as a payload. It is read
+/// as a route length, a route and an id, and what reaches the application is
+/// short by however many bytes that are treated as headers, under a route
+/// nothing is listening on. The runtime refuses a binary message it cannot read
+/// as a frame, so this is how a handler composes one it will accept.
+///
+/// Returns the framed message base64 encoded, which is the form `sendMessage`
+/// takes for a binary message, so the result can be passed straight to it.
+#[napi]
+pub fn encode_binary_message(parts: JsBinaryMessageParts) -> Result<String> {
+  let framed = encode_binary_message_inner(BinaryMessageParts {
+    route: &parts.route,
+    message_id: parts.message_id.as_deref(),
+    require_ack: parts.require_ack.unwrap_or(false),
+    message: &parts.message,
+  })
+  .map_err(|BinaryMessageEncodeError::Invalid(reason)| {
+    Error::new(
+      Status::InvalidArg,
+      format!("encode_binary_message failed: {reason}"),
+    )
+  })?;
+
+  Ok(BASE64_STANDARD.encode(framed))
 }
 
 /// Registry for sending messages to WebSocket connections.

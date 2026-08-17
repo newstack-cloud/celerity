@@ -203,6 +203,12 @@ export declare class CoreRuntimeConfigBuilder {
    * If not set, falls back to the `CELERITY_LOG_FORMAT` environment variable.
    */
   setLogFormat(value: string): this
+  /**
+   * Sets whether to serve the local handler invoke endpoint. Defaults to
+   * `false`, and is only served when the platform is `Local` or test mode
+   * is on.
+   */
+  setEnableLocalInvoke(value: boolean): this
   /** Sets whether to enable metrics collection. Defaults to `false`. */
   setMetricsEnabled(value: boolean): this
   /** Sets the trace sampling ratio (0.0–1.0). Defaults to `0.1` (10%). */
@@ -461,6 +467,13 @@ export interface CoreRuntimeConfig {
    * environment variable.
    */
   logFormat?: string
+  /**
+   * Whether to serve `POST /runtime/handlers/invoke`, which runs any handler
+   * by name with a payload the caller supplies, bypassing whatever normally
+   * triggers it and with no authentication. Defaults to `false`, and is only
+   * served when the platform is `Local` or test mode is on.
+   */
+  enableLocalInvoke?: boolean
   /** Whether to enable metrics collection. Defaults to `false` when not set. */
   metricsEnabled?: boolean
   /** The trace sampling ratio (0.0–1.0). Defaults to `0.1` (10%) when not set. */
@@ -514,6 +527,21 @@ export interface CoreWebSocketHandlerDefinition {
   timeout: number
 }
 
+/**
+ * Frames a binary message in the Celerity Binary Message Format.
+ *
+ * A client reads every binary frame that is not a reserved one as a framed
+ * message, so a payload sent without this is not read as a payload. It is read
+ * as a route length, a route and an id, and what reaches the application is
+ * short by however many bytes that are treated as headers, under a route
+ * nothing is listening on. The runtime refuses a binary message it cannot read
+ * as a frame, so this is how a handler composes one it will accept.
+ *
+ * Returns the framed message base64 encoded, which is the form `sendMessage`
+ * takes for a binary message, so the result can be passed straight to it.
+ */
+export declare function encodeBinaryMessage(parts: JsBinaryMessageParts): string
+
 /** The input passed to a guard handler callback from the Rust runtime. */
 export interface GuardInput {
   /**
@@ -556,6 +584,29 @@ export interface GuardResult {
   auth?: any
   /** Error message (returned on failure). */
   message?: string
+}
+
+/** The parts of a binary message to be framed for a WebSocket client. */
+export interface JsBinaryMessageParts {
+  /**
+   * The route the message is for, which is how a client hands it to the right
+   * handler. No longer than 255 bytes, and it can not begin with one of the
+   * bytes the protocol reserves for its own frames.
+   */
+  route: string
+  /**
+   * The id the message is known by, which is what an acknowledgement names,
+   * what deduplication keys on and what a loss notification refers to. No
+   * longer than 255 bytes.
+   */
+  messageId?: string
+  /**
+   * Whether the client is being asked to acknowledge this message, which only
+   * means anything alongside an id.
+   */
+  requireAck?: boolean
+  /** The payload, carried to the client without being read. */
+  message: Buffer
 }
 
 /** The handler input for when consumer event messages are received from an event source. */
