@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     fmt::{Debug, Display},
-    sync::{Arc, RwLock},
+    sync::{Arc, OnceLock, RwLock},
 };
 
 use async_trait::async_trait;
@@ -89,7 +89,10 @@ pub struct WebSocketConnRegistry {
     // Held separately because the two answer different questions. A node
     // confirming it took a message on is not a client confirming it received
     // one, and only the node holding a connection can be told the second.
-    client_ack_sender: Mutex<Option<Sender<AckWorkerMessage>>>,
+    //
+    // Written once, before the worker is spawned, so a send can never find it
+    // empty and drop the tracking for a message that asked to be acknowledged.
+    client_ack_sender: OnceLock<Sender<AckWorkerMessage>>,
     // This is called "broadcaster" because it is used to send messages to all
     // other nodes in a cluster, however, it should not be confused with a broadcast::Sender
     // for in-process broadcasting. Typically, there will be a single receiver in the same process
@@ -111,7 +114,7 @@ impl WebSocketConnRegistry {
             ack_worker_config: config.ack_worker_config,
             connections: Arc::new(RwLock::new(HashMap::new())),
             ack_sender: Mutex::new(None),
-            client_ack_sender: Mutex::new(None),
+            client_ack_sender: OnceLock::new(),
             broadcaster,
             server_node_name: config.server_node_name,
         }
@@ -128,12 +131,12 @@ impl WebSocketConnRegistry {
         let (action_tx, mut action_rx) = tokio::sync::mpsc::channel(1024);
         Worker::new(self.ack_worker_config.clone().unwrap_or_default()).start(ack_rx, action_tx);
 
-        tokio::spawn(async move {
-            {
-                let mut sender = self.client_ack_sender.lock().await;
-                sender.replace(ack_tx);
-            }
+        // Published before the worker is spawned rather than from inside it, so
+        // that a send arriving between this returning and the task first being
+        // polled is still tracked.
+        let _ = self.client_ack_sender.set(ack_tx);
 
+        tokio::spawn(async move {
             while let Some(action) = action_rx.recv().await {
                 match action {
                     MessageAction::Resend(resend) => {
@@ -192,7 +195,7 @@ impl WebSocketConnRegistry {
         inform_clients: Vec<String>,
         caller: Option<String>,
     ) {
-        if let Some(sender) = self.client_ack_sender.lock().await.as_ref() {
+        if let Some(sender) = self.client_ack_sender.get() {
             let _ = sender
                 .send(AckWorkerMessage::Status(
                     message_id,
@@ -210,7 +213,7 @@ impl WebSocketConnRegistry {
 
     /// Records that a client acknowledged a message, so it stops being tracked.
     pub async fn record_client_ack(&self, message_id: String) {
-        if let Some(sender) = self.client_ack_sender.lock().await.as_ref() {
+        if let Some(sender) = self.client_ack_sender.get() {
             let _ = sender
                 .send(AckWorkerMessage::Status(message_id, AckStatus::Received))
                 .await;
