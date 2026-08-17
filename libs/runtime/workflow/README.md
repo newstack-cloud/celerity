@@ -7,7 +7,7 @@ This crate provides a HTTP server application for the workflow engine that imple
 This package creates an executable workflow from a blueprint file and a set of handlers.
 This also provides an API for the registration of handlers.
 
-### About `${..}` Substitutions
+## About `${..}` Substitutions
 
 The runtime supports a limited version of `${..}` [substitutions](https://bluelink.dev/docs/bluelink/blueprints/specification#references--substitutions).
 Only `${variables.[name]}` substitutions are recognised, all other substitutions are treated as string literals.

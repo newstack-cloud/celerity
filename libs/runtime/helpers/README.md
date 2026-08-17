@@ -1,16 +1,17 @@
-# celerity runtime workflow
+# celerity runtime helpers
 
-This package provides the workflow engine components designed to be used in the Celerity workflow runtime.
-This crate provides a HTTP server application for the workflow engine that implements the specification defined in the [Celerity Workflow Specification](https://celerityframework.io/docs/framework/applications/resources/celerity-workflow).
-This package creates an executable workflow from a blueprint file and a set of handlers.
-This also provides an API for the registration of handlers.
+This crate holds the pieces more than one Celerity runtime component needs, so
+that they are written once and agree with each other.
 
-### About `${..}` Substitutions
+The most prominent of these being the WebSocket message format, where a parser and an encoder
+sit together. A message read differently from the way it was written is a
+message nobody receives, so the two belong side by side rather than in the
+crates that happen to use them.
 
-The runtime supports a limited version of `${..}` [substitutions](https://bluelink.dev/docs/bluelink/blueprints/specification#references--substitutions).
-Only `${variables.[name]}` substitutions are recognised, all other substitutions are treated as string literals.
-
-In the runtime, the parser will replace `${variables.[name]}` with an environment variable of the form `CELERITY_VARIABLE_[name]`, these environment variables are expected to be set at package/build time by a tool like the Celerity Deploy Engine used in the Celerity CLI.
+The rest is the ordinary shared ground of a runtime: reading configuration from
+the environment, request and response helpers, telemetry setup for tracing and
+metrics, retry and backoff, time, JSONPath, and the client pieces for consumers
+and Redis.
 
 ## Additional documentation
 
