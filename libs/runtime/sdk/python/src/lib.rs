@@ -1002,6 +1002,10 @@ fn _celerity_runtime_sdk(m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add_class::<PyRequestContext>()?;
   m.add_class::<WSBindingSendContext>()?;
   m.add_class::<WSBindingRegistrySend>()?;
+  m.add_function(wrap_pyfunction!(
+    crate::websockets::encode_binary_message,
+    m
+  )?)?;
   m.add_class::<CoreRuntimeAppConfig>()?;
   m.add_class::<CoreApiConfig>()?;
   m.add_class::<CoreHttpConfig>()?;

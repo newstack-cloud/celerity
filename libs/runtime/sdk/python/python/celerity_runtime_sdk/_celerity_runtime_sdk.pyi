@@ -1336,6 +1336,41 @@ class WebSocketRegistry:
         """
 
 
+def encode_binary_message(
+    route: str,
+    message: bytes,
+    message_id: str | None = None,
+    require_ack: bool = False,
+) -> str:
+    """
+    Frames a binary message in the Celerity Binary Message Format.
+
+    A client reads every binary frame that is not a reserved one as a framed message,
+    so a payload sent without this is not read as a payload. It is read as a route
+    length, a route and an id, and what reaches the application is short by however
+    many bytes that are treated as headers, under a route nothing is listening on.
+    The runtime refuses a binary message it cannot read as a frame, so this is how a
+    handler composes one it will accept.
+
+    Args:
+        route: The route the message is for, which is how a client hands it to the
+               right handler. At most 255 bytes, and it can not begin with one of the
+               bytes the protocol reserves for its own frames.
+        message: The payload, carried to the client without being read.
+        message_id: The id the message is known by, which is what an acknowledgement
+                    names and what deduplication keys on. At most 255 bytes.
+        require_ack: Whether the client is being asked to acknowledge this message,
+                     which needs an id for the acknowledgement to name.
+
+    Returns:
+        The framed message base64 encoded, which is the form `send_message` takes for
+        a binary message, so the result can be passed straight to it.
+
+    Raises:
+        ValueError: If any part cannot be represented in the format.
+    """
+
+
 class ConsumerEventInput:
     """
     The handler input for when consumer event messages are received from an event source.

@@ -1,6 +1,11 @@
 use std::{collections::HashMap, sync::Arc};
 
 use async_trait::async_trait;
+use base64::{prelude::BASE64_STANDARD, Engine};
+use celerity_helpers::websockets::{
+  encode_binary_message as encode_binary_message_inner, BinaryMessageEncodeError,
+  BinaryMessageParts,
+};
 use celerity_runtime_core::{
   config::{WebSocketConfig, WebSocketHandlerDefinition},
   errors::WebSocketsMessageError,
@@ -521,6 +526,43 @@ impl From<WSBindingMessageType> for MessageType {
       WSBindingMessageType::Binary => MessageType::Binary,
     }
   }
+}
+
+/// Frames a binary message in the Celerity Binary Message Format.
+///
+/// A client reads every binary frame that is not a reserved one as a framed
+/// message, so a payload sent without this is not read as a payload. It is read
+/// as a route length, a route and an id, and what reaches the application is
+/// short by however many bytes that are treated as headers, under a route
+/// nothing is listening on. The runtime refuses a binary message it cannot read
+/// as a frame, so this is how a handler composes one it will accept.
+///
+/// The route can be at most 255 bytes and can not begin with one of the bytes
+/// the protocol reserves for its own frames. The message id, which is what an
+/// acknowledgement names and what deduplication keys on, can also be at most
+/// 255 bytes, and is required when asking to be acknowledged.
+///
+/// Returns the framed message base64 encoded, which is the form `send_message`
+/// takes for a binary message, so the result can be passed straight to it.
+#[pyfunction]
+#[pyo3(signature = (route, message, message_id=None, require_ack=false))]
+pub fn encode_binary_message(
+  route: &str,
+  message: &[u8],
+  message_id: Option<&str>,
+  require_ack: bool,
+) -> PyResult<String> {
+  let framed = encode_binary_message_inner(BinaryMessageParts {
+    route,
+    message_id,
+    require_ack,
+    message,
+  })
+  .map_err(|BinaryMessageEncodeError::Invalid(reason)| {
+    pyo3::exceptions::PyValueError::new_err(format!("encode_binary_message failed: {reason}"))
+  })?;
+
+  Ok(BASE64_STANDARD.encode(framed))
 }
 
 #[pyclass(name = "WebSocketRegistry")]
