@@ -26,6 +26,7 @@ use celerity_blueprint_config_parser::blueprint::{
 use celerity_helpers::{
     http::ResourceStore,
     request::{headers_to_hashmap, query_from_uri},
+    websockets::{encode_reserved_message, ReservedRoute},
 };
 use celerity_ws_registry::registry::{WebSocketConnRegistry, WebSocketConnSender};
 use futures::{SinkExt, StreamExt};
@@ -45,7 +46,7 @@ use crate::{
     },
     auth_jwt::{validate_jwt_on_ws_connect, ValidateJwtError},
     consts::{
-        CELERITY_WS_ACK_SIGNAL, CELERITY_WS_CAPABILITIES_SIGNAL, CELERITY_WS_CONNECT_HANDLER_ROUTE,
+        CELERITY_WS_ACK_SIGNAL, CELERITY_WS_CONNECT_HANDLER_ROUTE,
         CELERITY_WS_DEFAULT_MESSAGE_HANDLER_ROUTE, CELERITY_WS_DISCONNECT_HANDLER_ROUTE,
         CELERITY_WS_FORBIDDEN_ERROR_CODE, CELERITY_WS_UNAUTHORISED_ERROR_CODE,
         WS_CONNECTION_DRAIN_GRACE_MS, WS_CONNECTION_SATURATED_RETRY_AFTER_MS,
@@ -318,7 +319,7 @@ async fn handle_socket(
             let mut sock = socket_ref.lock().await;
             let _ = sock
                 .send(Message::Binary(
-                    CELERITY_WS_CAPABILITIES_SIGNAL.to_vec().into(),
+                    encode_reserved_message(ReservedRoute::Capabilities, &[]).into(),
                 ))
                 .await;
         }
@@ -1158,7 +1159,9 @@ fn detect_heartbeat_ping(msg: &Message) -> Option<Message> {
                 && bytes[2] == 0x0
                 && bytes[3] == 0x0
             {
-                return Some(Message::Binary(vec![0x1, 0x2, 0x0, 0x0].into()));
+                return Some(Message::Binary(
+                    encode_reserved_message(ReservedRoute::Pong, &[]).into(),
+                ));
             }
             None
         }
@@ -1396,9 +1399,7 @@ async fn acknowledge(
         AckFormat::Binary => {
             let body =
                 serde_json::json!({ "messageId": message_id, "timestamp": timestamp }).to_string();
-            let mut frame = CELERITY_WS_ACK_SIGNAL.to_vec();
-            frame.extend_from_slice(body.as_bytes());
-            Message::Binary(frame.into())
+            Message::Binary(encode_reserved_message(ReservedRoute::Ack, body.as_bytes()).into())
         }
     };
 
@@ -1653,6 +1654,25 @@ async fn close_with_retry_after(socket_ref: Arc<Mutex<WebSocketConnSender>>, ret
 #[cfg(test)]
 mod tests {
     use super::*;
+    // Only needed to hold the constant against the encoder, since nothing
+    // outside the tests matches on it.
+    use crate::consts::CELERITY_WS_CAPABILITIES_SIGNAL;
+
+    /// The constants are for matching an inbound frame, where a fixed size
+    /// array is what is wanted, and the encoder is for building an outbound
+    /// one. Two spellings of the same four bytes is how the header came to be
+    /// written short somewhere else, so they are held against each other here.
+    #[test]
+    fn test_the_reserved_signals_agree_with_what_the_encoder_builds() {
+        assert_eq!(
+            CELERITY_WS_ACK_SIGNAL.to_vec(),
+            encode_reserved_message(ReservedRoute::Ack, &[])
+        );
+        assert_eq!(
+            CELERITY_WS_CAPABILITIES_SIGNAL.to_vec(),
+            encode_reserved_message(ReservedRoute::Capabilities, &[])
+        );
+    }
 
     #[test]
     fn test_detect_client_ack_reads_both_encodings() {
