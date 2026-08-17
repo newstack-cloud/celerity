@@ -33,6 +33,23 @@ pub enum ReservedRoute {
     Capabilities = 0x5,
 }
 
+impl ReservedRoute {
+    /// Reads a route byte as one of the protocol's own, if it is one.
+    ///
+    /// The used by the parser and encoder for a single source of truth on
+    /// reserved routes.
+    pub fn from_byte(byte: u8) -> Option<Self> {
+        match byte {
+            0x1 => Some(ReservedRoute::Ping),
+            0x2 => Some(ReservedRoute::Pong),
+            0x3 => Some(ReservedRoute::LostMessage),
+            0x4 => Some(ReservedRoute::Ack),
+            0x5 => Some(ReservedRoute::Capabilities),
+            _ => None,
+        }
+    }
+}
+
 /// Frames one of the protocol's own messages.
 ///
 /// Not a different format from an application's message, the same one with a
@@ -69,6 +86,13 @@ pub fn parse_binary_message(
     }
 
     let route_length = msg_bytes[0];
+    if route_length == 0 {
+        return Err(BinaryMessageParseError::Malformed(
+            "a message must name the route it is for, and this one has a route \
+            of no length"
+                .to_string(),
+        ));
+    }
     if route_length as usize + 1 > msg_bytes.len() {
         return Err(BinaryMessageParseError::Malformed(
             "route length exceeds message length".to_string(),
@@ -76,8 +100,7 @@ pub fn parse_binary_message(
     }
 
     let route_bytes = &msg_bytes[1..=route_length as usize];
-    let route = if route_bytes[0] <= 0x4 {
-        // Reserved routes are single byte values from 0x0 to 0x4.
+    let route = if ReservedRoute::from_byte(route_bytes[0]).is_some() {
         BinaryRoute::Reserved(route_bytes[0])
     } else {
         // Custom routes are utf-8 strings.
@@ -181,7 +204,7 @@ pub fn encode_binary_message(
     // A route is read as reserved when its first byte is one of the reserved
     // values, so a custom route starting with one would come back as a ping or
     // an acknowledgement rather than as itself.
-    if route_bytes[0] <= 0x4 {
+    if ReservedRoute::from_byte(route_bytes[0]).is_some() {
         return Err(BinaryMessageEncodeError::Invalid(format!(
             "a route can not begin with the byte {:#x}, which is reserved",
             route_bytes[0]
@@ -633,6 +656,75 @@ mod tests {
             encode_reserved_message(ReservedRoute::Ack, &[0xff]),
             vec![0x1, 0x4, 0x0, 0x0, 0xff]
         );
+    }
+
+    /// A route of no length left an empty slice that was then indexed, which
+    /// took the process down rather than reporting a malformed message. Every
+    /// binary message sent to a client is read by this on its way out, so a
+    /// payload beginning with a zero byte was enough to do it.
+    #[test]
+    fn test_parse_binary_message_refuses_a_route_of_no_length() {
+        let result = parse_binary_message(&[0x00, 0x01, 0x02, 0x03]);
+
+        assert!(
+            matches!(result, Err(BinaryMessageParseError::Malformed(_))),
+            "a route of no length should be refused, got {result:?}"
+        );
+    }
+
+    /// The capabilities signal is one of the protocol's own routes, so it has
+    /// to be read back as one. Read as a custom route it would be handed to an
+    /// application as a message on a route named by a control byte.
+    #[test]
+    fn test_the_capabilities_signal_round_trips_as_a_reserved_route() {
+        let framed = encode_reserved_message(ReservedRoute::Capabilities, &[]);
+
+        assert_eq!(
+            parse_binary_message(&framed).unwrap(),
+            BinaryMessageData {
+                route: BinaryRoute::Reserved(0x5),
+                message_id: None,
+                require_ack: false,
+                message: Vec::new(),
+            }
+        );
+    }
+
+    /// Every reserved route, so none of them can be left out of the parser's
+    /// reckoning the way the capabilities one was.
+    #[test]
+    fn test_every_reserved_route_round_trips_as_reserved() {
+        for route in [
+            ReservedRoute::Ping,
+            ReservedRoute::Pong,
+            ReservedRoute::LostMessage,
+            ReservedRoute::Ack,
+            ReservedRoute::Capabilities,
+        ] {
+            let framed = encode_reserved_message(route, &[]);
+            let parsed = parse_binary_message(&framed).unwrap();
+
+            assert_eq!(
+                parsed.route,
+                BinaryRoute::Reserved(route as u8),
+                "{route:?} should be read back as the reserved route it is"
+            );
+        }
+    }
+
+    /// An application must not be able to compose a route that would be read as
+    /// the capabilities signal, for the same reason as the other reserved ones.
+    #[test]
+    fn test_encode_binary_message_refuses_a_route_beginning_with_the_capabilities_byte() {
+        assert!(matches!(
+            encode_binary_message(BinaryMessageParts {
+                route: "\u{5}route",
+                message_id: None,
+                require_ack: false,
+                message: &[],
+            }),
+            Err(BinaryMessageEncodeError::Invalid(_))
+        ));
     }
 
     /// Asking for an acknowledgement with no id is refused rather than framed
