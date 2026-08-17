@@ -381,15 +381,6 @@ async fn handle_socket(
                     continue;
                 }
 
-                // A client acknowledging something the runtime sent it. This is
-                // handled before routing, to avoid getting it confused with a routed message
-                // that would otherwise fallback to the default handler.
-                if let Some(acknowledged) = detect_client_ack(&msg) {
-                    debug!("client {connection_id} acknowledged message {acknowledged}");
-                    state.connections.record_client_ack(acknowledged).await;
-                    continue;
-                }
-
                 if !is_authenticated {
                     // Connection is in unauthenticated state (authMessage strategy).
                     // Only accept an "authenticate" message; reject everything else.
@@ -426,6 +417,23 @@ async fn handle_socket(
                         }
                     }
                 } else {
+                    // A client acknowledging something the runtime sent it,
+                    // taken before routing so it is not mistaken for a routed
+                    // message and handed to the default handler.
+                    //
+                    // Only from a connection that has authenticated, since an
+                    // acknowledgement calls off a resend and the loss event
+                    // that follows it, and that is not something an unproven
+                    // client should be able to do to a message.
+                    if let Some(acknowledged) = detect_client_ack(&msg) {
+                        debug!("client {connection_id} acknowledged message {acknowledged}");
+                        state
+                            .connections
+                            .record_client_ack(connection_id.clone(), acknowledged)
+                            .await;
+                        continue;
+                    }
+
                     // Handed to the worker rather than run here. A handler that
                     // takes a while must not stop this loop reading, or the
                     // heartbeat above goes unanswered and a close frame goes

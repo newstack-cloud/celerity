@@ -71,6 +71,10 @@ pub enum MessageAction {
 
 pub enum AckWorkerMessage {
     Status(String, AckStatus),
+    ClientAck {
+        message_id: String,
+        connection_id: String,
+    },
     Check(String, Sender<AckStatus>),
     Wait(String, Sender<AckStatus>),
 }
@@ -160,6 +164,12 @@ impl Worker {
                         Some(AckWorkerMessage::Status(message_id, ack_status)) => {
                             self.record_ack(message_id, ack_status).await;
                         }
+                        Some(AckWorkerMessage::ClientAck {
+                            message_id,
+                            connection_id,
+                        }) => {
+                            self.record_client_ack(message_id, connection_id).await;
+                        }
                         Some(AckWorkerMessage::Check(message_id, tx)) => {
                             let acks_guard = self.acks.lock().await;
                             let detailed_ack_status = acks_guard.get(&message_id).cloned();
@@ -220,6 +230,44 @@ impl Worker {
         };
 
         acks_guard.insert(message_id, new_detailed_ack_status);
+    }
+
+    /// Settles a message on the word of the client it was sent to.
+    ///
+    /// An acknowledgement naming a message that is waiting on a different
+    /// connection is ignored, so one client cannot call off the delivery
+    /// guarantees another is relying on.
+    async fn record_client_ack(&mut self, message_id: String, connection_id: String) {
+        let mut acks_guard = self.acks.lock().await;
+        let Some(existing) = acks_guard.get_mut(&message_id) else {
+            debug!(
+                message_id = %message_id,
+                connection_id = %connection_id,
+                "a client acknowledged a message nothing is waiting on, ignoring it"
+            );
+            return;
+        };
+
+        let owed_by = match &existing.status {
+            AckStatus::Pending {
+                connection_id: pending_connection_id,
+                ..
+            } => pending_connection_id,
+            // Already settled one way or the other, so there is nothing left to
+            // say about it.
+            _ => return,
+        };
+
+        if *owed_by != connection_id {
+            debug!(
+                message_id = %message_id,
+                connection_id = %connection_id,
+                "a client acknowledged a message owed by another connection, ignoring it"
+            );
+            return;
+        }
+
+        existing.status = AckStatus::Received;
     }
 }
 

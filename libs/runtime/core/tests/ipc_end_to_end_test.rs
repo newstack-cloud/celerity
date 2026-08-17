@@ -1274,6 +1274,60 @@ async fn tells_an_unauthenticated_client_to_authenticate_first() {
     let _ = tokio::fs::remove_file(&socket).await;
 }
 
+/// An acknowledgement is a message like any other until the client has proved
+/// who it is.
+///
+/// Acknowledgements are taken out of the way before routing, and that used to
+/// happen ahead of the authentication gate, so an unauthenticated client could
+/// still settle a message and call off the resend and loss event that follow
+/// it. The refusal below is the gate doing its job.
+#[test_log::test(tokio::test)]
+async fn refuses_an_acknowledgement_from_a_client_that_has_not_authenticated() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-auth-message-ack",
+        "tests/data/fixtures/ipc-websocket-auth-message.blueprint.yaml",
+    )
+    .await;
+    let _handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the authMessage strategy should let the connection upgrade");
+
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Text(
+            json!({
+                "event": "ack",
+                "data": { "messageId": "m-1", "timestamp": "2026-01-01T00:00:00.000Z" }
+            })
+            .to_string(),
+        ))
+        .await
+        .unwrap();
+
+    let rejected = tokio::time::timeout(Duration::from_secs(5), async {
+        while let Some(Ok(message)) = socket_conn.next().await {
+            if let tokio_tungstenite::tungstenite::Message::Text(text) = message {
+                if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
+                    if value["event"] == "error" {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    })
+    .await;
+
+    assert_eq!(
+        rejected,
+        Ok(true),
+        "an acknowledgement before authentication should be refused rather than settle a message"
+    );
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
 #[test_log::test(tokio::test)]
 async fn closes_a_connection_out_without_waiting_for_all_the_work_it_queued() {
     let (_app, addr, socket) = start_runtime(

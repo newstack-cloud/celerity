@@ -212,10 +212,16 @@ impl WebSocketConnRegistry {
     }
 
     /// Records that a client acknowledged a message, so it stops being tracked.
-    pub async fn record_client_ack(&self, message_id: String) {
+    ///
+    /// Named by the connection it came from, since a message is only settled by
+    /// the client it was sent to.
+    pub async fn record_client_ack(&self, connection_id: String, message_id: String) {
         if let Some(sender) = self.client_ack_sender.get() {
             let _ = sender
-                .send(AckWorkerMessage::Status(message_id, AckStatus::Received))
+                .send(AckWorkerMessage::ClientAck {
+                    message_id,
+                    connection_id,
+                })
                 .await;
         }
     }
@@ -1143,7 +1149,7 @@ mod tests {
 
         registry
             .send_message(
-                connection_id,
+                connection_id.clone(),
                 "m-1".to_string(),
                 MessageType::Json,
                 r#"{"event":"update","data":{"value":1},"messageId":"m-1","ack":true}"#.to_string(),
@@ -1166,7 +1172,9 @@ mod tests {
         assert_eq!(received["messageId"], "m-1");
         assert_eq!(received["ack"], true);
 
-        registry.record_client_ack("m-1".to_string()).await;
+        registry
+            .record_client_ack(connection_id, "m-1".to_string())
+            .await;
 
         // Long enough for several rounds of the worker's checks, so a message
         // still being chased would show up here.
@@ -1193,7 +1201,7 @@ mod tests {
 
         registry
             .send_message(
-                connection_id,
+                connection_id.clone(),
                 "m-bin".to_string(),
                 MessageType::Binary,
                 base64::prelude::BASE64_STANDARD.encode(&original),
@@ -1215,11 +1223,65 @@ mod tests {
         // opt in, it does not add or change one.
         assert_eq!(&received[..], original.as_slice());
 
-        registry.record_client_ack("m-bin".to_string()).await;
+        registry
+            .record_client_ack(connection_id, "m-bin".to_string())
+            .await;
         let resent = tokio::time::timeout(Duration::from_millis(400), socket.next()).await;
         assert!(
             resent.is_err(),
             "an acknowledged message should not be resent"
+        );
+    }
+
+    /// A message is only settled by the client it was sent to.
+    ///
+    /// A message id is chosen by the application, so it says nothing about who
+    /// the message went to, and the same id may be in flight to several clients
+    /// at once. An acknowledgement from anyone else has to count for nothing,
+    /// or one client can call off the resend and the loss event another is
+    /// relying on.
+    #[test_log::test(tokio::test)]
+    async fn test_a_message_is_not_settled_by_a_different_connection() {
+        let (registry, connection_id, mut socket) = registry_with_one_client().await;
+
+        registry
+            .send_message(
+                connection_id,
+                "m-3".to_string(),
+                MessageType::Json,
+                r#"{"event":"update","data":{"value":3},"messageId":"m-3","ack":true}"#.to_string(),
+                Some(SendContext {
+                    wait_for_ack: false,
+                    caller: None,
+                    inform_clients: vec![],
+                }),
+            )
+            .await
+            .unwrap();
+
+        registry
+            .record_client_ack("another-connection".to_string(), "m-3".to_string())
+            .await;
+
+        let mut deliveries = 0;
+        while let Ok(Some(Ok(message))) =
+            tokio::time::timeout(Duration::from_millis(400), socket.next()).await
+        {
+            if let tungstenite::Message::Text(text) = message {
+                let value: serde_json::Value = serde_json::from_str(&text).unwrap();
+                if value["messageId"] == "m-3" {
+                    deliveries += 1;
+                }
+            }
+            if deliveries > 1 {
+                break;
+            }
+        }
+
+        assert!(
+            deliveries > 1,
+            "an acknowledgement from another connection should settle nothing, \
+             but the message stopped being resent after {deliveries} delivery(s)"
         );
     }
 
