@@ -14,6 +14,7 @@ use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use celerity_runtime_core::{
     application::Application,
     config::RuntimeConfig,
+    consts::CELERITY_WS_CAPABILITIES_SIGNAL,
     ipc_proto::{
         self as proto, handler_message,
         handler_runtime_service_client::HandlerRuntimeServiceClient, runtime_message,
@@ -116,6 +117,11 @@ struct HandlerStub {
     dispatches: mpsc::Receiver<proto::Dispatch>,
     /// The events the handler was told to stop working on.
     cancels: mpsc::Receiver<proto::Cancel>,
+    /// Frames the handler sends of its own accord, rather than in answer to a
+    /// dispatch.
+    outbound: mpsc::Sender<proto::HandlerMessage>,
+    /// What the runtime made of each batch of websocket sends.
+    ws_acks: mpsc::Receiver<proto::WsSendAck>,
 }
 
 impl HandlerStub {
@@ -189,12 +195,18 @@ impl HandlerStub {
 
         let (dispatch_tx, dispatches) = mpsc::channel(16);
         let (cancel_tx, cancels) = mpsc::channel(16);
+        let (ws_ack_tx, ws_acks) = mpsc::channel(16);
+        let outbound = handler_tx.clone();
         tokio::spawn(async move {
             while let Some(Ok(message)) = frames.next().await {
                 let dispatch = match message.frame {
                     Some(runtime_message::Frame::Dispatch(dispatch)) => dispatch,
                     Some(runtime_message::Frame::Cancel(cancel)) => {
                         cancel_tx.send(cancel).await.ok();
+                        continue;
+                    }
+                    Some(runtime_message::Frame::WsAck(ack)) => {
+                        ws_ack_tx.send(ack).await.ok();
                         continue;
                     }
                     _ => continue,
@@ -221,7 +233,30 @@ impl HandlerStub {
         HandlerStub {
             dispatches,
             cancels,
+            outbound,
+            ws_acks,
         }
+    }
+
+    /// Sends a batch of websocket messages the way a handler does, of its own
+    /// accord rather than as the result of an event.
+    async fn send_ws(&self, correlation_id: &str, messages: Vec<proto::WsOutbound>) {
+        self.outbound
+            .send(proto::HandlerMessage {
+                frame: Some(handler_message::Frame::WsSend(proto::WsSend {
+                    correlation_id: correlation_id.to_string(),
+                    messages,
+                })),
+            })
+            .await
+            .expect("the runtime should still be taking frames");
+    }
+
+    async fn next_ws_ack(&mut self) -> Option<proto::WsSendAck> {
+        tokio::time::timeout(Duration::from_secs(10), self.ws_acks.recv())
+            .await
+            .ok()
+            .flatten()
     }
 
     async fn next_dispatch(&mut self) -> Option<proto::Dispatch> {
@@ -1080,6 +1115,111 @@ async fn routes_a_websocket_message_to_a_handler_over_the_stream() {
     assert!(!message.connection_id.is_empty());
     let body: serde_json::Value = serde_json::from_slice(&message.message).unwrap();
     assert_eq!(body["data"]["text"], "hello");
+
+    let _ = socket_conn.close(None).await;
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+/// A handler sending binary is held to the format its client can read, and is
+/// told which of its messages was refused.
+///
+/// Failures are per message rather than per batch, so a batch carrying one bad
+/// message still delivers the rest and names the one that did not go.
+#[test_log::test(tokio::test)]
+async fn refuses_a_binary_websocket_message_that_is_not_framed() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-binary-framing",
+        "tests/data/fixtures/ipc-websocket-api.blueprint.yaml",
+    )
+    .await;
+    let mut handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Text(
+            json!({ "event": "sendMessage", "data": { "text": "hello" } }).to_string(),
+        ))
+        .await
+        .unwrap();
+
+    let dispatch = handler
+        .next_dispatch()
+        .await
+        .expect("the message should reach the handler");
+    let Some(proto::dispatch::Source::Websocket(message)) = dispatch.source else {
+        panic!("expected a WebSocket source");
+    };
+    let connection_id = message.connection_id;
+
+    // [routeLength][route][requireAck][messageIdLength][messageId][payload]
+    let mut framed = vec![7u8];
+    framed.extend_from_slice(b"updates");
+    framed.push(0x0);
+    framed.push(0x0);
+    framed.extend_from_slice(&[0xde, 0xad, 0xbe, 0xef]);
+
+    handler
+        .send_ws(
+            "batch-1",
+            vec![
+                // Raw bytes, which is what an application reaches for when it
+                // does not know the format is required. A protobuf payload
+                // here, field one as a length delimited string.
+                proto::WsOutbound {
+                    connection_id: connection_id.clone(),
+                    message: vec![0x0a, 0x05, b'p', b'r', b'i', b'c', b'e'],
+                    is_binary: true,
+                    ..Default::default()
+                },
+                proto::WsOutbound {
+                    connection_id: connection_id.clone(),
+                    message: framed.clone(),
+                    is_binary: true,
+                    ..Default::default()
+                },
+            ],
+        )
+        .await;
+
+    let ack = handler
+        .next_ws_ack()
+        .await
+        .expect("the runtime should report what became of the batch");
+    assert_eq!(ack.correlation_id, "batch-1");
+    assert!(
+        !ack.success,
+        "a batch with a refused message is not a success"
+    );
+    assert_eq!(
+        ack.failures.len(),
+        1,
+        "only the unframed message should fail"
+    );
+    assert_eq!(
+        ack.failures[0].index, 0,
+        "the failure should name the message that was refused"
+    );
+    assert_eq!(ack.failures[0].connection_id, connection_id);
+
+    // The framed one still arrives, exactly as the handler composed it, and it
+    // is the only binary frame after the capabilities signal.
+    let delivered = tokio::time::timeout(Duration::from_secs(5), async {
+        while let Some(Ok(message)) = socket_conn.next().await {
+            if let tokio_tungstenite::tungstenite::Message::Binary(bytes) = message {
+                if bytes[..] == CELERITY_WS_CAPABILITIES_SIGNAL[..] {
+                    continue;
+                }
+                return Some(bytes.to_vec());
+            }
+        }
+        None
+    })
+    .await
+    .expect("the framed message should reach the client");
+
+    assert_eq!(delivered, Some(framed));
 
     let _ = socket_conn.close(None).await;
     let _ = tokio::fs::remove_file(&socket).await;
