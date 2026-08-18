@@ -76,7 +76,8 @@ pub(crate) struct WebSocketAppState {
     pub api_auth: Option<CelerityApiAuth>,
     pub auth_strategy: Option<WebSocketAuthStrategy>,
     pub connection_auth_guard_names: Option<Vec<String>>,
-    pub connection_auth_guards: HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>>,
+    pub connection_auth_guards:
+        Arc<Mutex<HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>>>>,
     pub cors: Option<CelerityApiCors>,
     pub resource_store: Arc<ResourceStore>,
     // What the node has already seen from its clients, so a message resent
@@ -603,7 +604,10 @@ async fn authenticate_connection(
                 }
             }
             CelerityApiAuthGuardType::Custom => {
-                let guard_handler = state.connection_auth_guards.get(guard_name).cloned();
+                let guard_handler = {
+                    let guards = state.connection_auth_guards.lock().await;
+                    guards.get(guard_name).cloned()
+                };
                 match validate_custom_auth_on_connect(
                     auth_guard_config,
                     CustomAuthRequestContext {
@@ -1039,7 +1043,10 @@ async fn validate_auth_message_token_with_guards(
                 }
             }
             CelerityApiAuthGuardType::Custom => {
-                let guard_handler = state.connection_auth_guards.get(guard_name).cloned();
+                let guard_handler = {
+                    let guards = state.connection_auth_guards.lock().await;
+                    guards.get(guard_name).cloned()
+                };
                 match validate_custom_auth_on_connect(
                     auth_guard_config,
                     CustomAuthRequestContext {
