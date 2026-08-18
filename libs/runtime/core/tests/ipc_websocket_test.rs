@@ -1046,6 +1046,111 @@ async fn fires_the_disconnect_handler_once_for_a_client_that_sends_a_close_frame
     let _ = tokio::fs::remove_file(&socket).await;
 }
 
+/// A message the client never acknowledges is declared lost, on the timings the
+/// deployment configured rather than the ones compiled in.
+///
+/// The acknowledgement timeout and the attempt limit are what the protocol asks
+/// to be configurable, and until now they were fixed at whatever the worker
+/// defaulted to. This drives the whole path with both set small, so what it
+/// proves is not only that a message can be declared lost but that the
+/// configured values are the ones being used. On the defaults the loss would
+/// come after about half a minute, three resends ten seconds apart, so the five
+/// second bound below is what says the configured values reached the worker.
+#[test_log::test(tokio::test)]
+async fn declares_a_message_lost_on_the_timings_it_was_configured_with() {
+    let socket = socket_path("ipc-ws-ack-timings");
+    let env_vars = ipc_env(
+        "ipc-ws-ack-timings",
+        "tests/data/fixtures/ipc-websocket-api.blueprint.yaml",
+        &socket,
+        &[
+            ("CELERITY_WS_ACK_TIMEOUT_MS", "200"),
+            ("CELERITY_WS_ACK_MAX_ATTEMPTS", "1"),
+        ],
+    );
+    let runtime_config = RuntimeConfig::from_env(&env_vars);
+    let mut app = Application::new(runtime_config, Box::new(env_vars));
+    app.setup().unwrap();
+    let addr = app.run(false).await.unwrap().http_server_address.unwrap();
+
+    let mut handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+    // Sent only so the handler learns the connection id, which is what it
+    // addresses the message below to.
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Text(
+            json!({ "event": "sendMessage", "data": { "text": "hello" } }).to_string(),
+        ))
+        .await
+        .unwrap();
+
+    let dispatch = handler
+        .next_dispatch()
+        .await
+        .expect("the message should reach the handler");
+    let Some(proto::dispatch::Source::Websocket(message)) = dispatch.source else {
+        panic!("expected a WebSocket source");
+    };
+    let connection_id = message.connection_id;
+
+    // [routeLength][route][requireAck][messageIdLength][messageId][payload],
+    // this one asking to be acknowledged under the id the loss event will name.
+    let mut framed = vec![7u8];
+    framed.extend_from_slice(b"updates");
+    framed.push(0x1);
+    framed.push(5u8);
+    framed.extend_from_slice(b"m-ack");
+    framed.extend_from_slice(&[0xde, 0xad]);
+
+    handler
+        .send_ws(
+            "batch-1",
+            vec![proto::WsOutbound {
+                connection_id: connection_id.clone(),
+                message: framed,
+                is_binary: true,
+                message_id: "m-ack".to_string(),
+                // Without this nobody is told, since a loss event goes to the
+                // clients the sender named rather than to the one that missed
+                // the message.
+                inform_clients_on_loss: vec![connection_id.clone()],
+                ..Default::default()
+            }],
+        )
+        .await;
+
+    // The client reads the message and deliberately does not acknowledge it,
+    // which is the case a resend and then a loss event exist for.
+    let lost = tokio::time::timeout(Duration::from_secs(5), async {
+        while let Some(Ok(message)) = socket_conn.next().await {
+            if let tokio_tungstenite::tungstenite::Message::Binary(bytes) = message {
+                // A reserved frame, route 0x3, with no ack asked for and no id.
+                if bytes.len() > 4 && bytes[..4] == [0x1, 0x3, 0x0, 0x0] {
+                    return Some(bytes[4..].to_vec());
+                }
+            }
+        }
+        None
+    })
+    .await
+    .expect(
+        "a message nobody acknowledged should be declared lost, and within the configured \
+         timings rather than the compiled in ones",
+    );
+
+    let lost = lost.expect("the connection closed before the message was declared lost");
+    let lost: serde_json::Value = serde_json::from_slice(&lost).unwrap();
+    assert_eq!(
+        lost["messageId"], "m-ack",
+        "the loss event should name the message that went unacknowledged"
+    );
+    let _ = socket_conn.close(None).await;
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
 /// A guard that lets any non-empty token through, since what is under test is
 /// what the runtime says once a guard has passed rather than how it decides.
 #[derive(Debug)]

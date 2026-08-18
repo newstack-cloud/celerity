@@ -386,8 +386,8 @@ impl Application {
                 WebSocketConnRegistryConfig {
                     ack_worker_config: Some(AckWorkerConfig {
                         message_action_check_interval_ms: None,
-                        message_timeout_ms: None,
-                        max_attempts: None,
+                        message_timeout_ms: self.runtime_config.ws_ack_timeout_ms,
+                        max_attempts: self.runtime_config.ws_ack_max_attempts,
                     }),
                     server_node_name: "node1".to_string(),
                 },

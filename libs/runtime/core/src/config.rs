@@ -181,6 +181,19 @@ pub struct RuntimeConfig {
     ///
     /// Set via `CELERITY_DEPLOY_TARGET`.
     pub deploy_target: Option<String>,
+    /// How long the runtime waits for a client to acknowledge a message that
+    /// asked to be acknowledged, before sending it again.
+    ///
+    /// Leave unset for the suggested default the WebSocket runtime protocol names,
+    /// which is 10 seconds. Set via `CELERITY_WS_ACK_TIMEOUT_MS`.
+    pub ws_ack_timeout_ms: Option<u64>,
+    /// How many times a message asking to be acknowledged is sent before it is
+    /// considered lost and the clients waiting on it are told so.
+    ///
+    /// Counts the first send, so 3 means the original and two more. Leave unset
+    /// for the suggested default the WebSocket runtime protocol names, which is 3.
+    /// Set via `CELERITY_WS_ACK_MAX_ATTEMPTS`.
+    pub ws_ack_max_attempts: Option<u32>,
 }
 
 impl RuntimeConfig {
@@ -348,6 +361,9 @@ impl RuntimeConfig {
 
         let deploy_target = env.var("CELERITY_DEPLOY_TARGET").ok();
 
+        let ws_ack_timeout_ms = ws_ack_timeout_ms_from_env(env);
+        let ws_ack_max_attempts = ws_ack_max_attempts_from_env(env);
+
         RuntimeConfig {
             blueprint_config_path,
             runtime_call_mode,
@@ -375,6 +391,8 @@ impl RuntimeConfig {
             metrics_enabled,
             trace_sample_ratio,
             deploy_target,
+            ws_ack_timeout_ms,
+            ws_ack_max_attempts,
         }
     }
 
@@ -395,6 +413,35 @@ impl RuntimeConfig {
             RuntimePlatform::Local | RuntimePlatform::Other => self.deploy_target.as_deref(),
         }
     }
+}
+
+/// Reads the WebSocket acknowledgement timeout from the environment.
+///
+/// Separate from [`RuntimeConfig::from_env`] so that the SDKs, which rebuild a
+/// runtime configuration from their own, read it the same way rather than each
+/// deciding what the variable is called.
+pub fn ws_ack_timeout_ms_from_env(env: &impl EnvVars) -> Option<u64> {
+    env.var("CELERITY_WS_ACK_TIMEOUT_MS").ok().map(|val| {
+        val.parse()
+            .expect("Invalid WebSocket ack timeout, must be a whole number of milliseconds")
+    })
+}
+
+/// Reads the WebSocket acknowledgement attempt limit from the environment.
+///
+/// See [`ws_ack_timeout_ms_from_env`] for why this is not only read in
+/// [`RuntimeConfig::from_env`].
+pub fn ws_ack_max_attempts_from_env(env: &impl EnvVars) -> Option<u32> {
+    env.var("CELERITY_WS_ACK_MAX_ATTEMPTS").ok().map(|val| {
+        let attempts: u32 = val
+            .parse()
+            .expect("Invalid WebSocket ack max attempts, must be a whole number");
+        assert!(
+            attempts > 0,
+            "Invalid WebSocket ack max attempts, a message has to be sent at least once"
+        );
+        attempts
+    })
 }
 
 #[derive(Debug)]
@@ -759,5 +806,41 @@ mod tests {
 
         assert_eq!(config.runtime_socket_fallback_port, 0);
         assert!(!config.runtime_socket_fallback_enabled);
+    }
+
+    /// Unset means the good defaults the protocol names, which the worker
+    /// applies, rather than a value chosen here.
+    #[test]
+    fn test_ack_timings_are_left_to_the_worker_when_unset() {
+        let config = RuntimeConfig::from_env(&env(&[]));
+
+        assert_eq!(config.ws_ack_timeout_ms, None);
+        assert_eq!(config.ws_ack_max_attempts, None);
+    }
+
+    #[test]
+    fn test_ack_timings_are_read_from_the_environment() {
+        let config = RuntimeConfig::from_env(&env(&[
+            ("CELERITY_WS_ACK_TIMEOUT_MS", "2500"),
+            ("CELERITY_WS_ACK_MAX_ATTEMPTS", "5"),
+        ]));
+
+        assert_eq!(config.ws_ack_timeout_ms, Some(2500));
+        assert_eq!(config.ws_ack_max_attempts, Some(5));
+    }
+
+    /// A message has to be sent once before it can be resent, so no attempts at
+    /// all is a configuration that cannot be honoured rather than one meaning
+    /// never send.
+    #[test]
+    #[should_panic(expected = "sent at least once")]
+    fn test_no_ack_attempts_at_all_is_refused() {
+        RuntimeConfig::from_env(&env(&[("CELERITY_WS_ACK_MAX_ATTEMPTS", "0")]));
+    }
+
+    #[test]
+    #[should_panic(expected = "whole number of milliseconds")]
+    fn test_an_ack_timeout_that_is_not_a_number_is_refused() {
+        RuntimeConfig::from_env(&env(&[("CELERITY_WS_ACK_TIMEOUT_MS", "ten seconds")]));
     }
 }
