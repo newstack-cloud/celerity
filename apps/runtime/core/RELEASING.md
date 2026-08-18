@@ -6,9 +6,17 @@ The core runtime is versioned independently. It has no language SDK to track: th
 
 A change to the protocol that handlers have to be rebuilt for is a breaking change for this app, and gets a `!` or a `BREAKING CHANGE` footer so release-please bumps it accordingly.
 
+Releases are **not** automatic. Like the Node.js and Python runtimes, this component is gated in `release-please.yml`, so a release PR opened without an explicit `Release-As` footer is closed automatically. Publishing an image is a deliberate act rather than something an ordinary `feat` commit triggers, and it is what lets the version be chosen rather than derived.
+
+```bash
+git commit -m "feat(runtime-core): add the core runtime application
+
+Release-As: 0.1.0"
+```
+
 ## Release Flow
 
-1. **release-please** collects commits that change files under `apps/runtime/core` on `main` — conventionally scoped `runtime-core` — and opens a release PR for the `runtime-core-app` component. The component name differs from the scope because `runtime-core` is already the tag prefix for the crates under `libs/runtime`.
+1. **release-please** collects commits that change files under `apps/runtime/core` on `main` with the conventionally scoped `runtime-core` and opens a release PR for the `runtime-core-app` component when one of them carries a `Release-As` footer. The component name differs from the scope because `runtime-core` is already the tag prefix for the crates under `libs/runtime`.
 2. **Merge** the release PR — release-please creates tag `runtime-core-app/v0.1.0`.
 3. The `release-please.yml` `post-process-tags` job dispatches `app-runtime-core-release.yml` with the tag.
 4. The release workflow builds and pushes Docker images to GHCR:
