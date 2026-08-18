@@ -380,7 +380,7 @@ async fn handle_socket(
         // rather than growing a queue without limit. Once the buffer is full
         // this loop does wait, which is the intended answer to a flood, and a
         // different situation from one slow handler.
-        let (work_tx, work_rx) = mpsc::channel::<(Message, WebSocketRequestContext)>(
+        let (work_tx, work_rx) = mpsc::channel::<(Message, Option<Value>, WebSocketRequestContext)>(
             WS_CONNECTION_WORK_BUFFER,
         );
         let mut worker = spawn_message_worker(
@@ -437,6 +437,23 @@ async fn handle_socket(
                         }
                     }
                 } else {
+                    // Parsed once here and carried from here on. A JSON string
+                    // may escape any character, so only a parse can tell what a
+                    // message says.
+                    let parsed = match &msg {
+                        Message::Text(text) => match serde_json::from_str::<Value>(text) {
+                            Ok(value) => Some(value),
+                            Err(err) => {
+                                error!(
+                                    "failed to parse JSON message from client \
+                                     {connection_id}: {err}"
+                                );
+                                None
+                            }
+                        },
+                        _ => None,
+                    };
+
                     // A client acknowledging something the runtime sent it,
                     // taken before routing so it is not mistaken for a routed
                     // message and handed to the default handler.
@@ -445,7 +462,7 @@ async fn handle_socket(
                     // acknowledgement calls off a resend and the loss event
                     // that follows it, and that is not something an unproven
                     // client should be able to do to a message.
-                    if let Some(acknowledged) = detect_client_ack(&msg) {
+                    if let Some(acknowledged) = detect_client_ack(&msg, parsed.as_ref()) {
                         debug!("client {connection_id} acknowledged message {acknowledged}");
                         state
                             .connections
@@ -468,11 +485,11 @@ async fn handle_socket(
                     // instead, with a hint for when to come back.
                     // Read before the message is handed on, since handing it on
                     // gives it away.
-                    let ack = ack_request(&msg);
+                    let ack = ack_request(&msg, parsed.as_ref());
 
                     match work_tx
                         .send_timeout(
-                            (msg, request_ctx.clone()),
+                            (msg, parsed, request_ctx.clone()),
                             Duration::from_millis(WS_CONNECTION_WORK_SHED_GRACE_MS),
                         )
                         .await
@@ -703,14 +720,14 @@ fn create_connect_message(
 
 /// Runs a connection's messages, one at a time, off its read loop.
 fn spawn_message_worker(
-    mut work_rx: mpsc::Receiver<(Message, WebSocketRequestContext)>,
+    mut work_rx: mpsc::Receiver<(Message, Option<Value>, WebSocketRequestContext)>,
     socket_ref: Arc<Mutex<WebSocketConnSender>>,
     connection_id: String,
     state: WebSocketAppState,
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
-        while let Some((message, request_ctx)) = work_rx.recv().await {
-            if process_message(message, connection_id.clone(), request_ctx, &state)
+        while let Some((message, parsed, request_ctx)) = work_rx.recv().await {
+            if process_message(message, parsed, connection_id.clone(), request_ctx, &state)
                 .await
                 .is_break()
             {
@@ -1115,17 +1132,14 @@ async fn already_acted_on(
 
 async fn process_message(
     msg: Message,
+    parsed: Option<Value>,
     connection_id: String,
     request_ctx: WebSocketRequestContext,
     state: &WebSocketAppState,
 ) -> ControlFlow<(), ()> {
     match msg {
-        Message::Text(text) => {
-            let resolved = resolve_route(
-                text.to_string(),
-                connection_id.clone(),
-                state.route_key.clone(),
-            )?;
+        Message::Text(_) => {
+            let resolved = resolve_route(parsed, connection_id.clone(), state.route_key.clone())?;
             if let Some((route, message_id, _requires_ack, data)) = resolved {
                 if already_acted_on(&message_id, &connection_id, state).await {
                     return ControlFlow::Continue(());
@@ -1355,7 +1369,7 @@ enum AckFormat {
 /// carrying `ack` as the value of `event`. That key is fixed by the protocol
 /// rather than being the API's configured route key, which is what makes these
 /// messages unroutable and why they have to be recognised here.
-fn detect_client_ack(msg: &Message) -> Option<String> {
+fn detect_client_ack(msg: &Message, parsed: Option<&Value>) -> Option<String> {
     let body = match msg {
         Message::Binary(bytes) => {
             if !bytes.starts_with(&CELERITY_WS_ACK_SIGNAL) {
@@ -1364,13 +1378,8 @@ fn detect_client_ack(msg: &Message) -> Option<String> {
             let value: Value = serde_json::from_slice(bytes.get(4..)?).ok()?;
             value
         }
-        Message::Text(text) => {
-            // A reserved acknowledgement always names itself, so anything that
-            // does not mention it is passed over before it is parsed.
-            if !text.contains("\"ack\"") {
-                return None;
-            }
-            let value: Value = serde_json::from_str(text).ok()?;
+        Message::Text(_) => {
+            let value = parsed?;
             if value.get("event").and_then(Value::as_str) != Some("ack") {
                 return None;
             }
@@ -1384,17 +1393,6 @@ fn detect_client_ack(msg: &Message) -> Option<String> {
         .map(str::to_string)
 }
 
-/// Whether a JSON text carries `ack` as an object key.
-///
-/// A prefilter, not a parser. It is allowed to say yes to a message that turns
-/// out not to opt in, which costs a parse that then finds nothing. It must not
-/// say no to one that does, which is why it looks for the key rather than for
-/// the word.
-fn has_ack_key(text: &str) -> bool {
-    text.match_indices("\"ack\"")
-        .any(|(index, matched)| text[index + matched.len()..].trim_start().starts_with(':'))
-}
-
 /// Recognises a message asking to be acknowledged, returning the id to
 /// acknowledge it by and the encoding to answer in.
 ///
@@ -1402,20 +1400,10 @@ fn has_ack_key(text: &str) -> bool {
 /// answered as soon as it is taken in. Asking without a message id returns
 /// nothing, since an acknowledgement names the message it is for and there
 /// would be nothing to name.
-fn ack_request(msg: &Message) -> Option<(String, AckFormat)> {
+fn ack_request(msg: &Message, parsed: Option<&Value>) -> Option<(String, AckFormat)> {
     match msg {
-        Message::Text(text) => {
-            // Parsing every text message twice to find out that almost none of
-            // them opt in is not worth it, so a message that does not carry the
-            // key is passed over before it is parsed at all.
-            //
-            // Matched as a key rather than anywhere in the text, since a
-            // message is free to carry "ack" as a value and many will.
-            if !has_ack_key(text) {
-                return None;
-            }
-            let value: Value = serde_json::from_str(text).ok()?;
-            let object = value.as_object()?;
+        Message::Text(_) => {
+            let object = parsed?.as_object()?;
             if object.get("ack").and_then(Value::as_bool) != Some(true) {
                 return None;
             }
@@ -1477,19 +1465,13 @@ async fn acknowledge(
 type JsonRouteData = (String, Option<String>, bool, Value);
 
 fn resolve_route(
-    msg_text: String,
+    parsed: Option<Value>,
     connection_id: String,
     route_key: String,
 ) -> ControlFlow<(), Option<JsonRouteData>> {
-    let data: Value = match serde_json::from_str(&msg_text) {
-        Ok(data) => data,
-        Err(e) => {
-            error!(
-                "failed to parse JSON message from client {}: {}",
-                connection_id, e
-            );
-            return ControlFlow::Continue(None);
-        }
+    // A failed parse is reported by the read loop.
+    let Some(data) = parsed else {
+        return ControlFlow::Continue(None);
     };
     let data_obj = match &data {
         Value::Object(obj) => obj,
@@ -1722,6 +1704,14 @@ mod tests {
     // outside the tests matches on it.
     use crate::consts::CELERITY_WS_CAPABILITIES_SIGNAL;
 
+    /// Pairs a text message with its parsed form, as the read loop does.
+    fn text_message(text: &str) -> (Message, Option<Value>) {
+        (
+            Message::Text(text.into()),
+            serde_json::from_str::<Value>(text).ok(),
+        )
+    }
+
     /// The constants are for matching an inbound frame, where a fixed size
     /// array is what is wanted, and the encoder is for building an outbound
     /// one. Two spellings of the same four bytes is how the header came to be
@@ -1743,13 +1733,14 @@ mod tests {
         let mut frame = CELERITY_WS_ACK_SIGNAL.to_vec();
         frame.extend_from_slice(br#"{"messageId":"m-1","timestamp":"1"}"#);
         assert_eq!(
-            detect_client_ack(&Message::Binary(frame.into())),
+            detect_client_ack(&Message::Binary(frame.into()), None),
             Some("m-1".to_string())
         );
 
-        let text = r#"{"event":"ack","data":{"messageId":"m-2","timestamp":"1"}}"#;
+        let (msg, parsed) =
+            text_message(r#"{"event":"ack","data":{"messageId":"m-2","timestamp":"1"}}"#);
         assert_eq!(
-            detect_client_ack(&Message::Text(text.into())),
+            detect_client_ack(&msg, parsed.as_ref()),
             Some("m-2".to_string())
         );
     }
@@ -1758,33 +1749,75 @@ mod tests {
     fn test_detect_client_ack_leaves_application_messages_alone() {
         // Carries the word but is an ordinary message, and the runtime must not
         // swallow it on the way to its handler.
-        let text = r#"{"event":"sendMessage","data":{"kind":"ack"}}"#;
-        assert!(detect_client_ack(&Message::Text(text.into())).is_none());
+        let (msg, parsed) = text_message(r#"{"event":"sendMessage","data":{"kind":"ack"}}"#);
+        assert!(detect_client_ack(&msg, parsed.as_ref()).is_none());
 
         // An acknowledgement request, which travels the other way.
-        let text = r#"{"event":"sendMessage","ack":true,"messageId":"m-3"}"#;
-        assert!(detect_client_ack(&Message::Text(text.into())).is_none());
+        let (msg, parsed) = text_message(r#"{"event":"sendMessage","ack":true,"messageId":"m-3"}"#);
+        assert!(detect_client_ack(&msg, parsed.as_ref()).is_none());
 
         // A binary application message whose route happens to be one byte.
         let frame = vec![0x1, 0x9, 0x0, 0x0, 0xff];
-        assert!(detect_client_ack(&Message::Binary(frame.into())).is_none());
+        assert!(detect_client_ack(&Message::Binary(frame.into()), None).is_none());
     }
 
     #[test]
-    fn test_has_ack_key_ignores_ack_as_a_value() {
-        // Reserved as an event value by the protocol itself, so a message
-        // carrying it is ordinary rather than an opt in.
-        assert!(!has_ack_key(r#"{"event":"ack","data":{}}"#));
-        assert!(!has_ack_key(r#"{"event":"send","data":{"type":"ack"}}"#));
+    fn test_detect_client_ack_reads_an_escaped_acknowledgement() {
+        let text = r#"{"event":"\u0061ck","data":{"messageId":"m-4","timestamp":"1"}}"#;
+        // Holds the fixture to the case, since spelling it plainly would
+        // pass without the parse being what decides.
+        assert!(!text.contains(r#""ack""#));
+
+        let (msg, parsed) = text_message(text);
+        assert_eq!(
+            detect_client_ack(&msg, parsed.as_ref()),
+            Some("m-4".to_string()),
+            "an acknowledgement missed is a message resent and then declared lost \
+             to a client that already confirmed it"
+        );
     }
 
     #[test]
-    fn test_has_ack_key_finds_the_key() {
-        assert!(has_ack_key(r#"{"ack":true,"messageId":"1"}"#));
-        // Whitespace is legal JSON either side of the colon.
-        assert!(has_ack_key(r#"{"ack" : true}"#));
-        // Present as a value elsewhere as well as a key.
-        assert!(has_ack_key(r#"{"event":"ack","ack":true}"#));
+    fn test_ack_request_reads_an_escaped_opt_in() {
+        let text = r#"{"\u0061ck":true,"messageId":"m-5"}"#;
+        assert!(!text.contains(r#""ack""#));
+
+        let (msg, parsed) = text_message(text);
+        let request = ack_request(&msg, parsed.as_ref());
+        let Some((message_id, AckFormat::Json)) = request else {
+            panic!("expected a JSON acknowledgement request, got {request:?}");
+        };
+        assert_eq!(message_id, "m-5");
+    }
+
+    /// The protocol reserves `ack` as an event value, so a message carrying it
+    /// there is an ordinary one rather than an opt in.
+    #[test]
+    fn test_ack_request_tells_the_key_from_the_value() {
+        let (msg, parsed) = text_message(r#"{"event":"ack","data":{}}"#);
+        assert!(ack_request(&msg, parsed.as_ref()).is_none());
+
+        let (msg, parsed) = text_message(r#"{"event":"send","data":{"type":"ack"}}"#);
+        assert!(ack_request(&msg, parsed.as_ref()).is_none());
+
+        // Present as a value elsewhere as well as a key, which is an opt in.
+        let (msg, parsed) = text_message(r#"{"event":"ack","ack":true,"messageId":"m-6"}"#);
+        assert!(ack_request(&msg, parsed.as_ref()).is_some());
+    }
+
+    /// Opting in without an id is ignored, since an acknowledgement names the
+    /// message it settles and there would be nothing to name.
+    #[test]
+    fn test_ack_request_ignores_an_opt_in_with_no_id() {
+        let (msg, parsed) = text_message(r#"{"event":"send","ack":true}"#);
+        assert!(ack_request(&msg, parsed.as_ref()).is_none());
+    }
+
+    #[test]
+    fn test_neither_check_reads_a_message_that_is_not_json() {
+        let msg = Message::Text("not json at all".into());
+        assert!(detect_client_ack(&msg, None).is_none());
+        assert!(ack_request(&msg, None).is_none());
     }
 
     #[test]
@@ -1797,7 +1830,7 @@ mod tests {
         frame.extend_from_slice(b"m-1");
         frame.extend_from_slice(&[0xff, 0x00]);
 
-        let request = ack_request(&Message::Binary(frame.into()));
+        let request = ack_request(&Message::Binary(frame.into()), None);
         let Some((message_id, AckFormat::Binary)) = request else {
             panic!("expected a binary acknowledgement request, got {request:?}");
         };
@@ -1812,7 +1845,7 @@ mod tests {
         frame.push(3);
         frame.extend_from_slice(b"m-1");
 
-        assert!(ack_request(&Message::Binary(frame.into())).is_none());
+        assert!(ack_request(&Message::Binary(frame.into()), None).is_none());
     }
 
     #[test]
@@ -1820,7 +1853,7 @@ mod tests {
         // Claims a route longer than the bytes that follow it, so reading the
         // acknowledgement flag would run off the end.
         let frame = vec![9u8, b'a', b'b'];
-        assert!(ack_request(&Message::Binary(frame.into())).is_none());
+        assert!(ack_request(&Message::Binary(frame.into()), None).is_none());
     }
 
     #[test]
