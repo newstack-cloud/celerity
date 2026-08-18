@@ -1,4 +1,16 @@
 version: 2
+
+# The base images for every runtime and sidecar come from Docker Hardened
+# Images, so Dependabot needs credentials of its own to see
+# what tags exist. These are Dependabot secrets rather than Actions secrets,
+# which are a separate store that Dependabot cannot read.
+registries:
+  dhi:
+    type: docker-registry
+    url: dhi.io
+    username: ${{secrets.DOCKERHUB_USERNAME}}
+    password: ${{secrets.DOCKERHUB_TOKEN}}
+
 updates:
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -83,6 +95,8 @@ updates:
   # Docker - Core runtime base images
   - package-ecosystem: "docker"
     directory: "/apps/runtime/core"
+    registries:
+      - dhi
     schedule:
       interval: "weekly"
     commit-message:
@@ -95,6 +109,8 @@ updates:
   # Docker - Node.js runtime base images
   - package-ecosystem: "docker"
     directory: "/apps/runtime/nodejs"
+    registries:
+      - dhi
     schedule:
       interval: "weekly"
     commit-message:
@@ -107,6 +123,8 @@ updates:
   # Docker - Python runtime base images
   - package-ecosystem: "docker"
     directory: "/apps/runtime/python"
+    registries:
+      - dhi
     schedule:
       interval: "weekly"
     commit-message:
@@ -119,6 +137,8 @@ updates:
   # Docker - Local events sidecar base images
   - package-ecosystem: "docker"
     directory: "/apps/local-events"
+    registries:
+      - dhi
     schedule:
       interval: "weekly"
     commit-message:
@@ -131,6 +151,8 @@ updates:
   # Docker - Dev auth base images
   - package-ecosystem: "docker"
     directory: "/apps/dev-auth"
+    registries:
+      - dhi
     schedule:
       interval: "weekly"
     commit-message:
