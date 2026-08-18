@@ -50,9 +50,6 @@ jobs:
       - name: Test
         run: cargo test --locked
 
-      - name: Check the lock file is up to date
-        run: cargo update --locked --dry-run
-
   docker-build:
     name: Docker Build (${{ matrix.target }})
     runs-on: ubuntu-latest
