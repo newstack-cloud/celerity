@@ -18,6 +18,8 @@ COPY --chown=nobody blueprint.yaml /opt/celerity/app/blueprint.yaml
 
 Both paths are the defaults, so nothing else needs configuring to start. A `dev-` tagged image is published alongside each release with a shell and the usual debugging tools, for getting inside a running application locally.
 
+Every release publishes `linux/amd64` and `linux/arm64`, each built on a runner of its own architecture, so an arm64 machine pulls a native image rather than an emulated one.
+
 ## Two processes, one lifetime
 
 The runtime is PID 1 in the container and starts the handlers executable itself, once the handler stream is bound and ready to be connected to. The executable inherits the runtime's environment, which is how it is told where to connect: `CELERITY_RUNTIME_SOCKET` is already there for an SDK to read. It also inherits stdout and stderr, so its logs reach the container's streams as it wrote them.
