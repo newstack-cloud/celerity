@@ -84,10 +84,6 @@ async fn routes_a_websocket_message_to_a_handler_over_the_stream() {
     let _ = tokio::fs::remove_file(&socket).await;
 }
 
-/// A handler sending binary is held to the format its client can read, and is
-/// told which of its messages was refused.
-///
-
 #[test_log::test(tokio::test)]
 async fn carries_a_binary_websocket_frame_without_corrupting_it() {
     let (_app, addr, socket) = start_runtime(
@@ -134,6 +130,11 @@ async fn carries_a_binary_websocket_frame_without_corrupting_it() {
     let _ = tokio::fs::remove_file(&socket).await;
 }
 
+/// A handler sending binary is held to the format its client can read, and is
+/// told which of its messages was refused.
+///
+/// Failures are per message rather than per batch, so a batch carrying one bad
+/// message still delivers the rest and names the one that did not go.
 #[test_log::test(tokio::test)]
 async fn refuses_a_binary_websocket_message_that_is_not_framed() {
     let (_app, addr, socket) = start_runtime(
@@ -236,7 +237,11 @@ async fn refuses_a_binary_websocket_message_that_is_not_framed() {
 
 /// A message the client sends twice is acted on once, and answered both times.
 ///
-
+/// The two halves have to go together. A client resends because it did not receive
+/// an acknowledgement, and what went missing may have been the acknowledgement
+/// rather than the message, so a duplicate that is met with silence is one the
+/// client keeps sending. Acknowledging without deduplicating runs the handler
+/// twice; deduplicating without acknowledging never ends.
 #[test_log::test(tokio::test)]
 async fn acts_once_on_a_message_the_client_sent_twice_but_answers_both() {
     let (_app, addr, socket) = start_runtime(
@@ -499,11 +504,16 @@ async fn does_not_acknowledge_a_message_that_did_not_ask() {
         .await
         .expect("the WebSocket server should accept the connection");
 
-    // Carries an id but does not opt in, and opting in without an id has
-    // nothing to name. Neither should be answered.
+    // The first carries an id but does not opt in, and the second opts in with
+    // no id for an acknowledgement to name. Neither should be answered.
+    //
+    // The third asks properly and is sent last, so its answer is what says the
+    // runtime was answering at all. Without it this test passes just as well
+    // against a runtime that acknowledges nothing, which is what it used to do.
     for message in [
-        json!({ "event": "sendMessage", "messageId": "msg-2", "data": {} }),
+        json!({ "event": "sendMessage", "messageId": "msg-no-opt-in", "data": {} }),
         json!({ "event": "sendMessage", "ack": true, "data": {} }),
+        json!({ "event": "sendMessage", "messageId": "msg-asks", "ack": true, "data": {} }),
     ] {
         socket_conn
             .send(tokio_tungstenite::tungstenite::Message::Text(
@@ -513,24 +523,38 @@ async fn does_not_acknowledge_a_message_that_did_not_ask() {
             .unwrap();
     }
 
-    let unexpected = tokio::time::timeout(Duration::from_secs(2), async {
+    // Messages are handled in the order they arrive, so by the time the third
+    // is answered any answer to the first two has had its chance.
+    let acknowledged = tokio::time::timeout(Duration::from_secs(5), async {
+        let mut acknowledged = Vec::new();
         while let Some(Ok(message)) = socket_conn.next().await {
             if let tokio_tungstenite::tungstenite::Message::Text(text) = message {
                 if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
                     if value["event"] == "ack" {
-                        return true;
+                        let message_id = value["data"]["messageId"]
+                            .as_str()
+                            .unwrap_or("")
+                            .to_string();
+                        let answered_the_one_that_asked = message_id == "msg-asks";
+                        acknowledged.push(message_id);
+                        // Everything sent before it has been handled by now, so
+                        // any answer they were going to get has arrived.
+                        if answered_the_one_that_asked {
+                            break;
+                        }
                     }
                 }
             }
         }
-        false
+        acknowledged
     })
-    .await;
+    .await
+    .expect("the message that asked to be acknowledged should have been");
 
-    assert_ne!(
-        unexpected,
-        Ok(true),
-        "acknowledgement is opt in, and an opt in without a message id is ignored"
+    assert_eq!(
+        acknowledged,
+        vec!["msg-asks".to_string()],
+        "only the message that asked should be answered, and it should be"
     );
 
     let _ = tokio::fs::remove_file(&socket).await;
@@ -595,6 +619,13 @@ async fn does_not_route_a_client_acknowledgement_to_a_handler() {
     let _ = tokio::fs::remove_file(&socket).await;
 }
 
+/// An acknowledgement is a message like any other until the client has proved
+/// who it is.
+///
+/// Acknowledgements are taken out of the way before routing, and that used to
+/// happen ahead of the authentication gate, so an unauthenticated client could
+/// still settle a message and call off the resend and loss event that follow
+/// it. The refusal below is the gate doing its job.
 #[test_log::test(tokio::test)]
 async fn refuses_an_acknowledgement_from_a_client_that_has_not_authenticated() {
     let (_app, addr, socket) = start_runtime(
@@ -688,10 +719,6 @@ async fn tells_an_unauthenticated_client_to_authenticate_first() {
 
     let _ = tokio::fs::remove_file(&socket).await;
 }
-
-/// An acknowledgement is a message like any other until the client has proved
-/// who it is.
-///
 
 #[test_log::test(tokio::test)]
 async fn answers_heartbeats_while_a_handler_is_still_running() {
