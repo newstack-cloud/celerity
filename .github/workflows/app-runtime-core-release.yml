@@ -36,15 +36,28 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Extracted version: $VERSION from tag: $TAG"
 
-  build-runtime:
-    name: Build & Push Production Image
-    runs-on: ubuntu-latest
+  build:
+    name: Build ${{ matrix.target }} on ${{ matrix.platform.arch }}
+    runs-on: ${{ matrix.platform.runner }}
     needs: prepare
     permissions:
       contents: read
       packages: write
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [runtime, dev]
+        # Each architecture is built on a runner of its own architecture. The
+        # other runtime images copy interpreted code and build the same either
+        # way, but this one compiles the runtime from source, and doing that for
+        # arm64 under emulation takes hours where a native runner takes minutes.
+        platform:
+          - arch: amd64
+            os: linux/amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            os: linux/arm64
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
 
@@ -53,6 +66,67 @@ jobs:
           registry: dhi.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          labels: |
+            org.opencontainers.image.title=Celerity Core Runtime
+            org.opencontainers.image.description=Runtime for Celerity applications with ahead-of-time compiled handlers
+
+      # Pushed without a tag, since a tag naming two architectures can only be
+      # applied once both exist. The manifest that carries the tags is assembled
+      # from these digests once every architecture has been built.
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/runtime/core/Dockerfile
+          target: ${{ matrix.target }}
+          platforms: ${{ matrix.platform.os }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=runtime-core-${{ matrix.target }}-${{ matrix.platform.arch }}
+          cache-to: type=gha,mode=max,scope=runtime-core-${{ matrix.target }}-${{ matrix.platform.arch }}
+
+      - name: Export the digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p /tmp/digests
+          touch "/tmp/digests/${DIGEST#sha256:}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.target }}-${{ matrix.platform.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge-runtime:
+    name: Publish Production Manifest
+    runs-on: ubuntu-latest
+    needs: [prepare, build]
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.manifest.outputs.digest }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-runtime-*
+          merge-multiple: true
+
+      - uses: docker/setup-buildx-action@v3
 
       - uses: docker/login-action@v3
         with:
@@ -68,44 +142,41 @@ jobs:
             type=semver,pattern={{version}},value=${{ needs.prepare.outputs.version }}
             type=semver,pattern={{major}}.{{minor}},value=${{ needs.prepare.outputs.version }}
             type=raw,value=latest,enable=${{ !contains(needs.prepare.outputs.version, '-') }}
-          labels: |
-            org.opencontainers.image.title=Celerity Core Runtime
-            org.opencontainers.image.description=Production runtime for Celerity applications with ahead-of-time compiled handlers
 
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
+      - name: Create the manifest list
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
 
-      - id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/runtime/core/Dockerfile
-          target: runtime
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
-          cache-from: type=gha,scope=runtime-core-prod
-          cache-to: type=gha,mode=max,scope=runtime-core-prod
+      - name: Read the manifest digest
+        id: manifest
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          digest=$(docker buildx imagetools inspect \
+            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}" \
+            --format '{{json .Manifest}}' | jq -r .digest)
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
-  build-dev:
-    name: Build & Push Dev Image
+  merge-dev:
+    name: Publish Dev Manifest
     runs-on: ubuntu-latest
-    needs: prepare
+    needs: [prepare, build]
     permissions:
       contents: read
       packages: write
     outputs:
-      digest: ${{ steps.build.outputs.digest }}
+      digest: ${{ steps.manifest.outputs.digest }}
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: docker/login-action@v3
+      - uses: actions/download-artifact@v4
         with:
-          registry: dhi.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          path: /tmp/digests
+          pattern: digests-dev-*
+          merge-multiple: true
+
+      - uses: docker/setup-buildx-action@v3
 
       - uses: docker/login-action@v3
         with:
@@ -120,31 +191,28 @@ jobs:
           tags: |
             type=raw,value=dev-${{ needs.prepare.outputs.version }}
             type=raw,value=dev-latest,enable=${{ !contains(needs.prepare.outputs.version, '-') }}
-          labels: |
-            org.opencontainers.image.title=Celerity Core Runtime (Dev)
-            org.opencontainers.image.description=Development runtime for Celerity applications with ahead-of-time compiled handlers (includes a shell)
 
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
+      - name: Create the manifest list
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
 
-      - id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/runtime/core/Dockerfile
-          target: dev
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
-          cache-from: type=gha,scope=runtime-core-dev
-          cache-to: type=gha,mode=max,scope=runtime-core-dev
+      - name: Read the manifest digest
+        id: manifest
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          digest=$(docker buildx imagetools inspect \
+            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev-${VERSION}" \
+            --format '{{json .Manifest}}' | jq -r .digest)
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
   scan-images:
     name: Scan Container Images
     runs-on: ubuntu-latest
-    needs: [build-runtime, build-dev]
+    needs: [merge-runtime, merge-dev]
     permissions:
       contents: read
       security-events: write
@@ -154,7 +222,7 @@ jobs:
       - name: Trivy scan production image (table)
         uses: aquasecurity/trivy-action@0.35.0
         with:
-          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-runtime.outputs.digest }}"
+          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-runtime.outputs.digest }}"
           format: "table"
           severity: "CRITICAL,HIGH"
           exit-code: "1"
@@ -163,7 +231,7 @@ jobs:
         if: always()
         uses: aquasecurity/trivy-action@0.35.0
         with:
-          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-runtime.outputs.digest }}"
+          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-runtime.outputs.digest }}"
           format: "sarif"
           output: "trivy-runtime.sarif"
           severity: "CRITICAL,HIGH"
@@ -179,7 +247,7 @@ jobs:
       - name: Trivy scan dev image (table)
         uses: aquasecurity/trivy-action@0.35.0
         with:
-          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-dev.outputs.digest }}"
+          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-dev.outputs.digest }}"
           format: "table"
           severity: "CRITICAL,HIGH"
           exit-code: "0"
@@ -188,7 +256,7 @@ jobs:
         if: always()
         uses: aquasecurity/trivy-action@0.35.0
         with:
-          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-dev.outputs.digest }}"
+          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-dev.outputs.digest }}"
           format: "sarif"
           output: "trivy-dev.sarif"
           severity: "CRITICAL,HIGH"
@@ -204,10 +272,10 @@ jobs:
   sign-and-attest:
     name: Sign & Attest Images
     runs-on: ubuntu-latest
-    needs: [build-runtime, build-dev, scan-images]
+    needs: [merge-runtime, merge-dev, scan-images]
     # A signature and a provenance attestation say this image was built here and
     # is fit to pull, so a failed scan has to stop them being made.
-    if: needs.build-runtime.result == 'success' && needs.build-dev.result == 'success' && needs.scan-images.result == 'success'
+    if: needs.merge-runtime.result == 'success' && needs.merge-dev.result == 'success' && needs.scan-images.result == 'success'
     permissions:
       contents: read
       packages: write
@@ -231,44 +299,44 @@ jobs:
       - name: Sign production image (cosign keyless)
         run: |
           cosign sign --yes \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-runtime.outputs.digest }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-runtime.outputs.digest }}
 
       - name: Generate production SBOM
         run: |
-          syft ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-runtime.outputs.digest }} \
+          syft ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-runtime.outputs.digest }} \
             -o spdx-json=runtime-sbom.spdx.json
 
       - name: Attest production SBOM
         run: |
           cosign attest --yes --predicate runtime-sbom.spdx.json --type spdxjson \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-runtime.outputs.digest }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-runtime.outputs.digest }}
 
       - name: GitHub attestation (production)
         uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ needs.build-runtime.outputs.digest }}
+          subject-digest: ${{ needs.merge-runtime.outputs.digest }}
           push-to-registry: true
 
       # --- Dev image ---
       - name: Sign dev image (cosign keyless)
         run: |
           cosign sign --yes \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-dev.outputs.digest }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-dev.outputs.digest }}
 
       - name: Generate dev SBOM
         run: |
-          syft ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-dev.outputs.digest }} \
+          syft ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-dev.outputs.digest }} \
             -o spdx-json=dev-sbom.spdx.json
 
       - name: Attest dev SBOM
         run: |
           cosign attest --yes --predicate dev-sbom.spdx.json --type spdxjson \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-dev.outputs.digest }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-dev.outputs.digest }}
 
       - name: GitHub attestation (dev)
         uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ needs.build-dev.outputs.digest }}
+          subject-digest: ${{ needs.merge-dev.outputs.digest }}
           push-to-registry: true
