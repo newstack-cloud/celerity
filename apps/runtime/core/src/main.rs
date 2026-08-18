@@ -156,18 +156,20 @@ async fn run() -> Result<ExitCode, Box<dyn std::error::Error>> {
 /// no readiness to wait on, though this runtime refuses to start in that mode.
 async fn wait_until_attached(readiness: Option<HandlerReadiness>, timeout: Duration) -> bool {
     let Some(mut readiness) = readiness else {
-        std::future::pending::<()>().await;
-        unreachable!("pending never resolves")
+        // Unreachable while this runtime refuses to start outside the IPC call
+        // mode, but waiting forever on a handle that will never be filled would
+        // hang the process with nothing to say for it.
+        error!("the runtime reported no handler readiness to wait on");
+        return false;
     };
 
     if timeout.is_zero() {
-        readiness.wait_until_ready().await;
-        return true;
+        return readiness.wait_until_ready().await;
     }
 
     tokio::time::timeout(timeout, readiness.wait_until_ready())
         .await
-        .is_ok()
+        .unwrap_or(false)
 }
 
 /// The exit code for the handlers executable going away on its own.
