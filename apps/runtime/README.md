@@ -48,4 +48,5 @@ Developers should make use of the Celerity Java SDK for a smoother development e
 
 # Additional docs
 
-- [HTTP API Docs](../../libs/runtime/api-docs/README.md) - API docs for the Local Runtime and Handler Invoke APIs where the former is used for handler <-> runtime communication for the os-only runtime.
+- [HTTP API Docs](../../libs/runtime/api-docs/README.md) - API docs for the Local Runtime and Handler Invoke APIs.
+- [IPC Handler Protocol](../../libs/runtime/proto/README.md) - The contract used for handler <-> runtime communication for the os-only runtime, one long-lived bidirectional gRPC stream over a unix socket.

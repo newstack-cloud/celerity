@@ -43,7 +43,7 @@ Only the process around the runtime including reading the environment, starting 
 
 `runtime-core`
 
-```
+```text
 feat(runtime-core): restart the handlers executable on failure
 ```
 

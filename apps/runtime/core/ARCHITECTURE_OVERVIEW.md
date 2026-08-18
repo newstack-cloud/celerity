@@ -48,7 +48,7 @@ On receiving a message to be sent to a specific connection, a node will look up 
 
 The runtime supports a serverless-like approach to sending messages to specific connections, where the runtime will handle the routing of messages to the correct node in the cluster.
 
-Here is some Python pseudo-code to illustrate this for the purpose of relaying a message to all clients in a chat room:
+Here is some Go pseudo-code to illustrate this for the purpose of relaying a message to all clients in a chat room:
 
 ```go
 func Handler(ctx context.Context, event ChatEvent, rooms ChatRoomService) error {

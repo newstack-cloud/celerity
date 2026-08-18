@@ -32,13 +32,13 @@ Both images are built for `linux/amd64` and `linux/arm64`.
 # Verify cosign signature
 cosign verify \
   ghcr.io/newstack-cloud/celerity-runtime-core:0.1.0 \
-  --certificate-identity-regexp="github.com/newstack-cloud" \
+  --certificate-identity="https://github.com/newstack-cloud/celerity/.github/workflows/app-runtime-core-release.yml@refs/heads/main" \
   --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
 
 # Verify SBOM attestation
 cosign verify-attestation --type spdxjson \
   ghcr.io/newstack-cloud/celerity-runtime-core:0.1.0 \
-  --certificate-identity-regexp="github.com/newstack-cloud" \
+  --certificate-identity="https://github.com/newstack-cloud/celerity/.github/workflows/app-runtime-core-release.yml@refs/heads/main" \
   --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
 ```
 
