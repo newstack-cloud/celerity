@@ -1092,9 +1092,13 @@ async fn tells_a_client_authenticated_during_the_upgrade_that_it_was() {
     );
     let runtime_config = RuntimeConfig::from_env(&env_vars);
     let mut app = Application::new(runtime_config, Box::new(env_vars));
+    app.setup().unwrap();
+    // Registered after setup, which is the only order an SDK can use, since
+    // setup is what returns the configuration telling it which guards the
+    // blueprint asks for. A guard the connection path cannot see is a
+    // connection refused, so this ordering is part of what the test asserts.
     app.register_custom_auth_guard("customGuard", AcceptAnyTokenGuard)
         .await;
-    app.setup().unwrap();
     let addr = app.run(false).await.unwrap().http_server_address.unwrap();
 
     let _handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;

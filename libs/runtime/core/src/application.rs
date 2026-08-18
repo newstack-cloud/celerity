@@ -443,8 +443,7 @@ impl Application {
                         .as_ref()
                         .map(|_| websocket_config.auth_strategy.clone()),
                     connection_auth_guard_names: websocket_config.connection_auth_guard.clone(),
-                    connection_auth_guards: self
-                        .get_custom_auth_guards_blocking(&websocket_config.connection_auth_guard),
+                    connection_auth_guards: self.custom_auth_guards.clone(),
                     cors: api_config.cors.clone(),
                     resource_store: resource_store.clone(),
                 }),
@@ -503,30 +502,6 @@ impl Application {
         }
 
         Ok(http_server_app)
-    }
-
-    fn get_custom_auth_guards_blocking(
-        &self,
-        guard_names: &Option<Vec<String>>,
-    ) -> HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>> {
-        let mut guards = HashMap::new();
-        if let Some(names) = guard_names {
-            // Taken without blocking. Setup is the only thing touching this map
-            // at this point, so the lock is always free, and a blocking take
-            // panics outright when setup is called from inside a runtime, which
-            // is how an application with connection auth guards is started from
-            // an async context.
-            let Ok(all_guards) = self.custom_auth_guards.try_lock() else {
-                error!("custom auth guards were unavailable while setting up the server");
-                return guards;
-            };
-            for name in names {
-                if let Some(guard) = all_guards.get(name) {
-                    guards.insert(name.clone(), guard.clone());
-                }
-            }
-        }
-        guards
     }
 
     /// Adds the endpoint that invokes a handler directly by name, which exists
