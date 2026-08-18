@@ -9,10 +9,13 @@ lint_project() {
   project=$1
   if project_changes $project > /dev/null 2>&1; then
     project_dir="$(git rev-parse --show-toplevel)/$project"
-    cd $project_dir
+    # Run in a subshell so the directory change cannot outlive this project.
+    # Hooks run with GIT_DIR set and GIT_WORK_TREE unset, which makes
+    # `--show-toplevel` answer from the current directory, so a cd left behind
+    # here sent the next project's lookup off into this one's tree.
     # Every application is expected to contain a specialised shell script for linting,
     # Each project may have its own set of files/packages to be excluded amongst other customisations.
-    if ! scripts/lint.sh; then
+    if ! (cd "$project_dir" && scripts/lint.sh); then
       echo -e "\033[1m\033[31mFailed linting, please fix the reported issues\033[0m\n"
       exit 1
     else
