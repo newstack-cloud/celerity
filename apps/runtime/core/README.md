@@ -10,7 +10,7 @@ The IPC protocol is one long-lived bidirectional gRPC stream over a unix socket.
 `ghcr.io/newstack-cloud/celerity-runtime-core` is a base image: it carries the runtime and no handlers. Build your own image from it and add your compiled executable and blueprint.
 
 ```dockerfile
-FROM ghcr.io/newstack-cloud/celerity-runtime-core:1.0.0
+FROM ghcr.io/newstack-cloud/celerity-runtime-core:0.1.0
 
 COPY --chown=nobody handlers /opt/celerity/app/handlers
 COPY --chown=nobody blueprint.yaml /opt/celerity/app/blueprint.yaml
@@ -50,7 +50,7 @@ Every setting is an environment variable. See [.env.example](./.env.example) for
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CELERITY_HANDLERS_EXECUTABLE` | `/opt/celerity/app/handlers` | Path to the compiled handlers executable. Required. |
+| `CELERITY_HANDLERS_EXECUTABLE` | `/opt/celerity/app/handlers` | Path to the compiled handlers executable. Set it only to override the default path; the executable itself is required either way, and the runtime exits if it cannot be started. |
 | `CELERITY_HANDLERS_ARGS` | — | Arguments passed to the executable, split on whitespace. |
 | `CELERITY_HANDLERS_WORKING_DIR` | the runtime's own | Directory the executable is started in. |
 | `CELERITY_HANDLERS_SHUTDOWN_TIMEOUT` | `30` | Seconds between `SIGTERM` and `SIGKILL` for the executable. |
