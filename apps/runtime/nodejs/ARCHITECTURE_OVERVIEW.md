@@ -8,8 +8,12 @@ _FFI stands for [Foreign Function Interface](https://en.wikipedia.org/wiki/Forei
 
 When the runtime launches, it parses a blueprint file that defines the handles and then waits for each handler to be registered. Once all handlers are registered, the runtime will start listening for incoming requests, messages and events.
 
-The Node.js runtime has the same plugin system as all other runtimes that can be called at the "pre-handle" and "post-handle" stages of processing a request or message. This plugin system is meant to be lightweight and only deal with essential tasks such as authentication and handling CORS headers, the primary interaction developers using the runtime will have with this is configuration for CORS and auth in a blueprint definition for an application.
-**_This is not interchangeable with the plugin systems defined for language-specific SDKs for handlers, all core runtime plugins must be written in Rust._**
+The Node.js runtime processes a request or message through the same stack of **layers** as every other runtime. Each layer wraps the one inside it: it runs whatever it needs to before calling `next`, and whatever it needs to after that call returns, so a single layer sees both the way in and the way out. The innermost `next` is the call into the handler. A layer can also decline to call `next` at all and return its own response, which is how authentication rejects a request before it reaches a handler.
+
+Layers run outermost first on the way in and unwind in the reverse order on the way out, so the order they are declared in is the order they see the request.
+
+The layer system is meant to be lightweight and only deal with essential tasks such as authentication and handling CORS headers; the primary interaction developers using the runtime will have with it is configuration for CORS and auth in a blueprint definition for an application.
+**_This is not interchangeable with the middleware systems defined for language-specific SDKs for handlers, all core runtime layers must be written in Rust._**
 
 
 ## Run-time flow
