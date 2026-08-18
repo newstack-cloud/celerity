@@ -1494,6 +1494,8 @@ mod tests {
             metrics_enabled: false,
             trace_sample_ratio: 1.0,
             deploy_target: None,
+            ws_ack_timeout_ms: None,
+            ws_ack_max_attempts: None,
         }
     }
 
