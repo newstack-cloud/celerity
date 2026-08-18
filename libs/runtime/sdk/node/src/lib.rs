@@ -30,10 +30,11 @@ use celerity_runtime_core::{
   auth_custom::{AuthGuardHandler, AuthGuardValidateError, AuthGuardValidateInput},
   auth_http::AuthContext,
   config::{
-    ApiConfig, AppConfig, ClientIpSource, ConsumerConfig, ConsumersConfig, CustomHandlerDefinition,
-    CustomHandlersConfig, EventConfig, EventHandlerDefinition, EventsConfig,
-    GuardHandlerDefinition, GuardsConfig, HttpConfig, HttpHandlerDefinition, RuntimeConfig,
-    ScheduleConfig, SchedulesConfig, WebSocketConfig, WebSocketHandlerDefinition,
+    ws_ack_max_attempts_from_env, ws_ack_timeout_ms_from_env, ApiConfig, AppConfig, ClientIpSource,
+    ConsumerConfig, ConsumersConfig, CustomHandlerDefinition, CustomHandlersConfig, EventConfig,
+    EventHandlerDefinition, EventsConfig, GuardHandlerDefinition, GuardsConfig, HttpConfig,
+    HttpHandlerDefinition, RuntimeConfig, ScheduleConfig, SchedulesConfig, WebSocketConfig,
+    WebSocketHandlerDefinition,
   },
   consts::{
     DEFAULT_RESOURCE_STORE_CACHE_ENTRY_TTL, DEFAULT_RESOURCE_STORE_CLEANUP_INTERVAL,
@@ -1330,6 +1331,8 @@ impl CoreRuntimeApplication {
       metrics_enabled: runtime_config.metrics_enabled.unwrap_or(false),
       trace_sample_ratio: runtime_config.trace_sample_ratio.unwrap_or(0.1),
       deploy_target: std::env::var("CELERITY_DEPLOY_TARGET").ok(),
+      ws_ack_timeout_ms: ws_ack_timeout_ms_from_env(&ProcessEnvVars::new()),
+      ws_ack_max_attempts: ws_ack_max_attempts_from_env(&ProcessEnvVars::new()),
     };
     let inner = Application::new(native_runtime_config, Box::new(ProcessEnvVars::new()));
     CoreRuntimeApplication {
