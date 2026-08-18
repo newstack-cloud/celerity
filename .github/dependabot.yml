@@ -79,3 +79,63 @@ updates:
       python-deps:
         patterns: ["*"]
         update-types: ["minor", "patch"]
+
+  # Docker - Core runtime base images
+  - package-ecosystem: "docker"
+    directory: "/apps/runtime/core"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps(runtime-core)"
+    groups:
+      docker-deps:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # Docker - Node.js runtime base images
+  - package-ecosystem: "docker"
+    directory: "/apps/runtime/nodejs"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps(runtime-nodejs)"
+    groups:
+      docker-deps:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # Docker - Python runtime base images
+  - package-ecosystem: "docker"
+    directory: "/apps/runtime/python"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps(runtime-python)"
+    groups:
+      docker-deps:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # Docker - Local events sidecar base images
+  - package-ecosystem: "docker"
+    directory: "/apps/local-events"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps(local-events)"
+    groups:
+      docker-deps:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # Docker - Dev auth base images
+  - package-ecosystem: "docker"
+    directory: "/apps/dev-auth"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps(dev-auth)"
+    groups:
+      docker-deps:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
