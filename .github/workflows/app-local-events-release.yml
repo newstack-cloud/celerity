@@ -10,10 +10,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
-  id-token: write
-  attestations: write
-  security-events: write
 
 env:
   REGISTRY: ghcr.io
@@ -38,6 +34,9 @@ jobs:
   build:
     name: Build & Push Production Image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     needs: prepare
     outputs:
       digest: ${{ steps.build.outputs.digest }}
@@ -87,6 +86,9 @@ jobs:
   scan-images:
     name: Scan Container Images
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     needs: [build]
     steps:
       - uses: actions/checkout@v4
@@ -119,8 +121,15 @@ jobs:
   sign-and-attest:
     name: Sign & Attest Images
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
     needs: [build, scan-images]
-    if: always() && needs.build.result == 'success'
+    # A signature and a provenance attestation say this image is fit to
+    # pull, so a failed scan has to stop them being made.
+    if: needs.build.result == 'success' && needs.scan-images.result == 'success'
     env:
       # Store signatures and attestations as OCI 1.1 referrers instead of
       # tag-based artifacts (.sig/.att/.sbom tags) that pollute the GHCR UI.
