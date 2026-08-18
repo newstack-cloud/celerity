@@ -43,6 +43,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
@@ -95,6 +96,37 @@ jobs:
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=runtime-core-${{ matrix.target }}-${{ matrix.platform.arch }}
           cache-to: type=gha,mode=max,scope=runtime-core-${{ matrix.target }}-${{ matrix.platform.arch }}
+
+      # Scanned here, before the manifest that carries the tags is assembled,
+      # so an image with a critical vulnerability is never tagged. Scanning
+      # after publication would leave the tags live and only skip the signing,
+      # which is a worse outcome than a failed release.
+      - name: Scan the image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
+          format: "table"
+          severity: "CRITICAL,HIGH"
+          # The production image has to be clean. The dev image carries a shell
+          # and the tools to debug with, and is reported on rather than blocked.
+          exit-code: ${{ matrix.target == 'runtime' && '1' || '0' }}
+
+      - name: Scan the image (SARIF)
+        if: always()
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
+          format: "sarif"
+          output: "trivy.sarif"
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"
+
+      - name: Upload the scan results
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: "trivy.sarif"
+          category: "container-core-${{ matrix.target }}-${{ matrix.platform.arch }}"
 
       - name: Export the digest
         env:
@@ -209,73 +241,13 @@ jobs:
             --format '{{json .Manifest}}' | jq -r .digest)
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
-  scan-images:
-    name: Scan Container Images
-    runs-on: ubuntu-latest
-    needs: [merge-runtime, merge-dev]
-    permissions:
-      contents: read
-      security-events: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Trivy scan production image (table)
-        uses: aquasecurity/trivy-action@0.35.0
-        with:
-          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-runtime.outputs.digest }}"
-          format: "table"
-          severity: "CRITICAL,HIGH"
-          exit-code: "1"
-
-      - name: Trivy scan production image (SARIF)
-        if: always()
-        uses: aquasecurity/trivy-action@0.35.0
-        with:
-          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-runtime.outputs.digest }}"
-          format: "sarif"
-          output: "trivy-runtime.sarif"
-          severity: "CRITICAL,HIGH"
-          exit-code: "0"
-
-      - name: Upload production scan results
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: "trivy-runtime.sarif"
-          category: "container-core-runtime"
-
-      - name: Trivy scan dev image (table)
-        uses: aquasecurity/trivy-action@0.35.0
-        with:
-          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-dev.outputs.digest }}"
-          format: "table"
-          severity: "CRITICAL,HIGH"
-          exit-code: "0"
-
-      - name: Trivy scan dev image (SARIF)
-        if: always()
-        uses: aquasecurity/trivy-action@0.35.0
-        with:
-          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-dev.outputs.digest }}"
-          format: "sarif"
-          output: "trivy-dev.sarif"
-          severity: "CRITICAL,HIGH"
-          exit-code: "0"
-
-      - name: Upload dev scan results
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: "trivy-dev.sarif"
-          category: "container-core-dev"
-
   sign-and-attest:
     name: Sign & Attest Images
     runs-on: ubuntu-latest
-    needs: [merge-runtime, merge-dev, scan-images]
-    # A signature and a provenance attestation say this image was built here and
-    # is fit to pull, so a failed scan has to stop them being made.
-    if: needs.merge-runtime.result == 'success' && needs.merge-dev.result == 'success' && needs.scan-images.result == 'success'
+    needs: [merge-runtime, merge-dev]
+    # Nothing reaches a manifest unless its scan passed, so getting this far
+    # already means every image being signed is one that cleared the scan.
+    if: needs.merge-runtime.result == 'success' && needs.merge-dev.result == 'success'
     permissions:
       contents: read
       packages: write

@@ -22,7 +22,9 @@ Release-As: 0.1.0"
 4. The release workflow builds and pushes Docker images to GHCR:
    - Production: `ghcr.io/newstack-cloud/celerity-runtime-core:0.1.0`, `:0.1`, `:latest`
    - Dev: `ghcr.io/newstack-cloud/celerity-runtime-core:dev-0.1.0`, `:dev-latest`
-5. Images are scanned (Trivy), signed (cosign keyless), and attested (SBOM + build provenance).
+5. Each image is scanned (Trivy) while it is still untagged, so a critical vulnerability fails the release before anything is published rather than leaving tags live. Once every architecture passes, the tagged manifest is assembled and then signed (cosign keyless) and attested (SBOM + build provenance).
+
+The production image has to be clean to be released. The dev image carries a shell and the tools to debug with, so its findings are reported but do not block.
 
 Both images are built for `linux/amd64` and `linux/arm64`.
 
