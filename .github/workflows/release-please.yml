@@ -35,7 +35,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_OUTPUTS: ${{ toJSON(steps.release.outputs) }}
         run: |
-          GATED_COMPONENTS=("apps/runtime/nodejs" "apps/runtime/python")
+          GATED_COMPONENTS=("apps/runtime/nodejs" "apps/runtime/python" "apps/runtime/core")
 
           for path in "${GATED_COMPONENTS[@]}"; do
             # release-please outputs use -- as separator for path-based keys
