@@ -82,6 +82,11 @@ jobs:
             org.opencontainers.image.title=Celerity Core Runtime
             org.opencontainers.image.description=Runtime for Celerity applications with ahead-of-time compiled handlers
 
+      # Needed for the container driver. The docker driver that a runner has by
+      # default cannot export an image by digest, which is how each
+      # architecture is pushed before there is a manifest to tag.
+      - uses: docker/setup-buildx-action@v3
+
       # Pushed without a tag, since a tag naming two architectures can only be
       # applied once both exist. The manifest that carries the tags is assembled
       # from these digests once every architecture has been built.
@@ -112,7 +117,7 @@ jobs:
           exit-code: ${{ matrix.target == 'runtime' && '1' || '0' }}
 
       - name: Scan the image (SARIF)
-        if: always()
+        if: "!cancelled() && steps.build.outputs.digest != ''"
         uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
@@ -123,7 +128,7 @@ jobs:
 
       - name: Upload the scan results
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: "!cancelled() && hashFiles('trivy.sarif') != ''" 
         with:
           sarif_file: "trivy.sarif"
           category: "container-core-${{ matrix.target }}-${{ matrix.platform.arch }}"
