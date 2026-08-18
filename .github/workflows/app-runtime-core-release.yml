@@ -10,10 +10,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
-  id-token: write
-  attestations: write
-  security-events: write
 
 env:
   REGISTRY: ghcr.io
@@ -28,17 +24,25 @@ jobs:
     steps:
       - name: Extract version from tag
         id: version
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
-          TAG="${{ inputs.tag }}"
+          if [[ ! "$TAG" =~ ^runtime-core-app/v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Expected a tag of the form runtime-core-app/v1.2.3, got '$TAG'"
+            exit 1
+          fi
           VERSION="${TAG##*/}"
           VERSION="${VERSION#v}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Extracted version: $VERSION from tag: $TAG"
 
   build-runtime:
     name: Build & Push Production Image
     runs-on: ubuntu-latest
     needs: prepare
+    permissions:
+      contents: read
+      packages: write
     outputs:
       digest: ${{ steps.build.outputs.digest }}
     steps:
@@ -89,6 +93,9 @@ jobs:
     name: Build & Push Dev Image
     runs-on: ubuntu-latest
     needs: prepare
+    permissions:
+      contents: read
+      packages: write
     outputs:
       digest: ${{ steps.build.outputs.digest }}
     steps:
@@ -138,6 +145,9 @@ jobs:
     name: Scan Container Images
     runs-on: ubuntu-latest
     needs: [build-runtime, build-dev]
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
 
@@ -195,7 +205,14 @@ jobs:
     name: Sign & Attest Images
     runs-on: ubuntu-latest
     needs: [build-runtime, build-dev, scan-images]
-    if: always() && needs.build-runtime.result == 'success' && needs.build-dev.result == 'success'
+    # A signature and a provenance attestation say this image was built here and
+    # is fit to pull, so a failed scan has to stop them being made.
+    if: needs.build-runtime.result == 'success' && needs.build-dev.result == 'success' && needs.scan-images.result == 'success'
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
     env:
       # Store signatures and attestations as OCI 1.1 referrers instead of
       # tag-based artifacts (.sig/.att/.sbom tags) that pollute the GHCR UI.
