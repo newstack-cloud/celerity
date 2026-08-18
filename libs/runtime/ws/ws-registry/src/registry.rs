@@ -1245,13 +1245,27 @@ mod tests {
         // opt in, it does not add or change one.
         assert_eq!(&received[..], original.as_slice());
 
+        // Sent again while it goes unanswered, which is what says the opt in was
+        // read at all. Without waiting for this the test passes just as well
+        // against a runtime that never reads the byte, since a message nothing
+        // is waiting on is also a message that is never resent.
+        let resent = tokio::time::timeout(Duration::from_millis(400), socket.next())
+            .await
+            .expect("a binary message asking to be acknowledged should be sent again")
+            .unwrap()
+            .unwrap();
+        match resent {
+            tungstenite::Message::Binary(bytes) => assert_eq!(&bytes[..], original.as_slice()),
+            other => panic!("Unexpected message but got {other:?}"),
+        }
+
         registry
             .record_client_ack(connection_id, "m-bin".to_string())
             .await;
-        let resent = tokio::time::timeout(Duration::from_millis(400), socket.next()).await;
+        let after_ack = tokio::time::timeout(Duration::from_millis(400), socket.next()).await;
         assert!(
-            resent.is_err(),
-            "an acknowledged message should not be resent"
+            after_ack.is_err(),
+            "an acknowledged message should not be resent, got {after_ack:?}"
         );
     }
 
