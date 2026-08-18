@@ -2,12 +2,12 @@ use std::{
     collections::HashMap,
     fmt::Display,
     net::SocketAddr,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, OnceLock},
     time::Duration,
 };
 
 use async_trait::async_trait;
-use axum::http::{HeaderName, HeaderValue, Method as HttpMethod};
+use axum::http::{HeaderName, HeaderValue, Method as HttpMethod, StatusCode};
 use axum::{
     extract::{MatchedPath, RawPathParams, Request},
     handler::Handler,
@@ -59,7 +59,7 @@ use crate::{
     consumer_handler::{
         ConsumerEventHandler, EventQueueConsumerEventHandler, SharedConsumerEventHandler,
     },
-    dispatcher::{drain_timeout, Dispatcher, DispatcherCommand},
+    dispatcher::{drain_timeout, Dispatcher, DispatcherCommand, HandlerReadiness},
     errors::{ApplicationStartError, ConfigError},
     event_queue::{
         collect_handler_timeouts, http_handler_tag, timeout_from_seconds, websocket_handler_tag,
@@ -114,6 +114,11 @@ pub struct Application {
     /// Built during setup, served in `run` once there is a runtime to spawn on.
     ipc_stream_context: Option<Arc<StreamContext>>,
     ipc_dispatcher: Option<Dispatcher>,
+    /// Taken from the dispatcher during setup, since starting it consumes it.
+    ///
+    /// Shared with the health check route, which is registered before the
+    /// dispatcher is built, and stays empty in the FFI call mode.
+    handler_readiness: Arc<OnceLock<HandlerReadiness>>,
     ipc_commands_rx: Option<mpsc::Receiver<DispatcherCommand>>,
     ipc_dispatcher_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     ipc_server_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
@@ -166,6 +171,7 @@ impl Application {
             event_cleanup_task_shutdown_signal: None,
             ipc_stream_context: None,
             ipc_dispatcher: None,
+            handler_readiness: Arc::new(OnceLock::new()),
             ipc_commands_rx: None,
             ipc_dispatcher_shutdown_signal: None,
             ipc_server_shutdown_signal: None,
@@ -284,6 +290,16 @@ impl Application {
         self.event_queue.clone()
     }
 
+    /// Whether a handlers executable is attached, or `None` in the FFI call
+    /// mode where handlers run in-process and cannot be absent.
+    ///
+    /// A runtime that starts the handlers executable itself uses this to give
+    /// up when nothing attaches, which is the only signal an orchestrator gets
+    /// for a handler process that is alive but never serves.
+    pub fn handler_readiness(&self) -> Option<HandlerReadiness> {
+        self.handler_readiness.get().cloned()
+    }
+
     pub fn websocket_registry(&self) -> Arc<dyn WebSocketRegistrySend> {
         if let Some(ws_connections) = &self.ws_connections {
             ws_connections.clone()
@@ -321,12 +337,32 @@ impl Application {
         let mut http_server_app = Router::new();
         let use_custom_health_check = self.runtime_config.use_custom_health_check.unwrap_or(false);
         if !use_custom_health_check {
+            let handler_readiness = self.handler_readiness.clone();
             http_server_app = http_server_app.route(
                 DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT,
-                get(|()| async {
-                    Json(HealthCheckResponse {
-                        timestamp: get_epoch_seconds(),
-                    })
+                get(move |()| {
+                    let handler_readiness = handler_readiness.clone();
+                    async move {
+                        // In the IPC call mode this includes
+                        // whether a handlers executable is attached, since a
+                        // runtime without one sheds every event it takes.
+                        let serving = handler_readiness
+                            .get()
+                            .is_none_or(HandlerReadiness::is_ready);
+                        let status = if serving {
+                            StatusCode::OK
+                        } else {
+                            // 503 rather than 500 as nothing has failed, there is
+                            // just nothing to hand work to yet.
+                            StatusCode::SERVICE_UNAVAILABLE
+                        };
+                        (
+                            status,
+                            Json(HealthCheckResponse {
+                                timestamp: get_epoch_seconds(),
+                            }),
+                        )
+                    }
                 }),
             );
         }
@@ -592,11 +628,15 @@ impl Application {
             "shutdown will wait this long for in-flight events"
         );
 
-        self.ipc_dispatcher = Some(Dispatcher::new(
+        let dispatcher = Dispatcher::new(
             event_queue.in_flight.clone(),
             handler_timeouts,
             drain_timeout,
-        ));
+        );
+        // Filled before anything serves, so the health check never answers on a
+        // readiness handle that is missing only because setup is still running.
+        let _ = self.handler_readiness.set(dispatcher.readiness());
+        self.ipc_dispatcher = Some(dispatcher);
         self.ipc_commands_rx = Some(commands_rx);
         self.ipc_stream_context = Some(Arc::new(StreamContext {
             runtime_config,

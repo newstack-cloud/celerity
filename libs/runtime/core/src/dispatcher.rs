@@ -28,7 +28,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use tokio::{
-    sync::{mpsc, oneshot},
+    sync::{mpsc, oneshot, watch},
     time::Instant,
 };
 use tracing::{debug, info, warn};
@@ -177,6 +177,44 @@ pub struct Dispatcher {
     timeouts: HandlerTimeouts,
     /// How long a shutdown waits for in-flight events before abandoning them.
     drain_timeout: Duration,
+    /// Publishes whether any stream is attached, for readiness probes and for
+    /// the startup deadline a supervising runtime applies.
+    readiness: watch::Sender<bool>,
+}
+
+/// Whether a handlers executable is attached and able to be given work.
+///
+/// A handler process that has died takes the runtime down with it, which an
+/// orchestrator sees as a non-zero exit. This covers the other case: a process
+/// that is alive but not serving, because it never completed its handshake, was
+/// refused over a handler tag mismatch, or detached and never came back. None
+/// of those exit, so without this they look healthy while every event is shed.
+///
+/// Readiness here means at least one stream is attached, not that every handler
+/// tag the blueprint declares is served. A partially attached application can
+/// still serve some of its routes, and refusing traffic outright would be a
+/// worse answer than shedding the events that have nowhere to go.
+#[derive(Debug, Clone)]
+pub struct HandlerReadiness {
+    ready: watch::Receiver<bool>,
+}
+
+impl HandlerReadiness {
+    /// Whether a handlers executable is attached right now.
+    pub fn is_ready(&self) -> bool {
+        *self.ready.borrow()
+    }
+
+    /// Resolves once a handlers executable has attached, immediately if one
+    /// already has.
+    ///
+    /// Resolves early if the dispatcher has gone, since nothing will attach
+    /// after that and a caller waiting on readiness would wait forever.
+    pub async fn wait_until_ready(&mut self) {
+        // `wait_for` checks the current value before waiting, so an attach that
+        // happened before this was called is not missed.
+        let _ = self.ready.wait_for(|ready| *ready).await;
+    }
 }
 
 /// Waits until an instant, or forever when there is nothing to wait for.
@@ -239,7 +277,30 @@ impl Dispatcher {
             in_flight,
             timeouts,
             drain_timeout,
+            readiness: watch::Sender::new(false),
         }
+    }
+
+    /// A handle to whether a handlers executable is attached.
+    ///
+    /// Take this before [`Dispatcher::run`], which consumes the dispatcher.
+    pub fn readiness(&self) -> HandlerReadiness {
+        HandlerReadiness {
+            ready: self.readiness.subscribe(),
+        }
+    }
+
+    /// Publishes the current readiness, notifying only on a change so that a
+    /// waiter is not woken by every attach on an application that has several.
+    fn publish_readiness(&self) {
+        let serving = !self.streams.is_empty();
+        self.readiness.send_if_modified(|ready| {
+            if *ready == serving {
+                return false;
+            }
+            *ready = serving;
+            true
+        });
     }
 
     /// Runs dispatch until the event queue closes or shutdown is signalled,
@@ -442,6 +503,7 @@ impl Dispatcher {
                         dispatch_tx: registration.dispatch_tx,
                     },
                 );
+                self.publish_readiness();
                 // A receiver that has gone away just means the caller stopped
                 // waiting, which is not a reason to fail the attach.
                 let _ = registered.send(());
@@ -492,6 +554,7 @@ impl Dispatcher {
         let Some(stream) = self.streams.remove(&stream_id) else {
             return;
         };
+        self.publish_readiness();
         if stream.holding.is_empty() {
             debug!(stream_id, "handler stream detached");
             return;
@@ -792,6 +855,7 @@ mod tests {
         queue: crate::event_queue::EventQueue,
         commands: mpsc::Sender<DispatcherCommand>,
         shutdown: Option<oneshot::Sender<()>>,
+        readiness: HandlerReadiness,
         _cleanup_shutdown: oneshot::Sender<()>,
     }
 
@@ -815,12 +879,14 @@ mod tests {
         let (shutdown_tx, shutdown_rx) = oneshot::channel();
 
         let dispatcher = Dispatcher::new(handles.in_flight.clone(), timeouts(), drain_timeout);
+        let readiness = dispatcher.readiness();
         tokio::spawn(dispatcher.run(receivers, command_rx, shutdown_rx));
 
         Harness {
             queue: handles.queue.clone(),
             commands: command_tx,
             shutdown: Some(shutdown_tx),
+            readiness,
             _cleanup_shutdown: cleanup_shutdown,
         }
     }
@@ -1434,5 +1500,71 @@ mod tests {
             .await
             .expect("the caller should be woken");
         assert!(outcome.is_err(), "the result channel should have closed");
+    }
+
+    #[tokio::test]
+    async fn is_not_ready_until_a_handler_stream_attaches() {
+        let harness = start(16);
+        assert!(
+            !harness.readiness.is_ready(),
+            "nothing has attached, so there is nothing to give work to"
+        );
+
+        let _stream = attach(&harness, 1, &["schedule::a"], 4, HashMap::new()).await;
+
+        assert!(harness.readiness.is_ready());
+    }
+
+    #[tokio::test]
+    async fn stops_being_ready_when_the_last_handler_stream_detaches() {
+        let harness = start(16);
+        let _stream = attach(&harness, 1, &["schedule::a"], 4, HashMap::new()).await;
+        assert!(harness.readiness.is_ready());
+
+        harness
+            .commands
+            .send(DispatcherCommand::Detach { stream_id: 1 })
+            .await
+            .unwrap();
+
+        let mut readiness = harness.readiness.clone();
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while readiness.is_ready() {
+                readiness.ready.changed().await.unwrap();
+            }
+        })
+        .await
+        .expect("readiness should drop once the last stream detaches");
+    }
+
+    #[tokio::test]
+    async fn stays_ready_while_another_handler_stream_is_still_attached() {
+        let harness = start(16);
+        let _first = attach(&harness, 1, &["schedule::a"], 4, HashMap::new()).await;
+        let _second = attach(&harness, 2, &["schedule::b"], 4, HashMap::new()).await;
+
+        harness
+            .commands
+            .send(DispatcherCommand::Detach { stream_id: 1 })
+            .await
+            .unwrap();
+        // Round-trips a command so the detach above has certainly been applied.
+        let _third = attach(&harness, 3, &["schedule::c"], 4, HashMap::new()).await;
+
+        assert!(
+            harness.readiness.is_ready(),
+            "one stream going does not leave the application unable to serve"
+        );
+    }
+
+    #[tokio::test]
+    async fn wait_until_ready_returns_for_a_stream_that_attached_earlier() {
+        let harness = start(16);
+        let _stream = attach(&harness, 1, &["schedule::a"], 4, HashMap::new()).await;
+
+        let mut readiness = harness.readiness.clone();
+        tokio::time::timeout(Duration::from_secs(5), readiness.wait_until_ready())
+            .await
+            .expect("readiness should not be missed by a later waiter");
     }
 }
