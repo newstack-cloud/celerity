@@ -9,16 +9,40 @@ use tracing::{debug, error, info, info_span, Instrument};
 
 use crate::types::{AckWorkerConfig, MessageType};
 
-/// The default interval at which to check for actions based on ack statuses.
-pub const DEFAULT_MESSAGE_ACTION_CHECK_INTERVAL_MS: u64 = 10000;
-
 /// The default timeout in milliseconds for which the caller should consider re-sending
 /// the message if it has not been acknowledged.
-pub const DEFAULT_MESSAGE_TIMEOUT_MS: u64 = 15000;
+///
+/// One of the suggested defaults the WebSocket runtime protocol names.
+pub const DEFAULT_MESSAGE_TIMEOUT_MS: u64 = 10000;
 
 /// The default number of times that a message should be attempted to be sent before it is
 /// considered lost.
-pub const DEFAULT_MAX_ATTEMPTS: u32 = 4;
+///
+/// One of the suggested defaults the WebSocket runtime protocol names.
+pub const DEFAULT_MAX_ATTEMPTS: u32 = 3;
+
+/// The longest a message may sit past its timeout before the worker notices,
+/// which is what the check interval buys at the cost of waking more often.
+const MAX_MESSAGE_ACTION_CHECK_INTERVAL_MS: u64 = 1000;
+
+/// The shortest the check interval may be derived as, so that a very small
+/// timeout does not turn the worker into a busy loop.
+const MIN_MESSAGE_ACTION_CHECK_INTERVAL_MS: u64 = 20;
+
+/// Derives how often to look for messages that have fallen due from the timeout
+/// they are due after.
+///
+/// The check interval is what the timeout is rounded up to, since a message
+/// falling due between two checks waits for the later one. Checking every ten
+/// seconds for a message due after ten would resend somewhere between ten and
+/// twenty seconds, so the interval has to be a fraction of the timeout for the
+/// timeout to be accurate.
+fn derive_message_action_check_interval_ms(message_timeout_ms: u64) -> u64 {
+    (message_timeout_ms / 10).clamp(
+        MIN_MESSAGE_ACTION_CHECK_INTERVAL_MS,
+        MAX_MESSAGE_ACTION_CHECK_INTERVAL_MS,
+    )
+}
 
 /// The default interval in milliseconds to check for the acknowledgement status of a message.
 pub const ACK_WAIT_CHECK_INTERVAL_MS: u64 = 20;
@@ -103,14 +127,15 @@ pub struct Worker {
 
 impl Worker {
     pub fn new(config: AckWorkerConfig) -> Self {
+        let message_timeout_ms = config
+            .message_timeout_ms
+            .unwrap_or(DEFAULT_MESSAGE_TIMEOUT_MS);
         Self {
             acks: Arc::new(Mutex::new(HashMap::new())),
             message_action_check_interval_ms: config
                 .message_action_check_interval_ms
-                .unwrap_or(DEFAULT_MESSAGE_ACTION_CHECK_INTERVAL_MS),
-            message_timeout_ms: config
-                .message_timeout_ms
-                .unwrap_or(DEFAULT_MESSAGE_TIMEOUT_MS),
+                .unwrap_or_else(|| derive_message_action_check_interval_ms(message_timeout_ms)),
+            message_timeout_ms,
             max_attempts: config.max_attempts.unwrap_or(DEFAULT_MAX_ATTEMPTS),
         }
     }
@@ -419,5 +444,52 @@ mod tests {
         };
         assert_eq!(resend.client_id, "connection-1");
         assert_eq!(resend.message_id, "message-1");
+    }
+
+    /// A timeout only means what it says if the worker looks often enough to
+    /// notice, so the interval is derived from it rather than set beside it.
+    #[test]
+    fn test_the_check_interval_is_a_fraction_of_the_timeout_it_is_derived_from() {
+        assert_eq!(
+            derive_message_action_check_interval_ms(DEFAULT_MESSAGE_TIMEOUT_MS),
+            1_000
+        );
+        assert_eq!(derive_message_action_check_interval_ms(2_000), 200);
+    }
+
+    /// Bounded at both ends. A long timeout does not buy a proportionally
+    /// coarse check, and a very short one does not turn the worker into a busy
+    /// loop.
+    #[test]
+    fn test_the_derived_check_interval_stays_within_its_bounds() {
+        assert_eq!(derive_message_action_check_interval_ms(600_000), 1_000);
+        assert_eq!(derive_message_action_check_interval_ms(100), 20);
+        assert_eq!(derive_message_action_check_interval_ms(0), 20);
+    }
+
+    /// An interval given explicitly is used as given, which is what lets a test
+    /// watch a resend without waiting on the production timings.
+    #[test]
+    fn test_an_explicit_check_interval_is_kept() {
+        let worker = Worker::new(AckWorkerConfig {
+            message_action_check_interval_ms: Some(50),
+            message_timeout_ms: Some(100),
+            max_attempts: Some(2),
+        });
+
+        assert_eq!(worker.message_action_check_interval_ms, 50);
+        assert_eq!(worker.message_timeout_ms, 100);
+        assert_eq!(worker.max_attempts, 2);
+    }
+
+    /// The good defaults the WebSocket runtime protocol names, which a
+    /// deployment gets by configuring nothing.
+    #[test]
+    fn test_the_defaults_are_the_ones_the_protocol_names() {
+        let worker = Worker::new(AckWorkerConfig::default());
+
+        assert_eq!(worker.message_timeout_ms, 10_000);
+        assert_eq!(worker.max_attempts, 3);
+        assert_eq!(worker.message_action_check_interval_ms, 1_000);
     }
 }
