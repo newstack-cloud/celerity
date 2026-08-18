@@ -1,0 +1,19 @@
+# The build context is the repository root, so this excludes everything outside
+# the two directories the build needs, and the build output inside them.
+*
+!libs/runtime
+!apps/runtime/core
+
+libs/runtime/**/target/
+libs/runtime/**/.venv/
+libs/runtime/**/node_modules/
+libs/runtime/**/__pycache__/
+libs/runtime/benchmarks/
+libs/runtime/docs/
+libs/runtime/api-docs/
+libs/runtime/**/*.md
+
+apps/runtime/core/target/
+apps/runtime/core/resources/
+apps/runtime/core/*.md
+apps/runtime/core/.env*

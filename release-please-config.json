@@ -86,6 +86,11 @@
       "release-type": "simple",
       "component": "runtime-python",
       "package-name": "celerity-runtime-python"
+    },
+    "apps/runtime/core": {
+      "release-type": "rust",
+      "component": "runtime-core-app",
+      "package-name": "celerity-runtime-core-app"
     }
   }
 }

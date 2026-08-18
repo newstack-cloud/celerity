@@ -47,6 +47,7 @@ Non-Go components do not need path-based tags — the component tag created by r
 | `runtime-sdk-ffi` | `libs/runtime/sdk` | FFI binding crates for Java/.NET. A release triggers the downstream Java/.NET SDK build and publish. |
 | `runtime-sdk-node` | `libs/runtime/sdk/node` | Node.js runtime SDK bindings |
 | `runtime-sdk-python` | `libs/runtime/sdk/python` | Python runtime SDK bindings |
+| `runtime-core-app` | `apps/runtime/core` | Core runtime application for ahead-of-time compiled handlers (Docker image published to GHCR) |
 | `runtime-nodejs` | `apps/runtime/nodejs` | Node.js runtime wrapper application (Docker image published to GHCR) |
 | `runtime-python` | `apps/runtime/python` | Python runtime wrapper application (Docker image published to GHCR) |
 

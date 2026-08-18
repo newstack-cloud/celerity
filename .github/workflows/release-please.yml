@@ -101,6 +101,7 @@ jobs:
             ["runtime-sdk-ffi"]="lib-java-csharp-sdk-release.yml"
             ["runtime-nodejs"]="app-runtime-nodejs-release.yml"
             ["runtime-python"]="app-runtime-python-release.yml"
+            ["runtime-core-app"]="app-runtime-core-release.yml"
             ["local-events"]="app-local-events-release.yml"
             ["dev-auth"]="app-dev-auth-release.yml"
           )
