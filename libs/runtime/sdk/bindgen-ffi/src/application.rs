@@ -7,7 +7,9 @@ use celerity_helpers::{
 };
 use celerity_runtime_core::{
     application::Application as RuntimeApp,
-    config::{ClientIpSource, RuntimeConfig},
+    config::{
+        ws_ack_max_attempts_from_env, ws_ack_timeout_ms_from_env, ClientIpSource, RuntimeConfig,
+    },
     errors::{ApplicationStartError, ConfigError},
 };
 use tokio::select;
@@ -65,6 +67,8 @@ pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut
                 metrics_enabled: false,
                 trace_sample_ratio: 0.1,
                 deploy_target: std::env::var("CELERITY_DEPLOY_TARGET").ok(),
+                ws_ack_timeout_ms: ws_ack_timeout_ms_from_env(&ProcessEnvVars::new()),
+                ws_ack_max_attempts: ws_ack_max_attempts_from_env(&ProcessEnvVars::new()),
             },
             Box::new(ProcessEnvVars::new()),
         ),
