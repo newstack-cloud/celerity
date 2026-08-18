@@ -44,6 +44,18 @@ updates:
         patterns: ["*"]
         update-types: ["minor", "patch"]
 
+  # Rust - Core runtime application
+  - package-ecosystem: "cargo"
+    directory: "/apps/runtime/core"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps(runtime-core)"
+    groups:
+      rust-deps:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
   # NPM - Node.js runtime SDK
   - package-ecosystem: "npm"
     directory: "/libs/runtime/sdk/node"
