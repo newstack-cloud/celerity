@@ -5,9 +5,11 @@ on:
     branches: [main]
     paths:
       - "libs/runtime/**"
+      - "apps/runtime/core/**"
   pull_request:
     paths:
       - "libs/runtime/**"
+      - "apps/runtime/core/**"
   schedule:
     - cron: "0 5 * * 1" # Weekly Monday 5AM UTC
   workflow_dispatch: {}
@@ -17,17 +19,31 @@ permissions:
 
 jobs:
   cargo-deny:
-    name: Cargo Deny Check
+    name: Cargo Deny Check (${{ matrix.manifest }})
     runs-on: ubuntu-latest
     strategy:
+      # Every manifest and check should report on its own, rather than the
+      # first failure hiding what the others would have said.
+      fail-fast: false
       matrix:
         checks:
           - advisories
           - bans licenses sources
+        # The core runtime app is a workspace of its own with its own lock
+        # file, so the crates it ships are not covered by checking the runtime
+        # libraries.
+        manifest:
+          - libs/runtime/Cargo.toml
+          - apps/runtime/core/Cargo.toml
     steps:
       - uses: actions/checkout@v4
 
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
+          # `--config` is an option of the check subcommand rather than a
+          # global one, so it goes here rather than in `arguments`. Without it
+          # cargo-deny looks beside the manifest, finds nothing for the app and
+          # falls back to its default policy.
           command: check ${{ matrix.checks }}
-          manifest-path: libs/runtime/Cargo.toml
+          command-arguments: --config libs/runtime/deny.toml
+          manifest-path: ${{ matrix.manifest }}
