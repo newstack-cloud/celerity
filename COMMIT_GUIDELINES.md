@@ -38,6 +38,7 @@ This list will evolve as more applications and libraries are added to Celerity.
 - `cli` - CLI for test/build/package/deploy tooling (`apps/cli`)
 - `local-events` - Local events sidecar for Celerity application event triggers for local and CI testing (`apps/local-events`)
 - `dev-auth` - Development authentication service for testing authentication flows locally (`apps/dev-auth`)
+- `runtime-core` - Core runtime application for ahead-of-time compiled handlers, supervising a handlers executable it streams events to over the IPC protocol (`apps/runtime/core`)
 - `runtime-nodejs` - Node.js runtime wrapper application (`apps/runtime/nodejs`)
 - `runtime-python` - Python runtime wrapper application (`apps/runtime/python`)
 
@@ -110,6 +111,7 @@ Release-please routes commits to component groups by **longest file path match**
 | `runtime-sdk-ffi` | `libs/runtime/sdk` | Triggers Java/.NET release | `lib-rt-sdk-ffi`, `lib-rt-sdk-ffi-java`, `lib-rt-sdk-schema`, `runtime-bindings`, `lib-rt-sdk-java`, `lib-rt-sdk-dotnet` |
 | `runtime-sdk-node` | `libs/runtime/sdk/node` | NPM | `lib-rt-sdk-node` |
 | `runtime-sdk-python` | `libs/runtime/sdk/python` | PyPI | `lib-rt-sdk-python` |
+| `runtime-core-app` | `apps/runtime/core` | GHCR | `runtime-core` |
 | `runtime-nodejs` | `apps/runtime/nodejs` | GHCR | `runtime-nodejs` |
 | `runtime-python` | `apps/runtime/python` | GHCR | `runtime-python` |
 

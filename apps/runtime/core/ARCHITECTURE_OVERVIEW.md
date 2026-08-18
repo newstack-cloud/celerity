@@ -1,17 +1,23 @@
 # Architecture Overview
 
-**_Coming soon as a part of Celerity v1_**
+The core runtime is an application that acts as a HTTP server, WebSocket server and a message queue consumer. It is responsible for processing incoming requests and messages/events; it then tags each one with the handler that is to run it and puts it on an in-memory queue, from which it is dispatched to the handlers executable that runs the handler developers defined.
 
-The core runtime is an application that acts as a HTTP server, WebSocket server and a message queue consumer. It is responsible for processing incoming requests and messages/events; it then tags and stores them to be retrieved by the handlers executable that is then responsible for routing requests or messages to the appropriate handlers defined by developers.
+The core runtime is a Rust application that interacts with handlers over the [Celerity IPC protocol](../../../libs/runtime/proto/README.md): one long-lived bidirectional gRPC stream over a unix socket, carrying events, results, configuration, WebSocket sends, cancellation and shutdown. This means that it doesn't matter what language the handlers are written in, as long as they can be executed and can speak the protocol, which a Celerity SDK for the language does on their behalf.
 
-The core runtime is a Rust application that interacts with handlers by exposing a HTTP API. This means that it doesn't matter what language the handlers are written in, as long as they can be executed and communicate with the local runtime API over HTTP.
+The stream is what makes this different from a polling API. The runtime does not dispatch until the handlers executable has declared what it serves and how much work it can take, it grants credit rather than letting work pile up on a process that cannot keep up, and it can cancel an event that has passed its deadline instead of waiting to find out.
 
-When using the core runtime there are two processes that are started, the main runtime process and the process for your compiled binary that contains your application's handlers. The process containing your handlers will contain a loop that reads requests/messages from the runtime via a HTTP API and executes the appropriate handler.
+When using the core runtime there are two processes that are started, the main runtime process and the process for your compiled binary that contains your application's handlers. The runtime starts the second itself, once the handler stream is bound, and the two share a lifetime: the runtime drains and stops the executable on shutdown, and stops itself if the executable exits while it is still serving.
 
 The core runtime is best suited for applications where the handlers need to be written in a language that is compiled ahead of time, such as Rust, C, C++ or Go.
 
-The core runtime has a plugin system that can be called at the "pre-handle" and "post-handle" stages of processing a request or message. This plugin system is meant to be lightweight and only deal with essential tasks such as authentication and handling CORS headers, the primary interaction developers using the runtime will have with this is configuration for CORS and auth in a blueprint definition for an application.
-**_This is not interchangeable with the plugin systems defined for language-specific SDKs for handlers, all core runtime plugins must be written in Rust._**
+The core runtime processes a request or message through a stack of **layers**. Each layer wraps the one inside it: it runs whatever it needs to before calling `next`, and whatever it needs to after that call returns, so a single layer sees both the way in and the way out. The innermost `next` is the dispatch to the handlers executable.
+
+Timing a request, adding a header to whatever response comes back, or turning a handler's error into a response body all need the same layer to see both sides. A layer can also decline to call `next` at all and return its own response, which is how authentication rejects a request before it reaches a handler, and how a cached response is served without one.
+
+Layers run outermost first on the way in and unwind in the reverse order on the way out, so the order they are declared in is the order they see the request.
+
+The layer system is meant to be lightweight and only deal with essential tasks such as authentication and handling CORS headers; the primary interaction developers using the runtime will have with it is configuration for CORS and auth in a blueprint definition for an application.
+**_This is not interchangeable with the middleware systems defined for language-specific SDKs for handlers, all core runtime layers must be written in Rust._**
 
 
 ## Run-time flow
@@ -44,15 +50,19 @@ The runtime supports a serverless-like approach to sending messages to specific 
 
 Here is some Python pseudo-code to illustrate this for the purpose of relaying a message to all clients in a chat room:
 
-```python
-from celerity_runtime.wsconn import send_message
-
-def handler(event, chat_room_service, context):
-    room = event['room']
-    message = event['message']
-    connection_ids = chat_room_service.get_connections(room)
-    for connection_id in connection_ids:
-        send_message(connection_id, message)
+```go
+func Handler(ctx context.Context, event ChatEvent, rooms ChatRoomService) error {
+	connectionIDs, err := rooms.GetConnections(event.Room)
+	if err != nil {
+		return err
+	}
+	for _, connectionID := range connectionIDs {
+		if err := wsconn.SendMessage(ctx, connectionID, event.Message); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 ```
 
 This allows for implementing features such as chat rooms or real-time collaboration without having to worry about which node a connection is on.

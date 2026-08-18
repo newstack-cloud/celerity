@@ -1,0 +1,31 @@
+# A workspace of its own rather than a member of the one under `libs/runtime`.
+# The app pins exact dependency versions and is released as a container image on
+# its own cadence, neither of which fits a workspace whose members are libraries
+# published together.
+[workspace]
+members = ["."]
+
+[package]
+name = "celerity-runtime-core-app"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[[bin]]
+name = "celerity-runtime-core"
+path = "src/main.rs"
+
+[dependencies]
+libc = "0.2"
+tokio = { version = "1.38.1", features = ["full"] }
+tracing = "0.1.40"
+
+[dependencies.celerity_runtime_core]
+path = "../../../libs/runtime/core"
+
+[dependencies.celerity_helpers]
+path = "../../../libs/runtime/helpers"
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"

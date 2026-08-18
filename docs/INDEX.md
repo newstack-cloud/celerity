@@ -16,6 +16,7 @@ Container images that host developer application code, interfacing with handlers
 
 | Path | Description | Language | Release Component |
 |------|-------------|----------|-------------------|
+| [apps/runtime/core](../apps/runtime/core) | Core runtime application for ahead-of-time compiled handlers, supervising a handlers executable it streams events to over the IPC protocol. | Rust | `runtime-core-app` |
 | [apps/runtime/nodejs](../apps/runtime/nodejs) | Node.js runtime application using bi-directional FFI calls to host handler code. | Node.js | `runtime-nodejs` |
 | [apps/runtime/python](../apps/runtime/python) | Python runtime application. | Python | `runtime-python` |
 | [apps/runtime/java](../apps/runtime/java) | Java runtime application (not yet implemented). | Java | — |
