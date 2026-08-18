@@ -205,15 +205,16 @@ impl HandlerReadiness {
         *self.ready.borrow()
     }
 
-    /// Resolves once a handlers executable has attached, immediately if one
-    /// already has.
+    /// Waits for a handlers executable to attach, returning whether one did.
     ///
-    /// Resolves early if the dispatcher has gone, since nothing will attach
-    /// after that and a caller waiting on readiness would wait forever.
-    pub async fn wait_until_ready(&mut self) {
+    /// Returns `false` when the dispatcher has gone, since nothing will attach
+    /// after that and a caller waiting on readiness would otherwise wait
+    /// forever. A caller has to tell that apart from an attach, or it treats a
+    /// runtime that is shutting down as one that is ready to serve.
+    pub async fn wait_until_ready(&mut self) -> bool {
         // `wait_for` checks the current value before waiting, so an attach that
         // happened before this was called is not missed.
-        let _ = self.ready.wait_for(|ready| *ready).await;
+        self.ready.wait_for(|ready| *ready).await.is_ok()
     }
 }
 
@@ -1563,8 +1564,26 @@ mod tests {
         let _stream = attach(&harness, 1, &["schedule::a"], 4, HashMap::new()).await;
 
         let mut readiness = harness.readiness.clone();
-        tokio::time::timeout(Duration::from_secs(5), readiness.wait_until_ready())
+        let attached = tokio::time::timeout(Duration::from_secs(5), readiness.wait_until_ready())
             .await
             .expect("readiness should not be missed by a later waiter");
+
+        assert!(attached);
+    }
+
+    #[tokio::test]
+    async fn wait_until_ready_gives_up_once_the_dispatcher_has_gone() {
+        let mut harness = start(16);
+        let mut readiness = harness.readiness.clone();
+        harness.stop();
+
+        // Waiting has to end, and it has to end saying nothing attached. A
+        // caller that read this as an attach would take a runtime on its way
+        // out for one that is ready to serve.
+        let attached = tokio::time::timeout(Duration::from_secs(5), readiness.wait_until_ready())
+            .await
+            .expect("a waiter should not outlive the dispatcher it waits on");
+
+        assert!(!attached);
     }
 }
