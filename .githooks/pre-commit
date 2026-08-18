@@ -31,3 +31,4 @@ lint_project apps/dev-auth
 
 # lint_project apps/runtime/nodejs
 # lint_project apps/runtime/python
+lint_project apps/runtime/core
