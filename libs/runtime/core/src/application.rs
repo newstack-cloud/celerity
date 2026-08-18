@@ -346,6 +346,13 @@ impl Application {
                         // In the IPC call mode this includes
                         // whether a handlers executable is attached, since a
                         // runtime without one sheds every event it takes.
+                        //
+                        // An instance is therefore unhealthy from the moment it
+                        // binds its port until its handlers attach. A deployment
+                        // has to allow for that before it treats a 503 as a
+                        // failure, through a startup probe or a start period
+                        // longer than CELERITY_HANDLERS_START_TIMEOUT, or it
+                        // will kill every instance during its cold start.
                         let serving = handler_readiness
                             .get()
                             .is_none_or(HandlerReadiness::is_ready);
