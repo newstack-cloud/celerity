@@ -313,7 +313,7 @@ async fn handle_socket(
             .add_connection(connection_id.clone(), socket_ref.clone());
         ws_connections_counter().add(1, &[]);
 
-        // Send the capabilities signal — a binary frame that indicates the server
+        // Send the capabilities signal, this is a binary frame that indicates the server
         // supports full protocol capabilities (binary messages, custom close codes,
         // binary control frames). In environments where binary frames are not
         // supported (e.g., managed WebSocket gateways that proxy via text-only APIs),
@@ -326,6 +326,20 @@ async fn handle_socket(
                     encode_reserved_message(ReservedRoute::Capabilities, &[]).into(),
                 ))
                 .await;
+        }
+
+        // Authentication happened during the upgrade for the connect strategy, so
+        // the client doesn't know about the auth status at this point.
+        if matches!(&state.auth_strategy, Some(WebSocketAuthStrategy::Connect)) {
+            let response = create_auth_response(
+                true,
+                Some(&auth_result_data).filter(|data| !data.is_null()),
+                Some("Authenticated successfully"),
+            );
+            let mut sock = socket_ref.lock().await;
+            if let Err(err) = sock.send(Message::Text(response.into())).await {
+                error!("failed to tell client {connection_id} it was authenticated: {err}");
+            }
         }
 
         // For Connect strategy, only reached after successful auth (with auth data).

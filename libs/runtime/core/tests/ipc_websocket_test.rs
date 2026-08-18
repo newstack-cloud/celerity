@@ -1045,3 +1045,110 @@ async fn fires_the_disconnect_handler_once_for_a_client_that_sends_a_close_frame
 
     let _ = tokio::fs::remove_file(&socket).await;
 }
+
+/// A guard that lets any non-empty token through, since what is under test is
+/// what the runtime says once a guard has passed rather than how it decides.
+#[derive(Debug)]
+struct AcceptAnyTokenGuard;
+
+#[async_trait::async_trait]
+impl celerity_runtime_core::auth_custom::AuthGuardHandler for AcceptAnyTokenGuard {
+    async fn validate(
+        &self,
+        input: celerity_runtime_core::auth_custom::AuthGuardValidateInput,
+    ) -> Result<serde_json::Value, celerity_runtime_core::auth_custom::AuthGuardValidateError> {
+        if input.token.is_empty() {
+            return Err(
+                celerity_runtime_core::auth_custom::AuthGuardValidateError::Unauthorised(
+                    "empty token".to_string(),
+                ),
+            );
+        }
+        Ok(json!({ "id": "user-1" }))
+    }
+}
+
+/// A client authenticated during the upgrade is told so afterwards.
+///
+/// The connect strategy authenticates before the connection is upgraded, so
+/// nothing the client receives says whether it worked. The protocol has the
+/// server say so once the connection is up, and a client waits for it: the
+/// official one moves into an authenticating state after the capabilities
+/// signal and leaves it only when this arrives. Without it, connecting never
+/// finishes and nothing the application queued is ever sent.
+///
+/// The order matters as much as the message. A client reads this as an answer
+/// about authentication only once it knows what the transport can carry, so
+/// sending it before the capabilities signal would have it taken for an
+/// ordinary message on a route named `authenticated`.
+#[test_log::test(tokio::test)]
+async fn tells_a_client_authenticated_during_the_upgrade_that_it_was() {
+    let socket = socket_path("ipc-ws-auth-connect");
+    let env_vars = ipc_env(
+        "ipc-ws-auth-connect",
+        "tests/data/fixtures/ipc-websocket-auth-connect.blueprint.yaml",
+        &socket,
+        &[],
+    );
+    let runtime_config = RuntimeConfig::from_env(&env_vars);
+    let mut app = Application::new(runtime_config, Box::new(env_vars));
+    app.register_custom_auth_guard("customGuard", AcceptAnyTokenGuard)
+        .await;
+    app.setup().unwrap();
+    let addr = app.run(false).await.unwrap().http_server_address.unwrap();
+
+    let _handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;
+
+    let mut request =
+        tokio_tungstenite::tungstenite::client::IntoClientRequest::into_client_request(format!(
+            "ws://{addr}/"
+        ))
+        .unwrap();
+    request
+        .headers_mut()
+        .insert("Authorization", "Bearer a-token".parse().unwrap());
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(request)
+        .await
+        .expect("a connection carrying a token the guard accepts should be upgraded");
+
+    let mut saw_capabilities = false;
+    let authenticated = tokio::time::timeout(Duration::from_secs(5), async {
+        while let Some(Ok(message)) = socket_conn.next().await {
+            match message {
+                tokio_tungstenite::tungstenite::Message::Binary(bytes)
+                    if bytes[..] == CELERITY_WS_CAPABILITIES_SIGNAL[..] =>
+                {
+                    saw_capabilities = true;
+                }
+                tokio_tungstenite::tungstenite::Message::Text(text) => {
+                    if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
+                        if value["event"] == "authenticated" {
+                            return Some(value);
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        None
+    })
+    .await
+    .expect("a client authenticated during the upgrade should be told so");
+
+    let authenticated = authenticated.expect("the connection closed before saying anything");
+    assert!(
+        saw_capabilities,
+        "the capabilities signal should come first, or a client takes this for an ordinary message"
+    );
+    assert_eq!(authenticated["data"]["success"], true);
+    // Claims are collected under the name of the guard that produced them, so
+    // an API with more than one can tell them apart.
+    assert_eq!(
+        authenticated["data"]["userInfo"]["customGuard"]["id"], "user-1",
+        "what the guard returned should reach the client"
+    );
+
+    let _ = socket_conn.close(None).await;
+    let _ = tokio::fs::remove_file(&socket).await;
+}

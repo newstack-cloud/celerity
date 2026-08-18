@@ -1,0 +1,52 @@
+version: 2025-11-02
+transform: celerity-2026-02-28
+variables:
+  logLevel:
+    type: string
+    description: "The log level to use for logging."
+    default: "INFO"
+    allowedValues:
+      - "DEBUG"
+      - "INFO"
+      - "WARNING"
+      - "ERROR"
+
+resources:
+  ordersWebSocketApi:
+    type: "celerity/api"
+    description: "A WebSocket API using the connect strategy, where authentication happens during the upgrade."
+    metadata:
+      displayName: Orders WebSocket API
+    linkSelector:
+      byLabel:
+        application: "orders"
+    spec:
+      protocols:
+        - websocketConfig:
+            routeKey: "event"
+            authStrategy: "connect"
+            authGuard: "customGuard"
+      tracingEnabled: false
+      auth:
+        guards:
+          # Registered by the test, which accepts any non-empty token, since
+          # what is under test is what the runtime says once a guard has passed
+          # rather than how it decides.
+          customGuard:
+            type: custom
+            tokenSource: "$.headers.Authorization"
+
+  sendMessageHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Send Message Handler
+      labels:
+        application: "orders"
+      annotations:
+        celerity.handler.websocket: true
+        celerity.handler.websocket.route: "sendMessage"
+    spec:
+      handlerName: SendMessage-v1
+      codeLocation: "./handlers"
+      handler: "handlers.send_message"
+      timeout: 30
