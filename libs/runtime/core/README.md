@@ -1,9 +1,9 @@
 # celerity runtime core
 
 This package provides the core components designed to be used in the Celerity runtime.
-This includes a HTTP server, WebSocket server, Queue consumers and a plugin system.
+This includes a HTTP server, WebSocket server, Queue consumers and a layer system, where each layer runs before and after the `next` call it wraps.
 This package provides an API to start different kinds of servers and consumers from a blueprint file and a set of handlers.
-This also provides APIs for the registration of handlers and plugins.
+This also provides APIs for the registration of handlers and layers.
 
 This package only provides traits for queue consumers and queue event message handlers.
 Implementations of these traits can be found in specific packages such as `celerity_runtime_consumer_sqs`.
