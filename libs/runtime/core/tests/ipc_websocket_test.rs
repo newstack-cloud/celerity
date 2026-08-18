@@ -1151,6 +1151,139 @@ async fn declares_a_message_lost_on_the_timings_it_was_configured_with() {
     let _ = tokio::fs::remove_file(&socket).await;
 }
 
+/// An acknowledgement written with escapes settles the message it names.
+///
+/// JSON lets a string escape any character, so `"\u0061ck"` is `"ack"` to a
+/// parser and something else to a search of the raw text. Missing one leaves
+/// the message it settles unsettled, and the client is told a message it
+/// confirmed was lost.
+///
+/// The timings are small so that loss would arrive well inside the window,
+/// rather than this passing on slowness.
+#[test_log::test(tokio::test)]
+async fn settles_a_message_acknowledged_with_an_escaped_event_name() {
+    let socket = socket_path("ipc-ws-escaped-ack");
+    let env_vars = ipc_env(
+        "ipc-ws-escaped-ack",
+        "tests/data/fixtures/ipc-websocket-api.blueprint.yaml",
+        &socket,
+        &[
+            ("CELERITY_WS_ACK_TIMEOUT_MS", "200"),
+            ("CELERITY_WS_ACK_MAX_ATTEMPTS", "1"),
+        ],
+    );
+    let runtime_config = RuntimeConfig::from_env(&env_vars);
+    let mut app = Application::new(runtime_config, Box::new(env_vars));
+    app.setup().unwrap();
+    let addr = app.run(false).await.unwrap().http_server_address.unwrap();
+
+    let mut handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Text(
+            json!({ "event": "sendMessage", "data": { "text": "hello" } }).to_string(),
+        ))
+        .await
+        .unwrap();
+
+    let dispatch = handler
+        .next_dispatch()
+        .await
+        .expect("the message should reach the handler");
+    let Some(proto::dispatch::Source::Websocket(message)) = dispatch.source else {
+        panic!("expected a WebSocket source");
+    };
+    let connection_id = message.connection_id;
+
+    // [routeLength][route][requireAck][messageIdLength][messageId][payload]
+    let mut framed = vec![7u8];
+    framed.extend_from_slice(b"updates");
+    framed.push(0x1);
+    framed.push(5u8);
+    framed.extend_from_slice(b"m-esc");
+    framed.extend_from_slice(&[0xde, 0xad]);
+
+    handler
+        .send_ws(
+            "batch-1",
+            vec![proto::WsOutbound {
+                connection_id: connection_id.clone(),
+                message: framed,
+                is_binary: true,
+                message_id: "m-esc".to_string(),
+                inform_clients_on_loss: vec![connection_id.clone()],
+                ..Default::default()
+            }],
+        )
+        .await;
+
+    // A client acknowledges what it has received, and an acknowledgement
+    // arriving before the message is recorded as waiting settles nothing.
+    let delivered = tokio::time::timeout(Duration::from_secs(5), async {
+        while let Some(Ok(message)) = socket_conn.next().await {
+            if let tokio_tungstenite::tungstenite::Message::Binary(bytes) = message {
+                if bytes[..] == CELERITY_WS_CAPABILITIES_SIGNAL[..] {
+                    continue;
+                }
+                return Some(bytes.to_vec());
+            }
+        }
+        None
+    })
+    .await
+    .expect("the message asking to be acknowledged should reach the client");
+    assert!(
+        delivered.is_some_and(|bytes| bytes.starts_with(&[7u8]) && bytes[8] == 0x1),
+        "the client should have been sent a message asking to be acknowledged"
+    );
+
+    // Escaped the way a conservative serialiser would, carrying no `"ack"`.
+    let acknowledgement = r#"{"event":"\u0061ck","data":{"messageId":"m-esc","timestamp":"2026-01-01T00:00:00.000Z"}}"#;
+    assert!(!acknowledgement.contains(r#""ack""#));
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Text(
+            acknowledgement.into(),
+        ))
+        .await
+        .unwrap();
+
+    // Nothing should follow. A loss event means the acknowledgement went
+    // unread, a dispatch means it was routed as an ordinary message.
+    let outcome = tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            tokio::select! {
+                incoming = socket_conn.next() => match incoming {
+                    Some(Ok(tokio_tungstenite::tungstenite::Message::Binary(bytes)))
+                        if bytes.len() > 4 && bytes[..4] == [0x1, 0x3, 0x0, 0x0] =>
+                    {
+                        return "the message was declared lost";
+                    }
+                    Some(Ok(_)) => continue,
+                    _ => return "the connection ended",
+                },
+                dispatched = handler.next_dispatch() => {
+                    if dispatched.is_some() {
+                        return "the acknowledgement was routed to a handler";
+                    }
+                }
+            }
+        }
+    })
+    .await;
+
+    assert!(
+        outcome.is_err(),
+        "an acknowledgement should settle the message it names, instead {}",
+        outcome.unwrap_or("nothing happened")
+    );
+
+    let _ = socket_conn.close(None).await;
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
 /// A guard that lets any non-empty token through, since what is under test is
 /// what the runtime says once a guard has passed rather than how it decides.
 #[derive(Debug)]
