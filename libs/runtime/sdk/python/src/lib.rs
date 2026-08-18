@@ -25,9 +25,10 @@ use celerity_runtime_core::{
   application::Application,
   auth_http::AuthContext,
   config::{
-    ApiConfig, AppConfig, ClientIpSource, ConsumerConfig, ConsumersConfig, CustomHandlerDefinition,
-    CustomHandlersConfig, EventConfig, EventHandlerDefinition, EventsConfig,
-    GuardHandlerDefinition, GuardsConfig, RuntimeConfig, ScheduleConfig, SchedulesConfig,
+    ws_ack_max_attempts_from_env, ws_ack_timeout_ms_from_env, ApiConfig, AppConfig, ClientIpSource,
+    ConsumerConfig, ConsumersConfig, CustomHandlerDefinition, CustomHandlersConfig, EventConfig,
+    EventHandlerDefinition, EventsConfig, GuardHandlerDefinition, GuardsConfig, RuntimeConfig,
+    ScheduleConfig, SchedulesConfig,
   },
   request::{MatchedRoute, RequestId, ResolvedClientIp, ResolvedUserAgent},
   telemetry_utils::extract_trace_context,
@@ -511,6 +512,8 @@ impl CoreRuntimeApplication {
       metrics_enabled: runtime_config.metrics_enabled,
       trace_sample_ratio: runtime_config.trace_sample_ratio,
       deploy_target: std::env::var("CELERITY_DEPLOY_TARGET").ok(),
+      ws_ack_timeout_ms: ws_ack_timeout_ms_from_env(&ProcessEnvVars::new()),
+      ws_ack_max_attempts: ws_ack_max_attempts_from_env(&ProcessEnvVars::new()),
     };
     println!("Creating CoreRuntimeApplication with config: {native_runtime_config:?}");
     let inner = Application::new(native_runtime_config, Box::new(ProcessEnvVars::new()));
