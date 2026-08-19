@@ -35,6 +35,9 @@ def run_server() -> None:
         .set_trace_otlp_collector_endpoint("")
         .set_platform(RuntimePlatform.LOCAL)
         .set_test_mode(True)
+        # The invoke endpoint under test is served only when it is asked for,
+        # so that a deployment cannot acquire it by being in test mode alone.
+        .set_enable_local_invoke(True)
         .build()
     )
     config = app.setup()

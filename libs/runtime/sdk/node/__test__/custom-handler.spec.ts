@@ -18,6 +18,9 @@ function testConfig(
     runtimeMaxDiagnosticsLevel: "info",
     platform: CoreRuntimePlatform.Local,
     testMode: true,
+    // The invoke endpoint under test is served only when it is asked for, so
+    // that a deployment cannot acquire it by being in test mode alone.
+    enableLocalInvoke: true,
     resourceStoreVerifyTls: false,
     resourceStoreCacheEntryTtl: 600,
     resourceStoreCleanupInterval: 3600,
