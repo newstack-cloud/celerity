@@ -1284,6 +1284,175 @@ async fn settles_a_message_acknowledged_with_an_escaped_event_name() {
     let _ = tokio::fs::remove_file(&socket).await;
 }
 
+/// A connection handles its messages beside each other unless it is asked for
+/// one at a time.
+///
+/// The handler is left holding the first message, never answering it, so the
+/// second can only reach it if something is running the two side by side.
+/// Paired with the test below, which is the same run asking for order, so what
+/// each proves is read against the other.
+#[test_log::test(tokio::test)]
+async fn handles_messages_beside_each_other_by_default() {
+    let dispatched = dispatches_seen_while_the_first_is_held("ipc-ws-concurrent", &[]).await;
+
+    assert_eq!(
+        dispatched, 2,
+        "a second message should not wait for a handler that is still going"
+    );
+}
+
+/// The order a serverless target cannot give, for an application that needs it
+/// and accepts being capped at one handler's worth of latency per message.
+#[test_log::test(tokio::test)]
+async fn handles_one_message_at_a_time_when_asked_to() {
+    let dispatched = dispatches_seen_while_the_first_is_held(
+        "ipc-ws-serial",
+        &[("CELERITY_WS_HANDLER_CONCURRENCY", "1")],
+    )
+    .await;
+
+    assert_eq!(
+        dispatched, 1,
+        "a second message should wait for the first when order was asked for"
+    );
+}
+
+/// Sends two messages to a handler that never answers, and reports how many of
+/// them reached it.
+///
+/// The handler holding the first is what makes the count mean something. An
+/// answer would free the worker and both would arrive whatever the concurrency.
+async fn dispatches_seen_while_the_first_is_held(
+    name: &str,
+    overrides: &[(&'static str, &str)],
+) -> usize {
+    let socket = socket_path(name);
+    let env_vars = ipc_env(
+        name,
+        "tests/data/fixtures/ipc-websocket-api.blueprint.yaml",
+        &socket,
+        overrides,
+    );
+    let runtime_config = RuntimeConfig::from_env(&env_vars);
+    let mut app = Application::new(runtime_config, Box::new(env_vars));
+    app.setup().unwrap();
+    let addr = app.run(false).await.unwrap().http_server_address.unwrap();
+
+    // Never answered, so the runtime is still waiting on the first message when
+    // the second arrives.
+    let mut handler = HandlerStub::attach(&socket, |_| None).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+
+    for text in ["first", "second"] {
+        socket_conn
+            .send(tokio_tungstenite::tungstenite::Message::Text(
+                json!({ "event": "sendMessage", "data": { "text": text } }).to_string(),
+            ))
+            .await
+            .unwrap();
+    }
+
+    let mut dispatched = 0;
+    while tokio::time::timeout(Duration::from_secs(2), handler.next_dispatch())
+        .await
+        .ok()
+        .flatten()
+        .is_some()
+    {
+        dispatched += 1;
+    }
+
+    let _ = socket_conn.close(None).await;
+    let _ = tokio::fs::remove_file(&socket).await;
+    dispatched
+}
+
+/// A connection can be left unable to finish tearing down by work other
+/// connections are holding.
+///
+/// Credit is one window per handler stream, refused to every tag once it runs
+/// out, and it comes back only when a handler answers. Handlers that never
+/// answer therefore take the window away permanently, and the disconnect
+/// handler is dispatched through the same window as the messages that consumed
+/// it. Each connection here holds a single message, which is all the current
+/// default allows, so this is reachable without any concurrency being raised.
+#[test_log::test(tokio::test)]
+async fn tears_a_connection_down_while_other_connections_hold_the_credit() {
+    let socket = socket_path("ipc-ws-credit-starve");
+    let env_vars = ipc_env(
+        "ipc-ws-credit-starve",
+        "tests/data/fixtures/ipc-websocket-disconnect.blueprint.yaml",
+        &socket,
+        &[],
+    );
+    let runtime_config = RuntimeConfig::from_env(&env_vars);
+    let mut app = Application::new(runtime_config, Box::new(env_vars));
+    app.setup().unwrap();
+    let addr = app.run(false).await.unwrap().http_server_address.unwrap();
+
+    // Never answered, and a cancel is ignored the way a hung handler would.
+    let mut handler = HandlerStub::attach(&socket, |_| None).await;
+
+    // As many connections as the stream has credit, each holding one message.
+    let mut connections = Vec::new();
+    for _ in 0..8 {
+        let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+            .await
+            .expect("the WebSocket server should accept the connection");
+        socket_conn
+            .send(tokio_tungstenite::tungstenite::Message::Text(
+                json!({ "event": "sendMessage", "data": { "text": "hold" } }).to_string(),
+            ))
+            .await
+            .unwrap();
+        connections.push(socket_conn);
+    }
+
+    // Taken until they stop coming rather than counted, since how many reach
+    // the handler at once is the cap's business and not this test's.
+    let mut held = 0;
+    while tokio::time::timeout(Duration::from_secs(2), handler.next_dispatch())
+        .await
+        .ok()
+        .flatten()
+        .is_some()
+    {
+        held += 1;
+    }
+    assert!(
+        held > 0,
+        "the connections should have reached the handler at all"
+    );
+
+    // Whatever reached the handler is now held by work that will never answer.
+    let mut closing = connections.pop().unwrap();
+    let _ = closing.close(None).await;
+
+    let disconnected = tokio::time::timeout(Duration::from_secs(10), async {
+        while let Some(dispatch) = handler.next_dispatch().await {
+            if let Some(proto::dispatch::Source::Websocket(message)) = dispatch.source {
+                if message.route == "$disconnect" {
+                    return true;
+                }
+            }
+        }
+        false
+    })
+    .await;
+
+    assert_eq!(
+        disconnected,
+        Ok(true),
+        "a connection that has gone should still run its disconnect handler, or it stays \
+         in the registry and counted for the life of the process"
+    );
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
 /// A guard that lets any non-empty token through, since what is under test is
 /// what the runtime says once a guard has passed rather than how it decides.
 #[derive(Debug)]

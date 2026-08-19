@@ -129,6 +129,19 @@ pub const WS_CONNECTION_DRAIN_GRACE_MS: u64 = 5_000;
 
 // How many of one connection's messages may be handled at the same time.
 //
+// More than one, because the same API deploys here or to a serverless gateway,
+// which runs a function per message with nothing between them. Handling one at
+// a time would make this the only target that puts a connection's messages in a
+// queue, and an application built against that would carry an ordering
+// dependency it cannot see until it is deployed somewhere that does not honour
+// it. A deployment that needs them in order asks for one.
+//
+// Bounds one connection rather than the process. What bounds the process is the
+// credit a handler grants its stream, and what stops a connection's messages
+// taking all of that is the default per tag limit, which keeps a place for the
+// tags nothing else can stand in for, the disconnect handler among them.
+pub const WS_CONNECTION_DEFAULT_HANDLER_CONCURRENCY: usize = 8;
+
 // The `retryAfter` hint sent in the close frame when a connection is shed for
 // outrunning its handlers.
 //

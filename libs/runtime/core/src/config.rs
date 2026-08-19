@@ -194,6 +194,14 @@ pub struct RuntimeConfig {
     /// for the suggested default the WebSocket runtime protocol names, which is 3.
     /// Set via `CELERITY_WS_ACK_MAX_ATTEMPTS`.
     pub ws_ack_max_attempts: Option<u32>,
+    /// How many of one connection's messages may be handled at the same time.
+    ///
+    /// Leave unset for eight. Set it to one for a connection whose messages have
+    /// to be handled in the order they arrived, at the cost of capping the
+    /// connection at one handler's worth of latency per message. Bounds one
+    /// connection rather than the process.
+    /// Set via `CELERITY_WS_HANDLER_CONCURRENCY`.
+    pub ws_handler_concurrency: Option<usize>,
 }
 
 impl RuntimeConfig {
@@ -363,6 +371,7 @@ impl RuntimeConfig {
 
         let ws_ack_timeout_ms = ws_ack_timeout_ms_from_env(env);
         let ws_ack_max_attempts = ws_ack_max_attempts_from_env(env);
+        let ws_handler_concurrency = ws_handler_concurrency_from_env(env);
 
         RuntimeConfig {
             blueprint_config_path,
@@ -393,6 +402,7 @@ impl RuntimeConfig {
             deploy_target,
             ws_ack_timeout_ms,
             ws_ack_max_attempts,
+            ws_handler_concurrency,
         }
     }
 
@@ -447,6 +457,23 @@ pub fn ws_ack_max_attempts_from_env(env: &impl EnvVars) -> Option<u32> {
             "Invalid WebSocket ack max attempts, a message has to be sent at least once"
         );
         attempts
+    })
+}
+
+/// Reads how many of a connection's messages may be handled at the same time.
+///
+/// See [`ws_ack_timeout_ms_from_env`] for why this is not only read in
+/// [`RuntimeConfig::from_env`].
+pub fn ws_handler_concurrency_from_env(env: &impl EnvVars) -> Option<usize> {
+    env.var("CELERITY_WS_HANDLER_CONCURRENCY").ok().map(|val| {
+        let concurrency: usize = val
+            .parse()
+            .expect("Invalid WebSocket handler concurrency, must be a whole number");
+        assert!(
+            concurrency > 0,
+            "Invalid WebSocket handler concurrency, a connection has to handle one message at a time              at the least"
+        );
+        concurrency
     })
 }
 
@@ -856,5 +883,28 @@ mod tests {
     #[should_panic(expected = "whole number of milliseconds")]
     fn test_an_ack_timeout_that_is_not_a_number_is_refused() {
         RuntimeConfig::from_env(&env(&[("CELERITY_WS_ACK_TIMEOUT_MS", "ten seconds")]));
+    }
+
+    #[test]
+    fn test_handler_concurrency_is_left_to_the_runtime_when_unset() {
+        assert_eq!(
+            RuntimeConfig::from_env(&env(&[])).ws_handler_concurrency,
+            None
+        );
+    }
+
+    #[test]
+    fn test_handler_concurrency_is_read_from_the_environment() {
+        let config = RuntimeConfig::from_env(&env(&[("CELERITY_WS_HANDLER_CONCURRENCY", "8")]));
+
+        assert_eq!(config.ws_handler_concurrency, Some(8));
+    }
+
+    /// Nothing at all would leave a connection unable to handle anything,
+    /// rather than meaning handle nothing in parallel.
+    #[test]
+    #[should_panic(expected = "one message at a time")]
+    fn test_no_handler_concurrency_at_all_is_refused() {
+        RuntimeConfig::from_env(&env(&[("CELERITY_WS_HANDLER_CONCURRENCY", "0")]));
     }
 }
