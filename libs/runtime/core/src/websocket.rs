@@ -393,10 +393,22 @@ async fn handle_socket(
         let mut connection_alive = true;
         while connection_alive {
             if let Some(Ok(msg)) = socket_rx.next().await {
+                // Parsed once here and carried from here on. A JSON string
+                // may escape any character, so only a parse can tell what a
+                // message says. Held as the parse result rather than the value
+                // so that a failure is still reported where it was, past the
+                // authentication gate.
+                let parsed = match &msg {
+                    Message::Text(text) => Some(serde_json::from_str::<Value>(text)),
+                    _ => None,
+                };
+
                 // Handle Celerity application-level heartbeat pings before
                 // route resolution. These are distinct from WebSocket protocol-level
                 // Ping frames (handled by tungstenite automatically).
-                if let Some(pong) = detect_heartbeat_ping(&msg) {
+                if let Some(pong) =
+                    detect_heartbeat_ping(&msg, parsed.as_ref().and_then(|res| res.as_ref().ok()))
+                {
                     let _ = socket_ref.lock().await.send(pong).await;
                     continue;
                 }
@@ -437,21 +449,16 @@ async fn handle_socket(
                         }
                     }
                 } else {
-                    // Parsed once here and carried from here on. A JSON string
-                    // may escape any character, so only a parse can tell what a
-                    // message says.
-                    let parsed = match &msg {
-                        Message::Text(text) => match serde_json::from_str::<Value>(text) {
-                            Ok(value) => Some(value),
-                            Err(err) => {
-                                error!(
-                                    "failed to parse JSON message from client \
-                                     {connection_id}: {err}"
-                                );
-                                None
-                            }
-                        },
-                        _ => None,
+                    let parsed = match parsed {
+                        Some(Ok(value)) => Some(value),
+                        Some(Err(err)) => {
+                            error!(
+                                "failed to parse JSON message from client \
+                                 {connection_id}: {err}"
+                            );
+                            None
+                        }
+                        None => None,
                     };
 
                     // A client acknowledging something the runtime sent it,
@@ -1219,14 +1226,12 @@ async fn process_message(
 /// Supported formats:
 /// - JSON: `{"ping": true}` → responds with `{"pong": true}`
 /// - Binary: `[0x1, 0x1, 0x0, 0x0]` → responds with `[0x1, 0x2, 0x0, 0x0]`
-fn detect_heartbeat_ping(msg: &Message) -> Option<Message> {
+fn detect_heartbeat_ping(msg: &Message, parsed: Option<&Value>) -> Option<Message> {
     match msg {
-        Message::Text(text) => {
-            if let Ok(val) = serde_json::from_str::<serde_json::Value>(text.as_ref()) {
-                if val.get("ping") == Some(&serde_json::Value::Bool(true)) {
-                    let pong = serde_json::json!({"pong": true}).to_string();
-                    return Some(Message::Text(pong.into()));
-                }
+        Message::Text(_) => {
+            if parsed?.get("ping") == Some(&Value::Bool(true)) {
+                let pong = serde_json::json!({"pong": true}).to_string();
+                return Some(Message::Text(pong.into()));
             }
             None
         }
@@ -1858,8 +1863,8 @@ mod tests {
 
     #[test]
     fn test_detect_json_ping() {
-        let msg = Message::Text(r#"{"ping":true}"#.into());
-        let result = detect_heartbeat_ping(&msg);
+        let (msg, parsed) = text_message(r#"{"ping":true}"#);
+        let result = detect_heartbeat_ping(&msg, parsed.as_ref());
         assert!(result.is_some());
         match result.unwrap() {
             Message::Text(text) => {
@@ -1873,7 +1878,7 @@ mod tests {
     #[test]
     fn test_detect_binary_ping() {
         let msg = Message::Binary(vec![0x1, 0x1, 0x0, 0x0].into());
-        let result = detect_heartbeat_ping(&msg);
+        let result = detect_heartbeat_ping(&msg, None);
         assert!(result.is_some());
         match result.unwrap() {
             Message::Binary(bytes) => {
@@ -1885,26 +1890,35 @@ mod tests {
 
     #[test]
     fn test_detect_non_ping_text() {
-        let msg = Message::Text(r#"{"event":"myAction","data":"hello"}"#.into());
-        assert!(detect_heartbeat_ping(&msg).is_none());
+        let (msg, parsed) = text_message(r#"{"event":"myAction","data":"hello"}"#);
+        assert!(detect_heartbeat_ping(&msg, parsed.as_ref()).is_none());
     }
 
     #[test]
     fn test_detect_non_ping_binary() {
         let msg = Message::Binary(vec![0x5, b'h', b'e', b'l', b'l', b'o'].into());
-        assert!(detect_heartbeat_ping(&msg).is_none());
+        assert!(detect_heartbeat_ping(&msg, None).is_none());
     }
 
     #[test]
     fn test_detect_non_ping_close() {
         let msg = Message::Close(None);
-        assert!(detect_heartbeat_ping(&msg).is_none());
+        assert!(detect_heartbeat_ping(&msg, None).is_none());
+    }
+
+    #[test]
+    fn test_detect_json_ping_written_with_escapes() {
+        let text = r#"{"\u0070ing":true}"#;
+        assert!(!text.contains(r#""ping""#));
+
+        let (msg, parsed) = text_message(text);
+        assert!(detect_heartbeat_ping(&msg, parsed.as_ref()).is_some());
     }
 
     #[test]
     fn test_detect_ping_false_is_not_heartbeat() {
-        let msg = Message::Text(r#"{"ping":false}"#.into());
-        assert!(detect_heartbeat_ping(&msg).is_none());
+        let (msg, parsed) = text_message(r#"{"ping":false}"#);
+        assert!(detect_heartbeat_ping(&msg, parsed.as_ref()).is_none());
     }
 
     #[test]
