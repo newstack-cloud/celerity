@@ -98,6 +98,14 @@ jobs:
           target: ${{ matrix.target }}
           platforms: ${{ matrix.platform.os }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Without this buildx attaches a provenance attestation, which makes
+          # what is pushed an index holding the image and the attestation rather
+          # than the image itself. Scanning that index means resolving a
+          # platform inside it, which is what failed here, and the manifest list
+          # assembled below is where multiple platforms belong anyway. The
+          # release still gets provenance, from the attestation step that runs
+          # against the published manifest.
+          provenance: false
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=runtime-core-${{ matrix.target }}-${{ matrix.platform.arch }}
           cache-to: type=gha,mode=max,scope=runtime-core-${{ matrix.target }}-${{ matrix.platform.arch }}
