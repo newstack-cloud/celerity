@@ -141,11 +141,6 @@ struct StreamState {
     tags: HashSet<String>,
     credit: u32,
     limits: HashMap<String, u32>,
-    /// What a tag may hold when the handler declared no limit for it.
-    ///
-    /// Leaves room for every other tag to place one event, so no tag can take
-    /// the window and leave the rest of them unable to dispatch at all.
-    default_limit: u32,
     /// How many events are in flight to this stream, per tag.
     in_flight: HashMap<String, u32>,
     /// The events this stream is holding, by event id and the tag they were
@@ -164,38 +159,38 @@ impl StreamState {
         if self.draining || self.credit == 0 || !self.tags.contains(handler_tag) {
             return false;
         }
-        let cap = self
-            .limits
-            .get(handler_tag)
-            .copied()
-            .unwrap_or(self.default_limit);
-        self.in_flight.get(handler_tag).copied().unwrap_or(0) < cap
+        if let Some(cap) = self.limits.get(handler_tag) {
+            if self.in_flight.get(handler_tag).copied().unwrap_or(0) >= *cap {
+                return false;
+            }
+        }
+        self.credit.saturating_sub(1) >= self.reserved_for_other_tags(handler_tag)
     }
-}
 
-/// What a tag may hold when the handler declared no limit for it.
-///
-/// A window is one per stream and is refused to every tag once it runs out, so
-/// without this a single tag can take all of it and the others are not just slow,
-/// they are stopped. That matters most for the tags nothing else can stand in
-/// for. A connection's disconnect handler shares a window with the messages
-/// that connection sent, and credit comes back only when a handler answers, so
-/// handlers that never answer would otherwise leave the connection unable to
-/// finish tearing down.
-///
-/// Holds back a place for each of the other tags, but never more than half the
-/// window. What is being bought is that no tag can take all of it, and a
-/// handler serving many tags on a small window cannot give each of them a place
-/// anyway. Without the halving, an application with twenty handlers and a window
-/// of eight would cap every one of them at a single event, which is a worse
-/// trade than the starvation it avoids for whichever handler carries the
-/// traffic.
-///
-/// A handler that wants a different split declares its own limits, which are
-/// used as given.
-fn default_tag_limit(credit: u32, tags: usize) -> u32 {
-    let held_back = (tags.saturating_sub(1) as u32).min(credit / 2);
-    credit.saturating_sub(held_back).max(1)
+    /// How many places have to be left for the tags holding nothing.
+    ///
+    /// Counted against the tags holding nothing rather than against all of
+    /// them, so it shrinks as they are served and the last tag to arrive is not
+    /// asked to leave room for tags already busy. A fixed share cannot manage
+    /// that. Give three tags a window of four and two places each, and the
+    /// first two take everything between them.
+    ///
+    /// Never more than half the window, since a stream serving many tags on a
+    /// small one cannot keep a place for each of them, and holding the window
+    /// half empty for tags that may send nothing would cost whichever tag
+    /// carries the traffic more than the starvation it avoids.
+    fn reserved_for_other_tags(&self, handler_tag: &str) -> u32 {
+        let idle = self
+            .tags
+            .iter()
+            .filter(|tag| tag.as_str() != handler_tag)
+            .filter(|tag| self.in_flight.get(*tag).copied().unwrap_or(0) == 0)
+            .count() as u32;
+        // Taken as it stands rather than as it was declared, since a grant may
+        // have resized the window since the stream attached.
+        let window = self.credit + self.holding.len() as u32;
+        idle.min(window / 2)
+    }
 }
 
 /// Runs the dispatch loop until shutdown.
@@ -624,15 +619,12 @@ impl Dispatcher {
                          throughput will be bounded by the buffer"
                     );
                 }
-                let tags: HashSet<String> = registration.handler_tags.into_iter().collect();
-                let default_limit = default_tag_limit(registration.initial_credit, tags.len());
                 self.streams.insert(
                     stream_id,
                     StreamState {
-                        tags,
+                        tags: registration.handler_tags.into_iter().collect(),
                         credit: registration.initial_credit,
                         limits: registration.limits,
-                        default_limit,
                         in_flight: HashMap::new(),
                         holding: HashMap::new(),
                         draining: false,
@@ -1738,35 +1730,65 @@ mod tests {
         assert!(!attached);
     }
 
-    /// Every tag keeps a place, so no tag can take the window and leave the
-    /// others unable to dispatch at all.
-    #[test]
-    fn a_tag_is_held_back_from_taking_the_whole_window() {
-        assert_eq!(default_tag_limit(8, 3), 6);
-        assert_eq!(default_tag_limit(8, 2), 7);
+    /// Three tags on a window of four, which a fixed share of two apiece cannot
+    /// serve: the first two take everything between them and the third is not
+    /// slow, it is stopped.
+    #[tokio::test]
+    async fn a_window_too_small_to_share_evenly_still_reaches_every_tag() {
+        let harness = start(64);
+        let mut stream = attach(&harness, 1, &["a", "b", "c"], 4, HashMap::new()).await;
+
+        for tag in ["a", "b"] {
+            for index in 0..4 {
+                harness
+                    .queue
+                    .enqueue(
+                        event(&format!("{tag}-{index}"), tag),
+                        admission_wait(Duration::from_secs(60)),
+                    )
+                    .await
+                    .unwrap();
+            }
+        }
+        let mut taken = Vec::new();
+        while let Some(dispatched) = recv_dispatch(&mut stream).await {
+            taken.push(dispatched.event.id);
+        }
+
+        harness
+            .queue
+            .enqueue(event("c-0", "c"), admission_wait(Duration::from_secs(60)))
+            .await
+            .unwrap();
+        let third = recv_dispatch(&mut stream).await;
+        assert_eq!(
+            third.map(|dispatched| dispatched.event.id),
+            Some("c-0".to_string()),
+            "the third tag was left nothing, the other two took {taken:?}"
+        );
     }
 
-    /// Nothing to starve, so nothing is held back.
-    #[test]
-    fn a_stream_serving_one_tag_gives_it_everything() {
-        assert_eq!(default_tag_limit(8, 1), 8);
-    }
+    /// Nothing to leave room for, so the whole window is available.
+    #[tokio::test]
+    async fn a_stream_serving_one_tag_gives_it_the_whole_window() {
+        let harness = start(64);
+        let mut stream = attach(&harness, 1, &["only"], 4, HashMap::new()).await;
 
-    /// More tags than credit cannot leave a place for each, so every tag gets
-    /// one and the window itself is what turns them away.
-    #[test]
-    fn a_window_too_small_to_share_still_lets_every_tag_try() {
-        assert_eq!(default_tag_limit(2, 5), 1);
-        assert_eq!(default_tag_limit(0, 3), 1);
-    }
-
-    /// Many handlers on a small window would otherwise cap each of them at a
-    /// single event, which costs whichever one carries the traffic far more
-    /// than the starvation it avoids.
-    #[test]
-    fn a_stream_serving_many_tags_still_keeps_half_the_window_for_one() {
-        assert_eq!(default_tag_limit(8, 20), 4);
-        assert_eq!(default_tag_limit(64, 100), 32);
+        for index in 0..6 {
+            harness
+                .queue
+                .enqueue(
+                    event(&format!("only-{index}"), "only"),
+                    admission_wait(Duration::from_secs(60)),
+                )
+                .await
+                .unwrap();
+        }
+        let mut taken = 0;
+        while recv_dispatch(&mut stream).await.is_some() {
+            taken += 1;
+        }
+        assert_eq!(taken, 4, "one tag alone should be able to fill the window");
     }
 
     /// A tag the handler declared no limit for still cannot take the window.
