@@ -471,7 +471,8 @@ pub fn ws_handler_concurrency_from_env(env: &impl EnvVars) -> Option<usize> {
             .expect("Invalid WebSocket handler concurrency, must be a whole number");
         assert!(
             concurrency > 0,
-            "Invalid WebSocket handler concurrency, a connection has to handle one message at a time              at the least"
+            "Invalid WebSocket handler concurrency, a connection has to handle at least one \
+             message at a time"
         );
         concurrency
     })
