@@ -17,7 +17,9 @@ use celerity_runtime_core::{
     consts::CELERITY_WS_CAPABILITIES_SIGNAL,
     ipc_proto::{self as proto},
 };
-use common::ipc::{ipc_env, socket_path, start_runtime, websocket_ack, HandlerStub};
+use common::ipc::{
+    ipc_env, socket_path, start_runtime, websocket_ack, HandlerStub, HANDLER_INITIAL_CREDIT,
+};
 use futures::SinkExt;
 use serde_json::json;
 use tokio_stream::StreamExt;
@@ -1322,6 +1324,11 @@ async fn handles_one_message_at_a_time_when_asked_to() {
 ///
 /// The handler holding the first is what makes the count mean something. An
 /// answer would free the worker and both would arrive whatever the concurrency.
+///
+/// The two second wait below is short for the same reason. The first message
+/// stops holding its place fifteen seconds in, ten for the handler timeout and
+/// five more for the cancellation grace perios, and a second message arriving after
+/// that would mean a place came free rather than two being handled at once.
 async fn dispatches_seen_while_the_first_is_held(
     name: &str,
     overrides: &[(&'static str, &str)],
@@ -1398,7 +1405,7 @@ async fn tears_a_connection_down_while_other_connections_hold_the_credit() {
 
     // As many connections as the stream has credit, each holding one message.
     let mut connections = Vec::new();
-    for _ in 0..8 {
+    for _ in 0..HANDLER_INITIAL_CREDIT {
         let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
             .await
             .expect("the WebSocket server should accept the connection");
@@ -1431,7 +1438,12 @@ async fn tears_a_connection_down_while_other_connections_hold_the_credit() {
     let mut closing = connections.pop().unwrap();
     let _ = closing.close(None).await;
 
-    let disconnected = tokio::time::timeout(Duration::from_secs(10), async {
+    // The messages above fall due after a second and their places are taken
+    // back five seconds after that, so nothing the reclaim frees can arrive
+    // before six seconds in. This window closes well before then, which is what
+    // makes this the place held for the disconnect handler rather than a place
+    // that happened to come free. Teardown should not have to wait out a grace period.
+    let disconnected = tokio::time::timeout(Duration::from_secs(2), async {
         while let Some(dispatch) = handler.next_dispatch().await {
             if let Some(proto::dispatch::Source::Websocket(message)) = dispatch.source {
                 if message.route == "$disconnect" {

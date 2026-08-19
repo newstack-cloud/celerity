@@ -17,8 +17,14 @@ use celerity_runtime_core::{
     },
 };
 use tokio::{net::UnixStream, sync::mpsc};
+
 use tokio_stream::StreamExt;
 use tonic::transport::{Endpoint, Uri};
+
+/// The credit the stub handler declares, which is how many events the runtime
+/// may have in flight to it at once. Named because a test that fills the window
+/// has to know what filling it means.
+pub const HANDLER_INITIAL_CREDIT: u32 = 8;
 
 pub fn ipc_env(
     service_name: &str,
@@ -143,7 +149,7 @@ impl HandlerStub {
                         .iter()
                         .map(|handler| handler.handler_tag.clone())
                         .collect(),
-                    initial_credit: 8,
+                    initial_credit: HANDLER_INITIAL_CREDIT,
                     sdk_version: "test/0.1".to_string(),
                     limits: vec![],
                 })),

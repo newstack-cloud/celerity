@@ -85,8 +85,9 @@ pub struct StreamRegistration {
     pub handler_tags: Vec<String>,
     /// How many events may be in flight to this stream at once.
     pub initial_credit: u32,
-    /// Optional per-tag concurrency caps. A tag with no entry is bounded only
-    /// by the credit window.
+    /// Optional per-tag concurrency caps. A tag with no entry is bounded by the
+    /// credit window and by a default cap, which keeps a place for the other
+    /// tags so that no one of them can take the window entirely.
     pub limits: HashMap<String, u32>,
     /// Where dispatched events and the frames concerning them are sent.
     pub dispatch_tx: mpsc::Sender<StreamFrame>,
@@ -1766,6 +1767,53 @@ mod tests {
     fn a_stream_serving_many_tags_still_keeps_half_the_window_for_one() {
         assert_eq!(default_tag_limit(8, 20), 4);
         assert_eq!(default_tag_limit(64, 100), 32);
+    }
+
+    /// A tag the handler declared no limit for still cannot take the window.
+    ///
+    /// The reclaim would eventually free the places a stalled tag holds, so
+    /// this is what keeps the other tags dispatching in the meantime rather
+    /// than waiting out a grace before they can be served at all.
+    #[tokio::test]
+    async fn a_tag_with_no_declared_limit_still_leaves_room_for_the_others() {
+        let harness = start(64);
+        let mut stream = attach(&harness, 1, &["hot", "cold"], 4, HashMap::new()).await;
+
+        // More of the hot tag than the window holds, and none of them answered.
+        for index in 0..8 {
+            harness
+                .queue
+                .enqueue(
+                    event(&format!("hot-{index}"), "hot"),
+                    admission_wait(Duration::from_secs(60)),
+                )
+                .await
+                .unwrap();
+        }
+        let mut hot = 0;
+        while let Some(dispatched) = recv_dispatch(&mut stream).await {
+            assert!(dispatched.event.id.starts_with("hot-"));
+            hot += 1;
+        }
+        assert!(
+            hot < 4,
+            "the hot tag took {hot} of a window of 4, leaving nothing for the other tag"
+        );
+
+        // The cold tag has never been served and nothing has answered, so the
+        // only reason it can be dispatched is the place held back for it.
+        harness
+            .queue
+            .enqueue(
+                event("cold-0", "cold"),
+                admission_wait(Duration::from_secs(60)),
+            )
+            .await
+            .unwrap();
+        let cold = recv_dispatch(&mut stream)
+            .await
+            .expect("a tag that has taken nothing should still have a place");
+        assert_eq!(cold.event.id, "cold-0");
     }
 
     /// A handler that never answers a cancellation does not keep what it was
