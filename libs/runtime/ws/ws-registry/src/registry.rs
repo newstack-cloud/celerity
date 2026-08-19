@@ -326,28 +326,8 @@ impl WebSocketConnRegistry {
                             inform_clients,
                             caller,
                         } => {
-                            for client_id in inform_clients {
-                                // Only inform clients that are connected to the current node.
-                                if let Some(connection) = self.get_connection(client_id.clone()) {
-                                    debug!(
-                                        connection_id = %client_id,
-                                        "acquiring lock to send message lost event to connection: {}",
-                                        client_id.clone()
-                                    );
-                                    let mut conn_lock = connection.lock().await;
-                                    debug!(connection_id = %client_id, "sending message lost event to connection: {}", client_id);
-                                    conn_lock
-                                        .send(Message::Binary(
-                                            create_message_lost_event(
-                                                message_id.clone(),
-                                                caller.clone(),
-                                            )
-                                            .into(),
-                                        ))
-                                        .await
-                                        .unwrap();
-                                }
-                            }
+                            self.inform_clients_of_loss(message_id, inform_clients, caller)
+                                .await;
                         }
                     }
                 }
@@ -621,19 +601,12 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
             // (no broadcaster), then the message is lost and the provided clients connected to
             // the current node should be informed.
             let send_ctx = ctx.unwrap_or_default();
-            // Taken before the loop consumes the rest of the context.
-            let caller = send_ctx.caller;
-            for client_id in send_ctx.inform_clients {
-                if let Some(connection) = self.get_connection(client_id.clone()) {
-                    connection
-                        .lock()
-                        .await
-                        .send(Message::Binary(
-                            create_message_lost_event(message_id.clone(), caller.clone()).into(),
-                        ))
-                        .await?;
-                }
-            }
+            self.inform_clients_of_loss(
+                message_id.clone(),
+                send_ctx.inform_clients,
+                send_ctx.caller,
+            )
+            .await;
             return Err(WebSocketConnError::MessageLost(message_id));
         }
         Ok(())
@@ -1424,5 +1397,135 @@ mod tests {
             );
             tokio::time::sleep(std::time::Duration::from_millis(20)).await;
         }
+    }
+
+    /// Holds a connection open in the state a lost message send has to survive,
+    /// where the client has gone but the registry does not know it yet.
+    ///
+    /// A connection is only taken out of the registry by its own read loop, and
+    /// that loop only ends once it sees the client leave. Between the client
+    /// going and the loop noticing, the registry hands out a connection whose
+    /// every write fails. Reading nothing here holds that window open for as
+    /// long as a test needs it, rather than leaving the test racing the loop.
+    ///
+    /// Returning closes nothing, since the registry holds the sending half of
+    /// the split socket and the socket lives while either half does.
+    fn create_unwatched_socket(
+        conn_info: ConnectionInfo,
+    ) -> impl FnOnce(WebSocket) -> std::pin::Pin<Box<dyn Future<Output = ()> + Send>> {
+        move |socket| {
+            let registry = conn_info.registry.clone();
+            async move {
+                let (socket_tx, _socket_rx) = socket.split();
+                registry.add_connection(nanoid!(), Arc::new(Mutex::new(socket_tx)));
+            }
+            .boxed()
+        }
+    }
+
+    async fn unwatched_connection_handler(
+        State(conn_info): State<ConnectionInfo>,
+        ws: WebSocketUpgrade,
+    ) -> Response {
+        ws.on_upgrade(create_unwatched_socket(conn_info))
+    }
+
+    /// A client that has gone does not cost the others their notification.
+    ///
+    /// Naming a client that can no longer be written to is ordinary, since a
+    /// connection can go at any point and a message being declared lost is
+    /// itself a sign that something is wrong with the connections involved.
+    #[test_log::test(tokio::test)]
+    async fn test_a_client_that_has_gone_does_not_stop_the_others_being_told() {
+        let registry = Arc::new(WebSocketConnRegistry::new(
+            WebSocketConnRegistryConfig {
+                ack_worker_config: None,
+                server_node_name: "node1".to_string(),
+            },
+            None,
+        ));
+
+        let app: Router = Router::new()
+            .route("/ws", get(unwatched_connection_handler))
+            .with_state(ConnectionInfo {
+                connection_id: None,
+                other_connection_id: None,
+                missing_connection_id: None,
+                registry: registry.clone(),
+            });
+
+        let listener = tokio::net::TcpListener::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0)))
+            .await
+            .unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+
+        // Connected by hand, and one at a time so each id can be told apart.
+        // By hand because the socket has to be made to reset rather than close,
+        // which is what makes a later write fail rather than succeed into a
+        // buffer nothing will ever read.
+        let gone_stream = tokio::net::TcpStream::connect(addr).await.unwrap();
+        // Deprecated because lingering can block a thread on drop. A zero
+        // timeout has nothing to wait for, it only asks for a reset.
+        #[allow(deprecated)]
+        gone_stream
+            .set_linger(Some(std::time::Duration::ZERO))
+            .unwrap();
+        let (gone_socket, _response) =
+            tokio_tungstenite::client_async(format!("ws://{addr}/ws"), gone_stream)
+                .await
+                .unwrap();
+        wait_for_connection_count(&registry, 1).await;
+        let gone_id = registry.get_connections()[0].0.clone();
+
+        let (mut live_socket, _response) =
+            tokio_tungstenite::connect_async(format!("ws://{addr}/ws"))
+                .await
+                .unwrap();
+        wait_for_connection_count(&registry, 2).await;
+        let live_id = registry
+            .get_connections()
+            .into_iter()
+            .map(|(id, _)| id)
+            .find(|id| *id != gone_id)
+            .expect("the second connection should have an id of its own");
+
+        drop(gone_socket);
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
+        // Named first, so a send that gives up on the first failure never
+        // reaches the client that is still there.
+        let result = registry
+            .send_message(
+                "a-connection-that-is-not-here".to_string(),
+                "m-1".to_string(),
+                MessageType::Json,
+                r#"{"event":"update"}"#.to_string(),
+                Some(SendContext {
+                    wait_for_ack: false,
+                    caller: Some("test-caller".to_string()),
+                    inform_clients: vec![gone_id, live_id],
+                }),
+            )
+            .await;
+
+        assert!(
+            matches!(result, Err(WebSocketConnError::MessageLost(ref id)) if id == "m-1"),
+            "a message with nowhere to go should be reported lost, got {result:?}"
+        );
+
+        let received = tokio::time::timeout(std::time::Duration::from_secs(5), live_socket.next())
+            .await
+            .expect("the client still connected should have been told about the lost message")
+            .expect("the connection closed before the lost message arrived")
+            .unwrap();
+        let tungstenite::Message::Binary(bytes) = received else {
+            panic!("expected a binary lost message event, got {received:?}");
+        };
+        assert_eq!(bytes[..4], [0x1, 0x3, 0x0, 0x0]);
+        let body: MessageLostBody = serde_json::from_slice(&bytes[4..]).unwrap();
+        assert_eq!(body.message_id, "m-1");
     }
 }
