@@ -8,9 +8,28 @@ db-urls = ["https://github.com/rustsec/advisory-db"]
 unmaintained = "workspace"
 yanked = "warn"
 ignore = [
-    # Low-impact rustls-webpki CRL matching bug; upstream aws-smithy-http-client
-    # still pulls in rustls 0.21 — no fix available yet.
-    "RUSTSEC-2026-0049",
+    # Reached through the AWS SDK, which still builds on the hyper 0.14 client
+    # stack and rustls 0.21. No release of aws-smithy-http-client moves off
+    # either, so updating cannot resolve these. They sit on the path the
+    # runtime uses to call AWS endpoints, not on the path it serves clients on.
+    #
+    # h2 0.3, unbounded empty DATA frames.
+    "RUSTSEC-2026-0258",
+    # rustls-webpki 0.101, name constraints for URI names were accepted.
+    "RUSTSEC-2026-0098",
+    # rustls-webpki 0.101, name constraints accepted for a wildcard name.
+    "RUSTSEC-2026-0099",
+    # rustls-webpki 0.101, panic parsing a certificate revocation list.
+    "RUSTSEC-2026-0104",
+
+    # PyO3 0.25, fixed in 0.29. That is several breaking releases away and
+    # needs pyo3-async-runtimes and pythonize to move with it, so it is an
+    # upgrade of its own rather than something to hold here indefinitely.
+    #
+    # Out of bounds read in the PyList and PyTuple iterators.
+    "RUSTSEC-2026-0176",
+    # Missing Sync bound on PyCFunction::new_closure closures.
+    "RUSTSEC-2026-0177",
 ]
 
 [licenses]

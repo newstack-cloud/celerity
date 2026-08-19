@@ -40,10 +40,9 @@ jobs:
 
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
-          # `--config` is an option of the check subcommand rather than a
-          # global one, so it goes here rather than in `arguments`. Without it
-          # cargo-deny looks beside the manifest, finds nothing for the app and
-          # falls back to its default policy.
+          # No `--config` here. Which position cargo-deny accepts it in differs
+          # between releases, and the version the action ships is not the one a
+          # contributor has locally. Each manifest has a deny.toml beside it
+          # instead, which every version finds without being told.
           command: check ${{ matrix.checks }}
-          command-arguments: --config libs/runtime/deny.toml
           manifest-path: ${{ matrix.manifest }}
