@@ -187,8 +187,10 @@ impl StreamState {
             .filter(|tag| self.in_flight.get(*tag).copied().unwrap_or(0) == 0)
             .count() as u32;
         // Taken as it stands rather than as it was declared, since a grant may
-        // have resized the window since the stream attached.
-        let window = self.credit + self.holding.len() as u32;
+        // have resized the window since the stream attached. Saturating because
+        // credit does, and a grant arriving while events are held can carry the
+        // sum past a u32.
+        let window = self.credit.saturating_add(self.holding.len() as u32);
         idle.min(window / 2)
     }
 }
