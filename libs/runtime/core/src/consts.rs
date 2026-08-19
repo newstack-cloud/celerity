@@ -127,6 +127,8 @@ pub const WS_CONNECTION_WORK_SHED_GRACE_MS: u64 = 1_000;
 // enough for work that is nearly done to land.
 pub const WS_CONNECTION_DRAIN_GRACE_MS: u64 = 5_000;
 
+// How many of one connection's messages may be handled at the same time.
+//
 // The `retryAfter` hint sent in the close frame when a connection is shed for
 // outrunning its handlers.
 //
@@ -135,6 +137,35 @@ pub const WS_CONNECTION_DRAIN_GRACE_MS: u64 = 5_000;
 // saturation. Clients take the greater of this and their own backoff and add
 // their own jitter.
 pub const WS_CONNECTION_SATURATED_RETRY_AFTER_MS: u64 = 5_000;
+
+// How long a cancelled event is left with its handler before the runtime takes
+// back what it was holding.
+//
+// Credit and a per tag place are consumed when an event is dispatched and
+// returned when the handler answers, including when it answers late. A handler
+// that never answers would otherwise hold both for the life of the process, so
+// a stream would lose a place every time one hung and would eventually stop
+// dispatching altogether.
+//
+// Taking them back is not a statement that the handler stopped, since nothing
+// can make it stop. It says the runtime will no longer keep room for an answer
+// it asked to be abandoned. Long enough for a handler that honours a
+// cancellation to unwind and answer, which is the case that should not be
+// treated as a hang.
+pub const HANDLER_CANCEL_RECLAIM_GRACE_SECS: u64 = 5;
+
+// How long the runtime remembers an event whose place it took back.
+//
+// A result carrying no credit is a handler withholding, asking for nothing
+// further until it grants again. Arriving after the place was taken back, that
+// asks for a place the runtime has already returned, so the return has to be
+// undone or the handler is sent work it said it could not take. Remembering
+// which events those were is what makes that possible.
+//
+// Bounded because a handler that never answers would otherwise be remembered
+// for good, and generous because the answer being late is the whole reason
+// there is anything to remember.
+pub const HANDLER_RECLAIM_MEMORY_SECS: u64 = 60;
 
 // How many dispatcher commands may be queued before a handler stream waits.
 // Commands are small and are drained by a single task, so this only needs to

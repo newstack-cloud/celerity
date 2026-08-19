@@ -34,7 +34,10 @@ use tokio::{
 use tracing::{debug, info, warn};
 
 use crate::{
-    consts::{HANDLER_ATTACH_GRACE_SECS, MAX_DERIVED_DRAIN_TIMEOUT_SECS},
+    consts::{
+        HANDLER_ATTACH_GRACE_SECS, HANDLER_CANCEL_RECLAIM_GRACE_SECS, HANDLER_RECLAIM_MEMORY_SECS,
+        MAX_DERIVED_DRAIN_TIMEOUT_SECS,
+    },
     event_queue::{EventQueueReceivers, HandlerTimeouts, InFlightEntry, InFlightTable},
     types::{CancelReason, CancelRequest, EventData, EventOutcome, EventTuple, UnservableReason},
 };
@@ -137,6 +140,11 @@ struct StreamState {
     tags: HashSet<String>,
     credit: u32,
     limits: HashMap<String, u32>,
+    /// What a tag may hold when the handler declared no limit for it.
+    ///
+    /// Leaves room for every other tag to place one event, so no tag can take
+    /// the window and leave the rest of them unable to dispatch at all.
+    default_limit: u32,
     /// How many events are in flight to this stream, per tag.
     in_flight: HashMap<String, u32>,
     /// The events this stream is holding, by event id and the tag they were
@@ -155,11 +163,38 @@ impl StreamState {
         if self.draining || self.credit == 0 || !self.tags.contains(handler_tag) {
             return false;
         }
-        match self.limits.get(handler_tag) {
-            Some(cap) => self.in_flight.get(handler_tag).copied().unwrap_or(0) < *cap,
-            None => true,
-        }
+        let cap = self
+            .limits
+            .get(handler_tag)
+            .copied()
+            .unwrap_or(self.default_limit);
+        self.in_flight.get(handler_tag).copied().unwrap_or(0) < cap
     }
+}
+
+/// What a tag may hold when the handler declared no limit for it.
+///
+/// A window is one per stream and is refused to every tag once it runs out, so
+/// without this a single tag can take all of it and the others are not just slow,
+/// they are stopped. That matters most for the tags nothing else can stand in
+/// for. A connection's disconnect handler shares a window with the messages
+/// that connection sent, and credit comes back only when a handler answers, so
+/// handlers that never answer would otherwise leave the connection unable to
+/// finish tearing down.
+///
+/// Holds back a place for each of the other tags, but never more than half the
+/// window. What is being bought is that no tag can take all of it, and a
+/// handler serving many tags on a small window cannot give each of them a place
+/// anyway. Without the halving, an application with twenty handlers and a window
+/// of eight would cap every one of them at a single event, which is a worse
+/// trade than the starvation it avoids for whichever handler carries the
+/// traffic.
+///
+/// A handler that wants a different split declares its own limits, which are
+/// used as given.
+fn default_tag_limit(credit: u32, tags: usize) -> u32 {
+    let held_back = (tags.saturating_sub(1) as u32).min(credit / 2);
+    credit.saturating_sub(held_back).max(1)
 }
 
 /// Runs the dispatch loop until shutdown.
@@ -180,6 +215,25 @@ pub struct Dispatcher {
     /// Publishes whether any stream is attached, for readiness probes and for
     /// the startup deadline a supervising runtime applies.
     readiness: watch::Sender<bool>,
+    /// Events that have been cancelled and the moment the runtime stops keeping
+    /// room for an answer to them.
+    ///
+    /// Every entry is given the same grace period, so they are added in the order they
+    /// fall due and the earliest is always the front.
+    reclaims: VecDeque<(Instant, String)>,
+    /// How long a cancelled event is left with its handler before what it holds
+    /// is taken back.
+    reclaim_grace: Duration,
+    /// Events whose place has been taken back, kept so that a handler answering
+    /// late can still withhold the place rather than be sent more work.
+    ///
+    /// Ordered by when they stop being remembered, which is the same span for
+    /// each, so the earliest is always the front.
+    reclaimed: VecDeque<(Instant, String)>,
+    /// The same events, for looking one up when a late answer names it.
+    reclaimed_ids: HashSet<String>,
+    /// How long a taken back event is remembered. Shortened by tests.
+    reclaim_memory: Duration,
 }
 
 /// Whether a handlers executable is attached and able to be given work.
@@ -279,6 +333,11 @@ impl Dispatcher {
             timeouts,
             drain_timeout,
             readiness: watch::Sender::new(false),
+            reclaims: VecDeque::new(),
+            reclaim_grace: Duration::from_secs(HANDLER_CANCEL_RECLAIM_GRACE_SECS),
+            reclaimed: VecDeque::new(),
+            reclaimed_ids: HashSet::new(),
+            reclaim_memory: Duration::from_secs(HANDLER_RECLAIM_MEMORY_SECS),
         }
     }
 
@@ -321,10 +380,20 @@ impl Dispatcher {
             // Recomputed each pass because attaching a stream can make a queue
             // servable again, and dispatching can empty one.
             let shed_at = self.next_shed_deadline();
+            let reclaim_at = match (self.reclaims.front(), self.reclaimed.front()) {
+                (Some((due, _)), Some((forget, _))) => Some(*due.min(forget)),
+                (Some((due, _)), None) => Some(*due),
+                (None, Some((forget, _))) => Some(*forget),
+                (None, None) => None,
+            };
 
             tokio::select! {
                 _ = &mut shutdown_rx => break,
                 _ = sleep_until_or_never(shed_at) => self.shed_unservable(),
+                _ = sleep_until_or_never(reclaim_at) => {
+                    self.reclaim_abandoned();
+                    self.dispatch_ready().await;
+                }
                 taken = events.recv() => match taken {
                     Some((result_tx, event)) => {
                         self.enqueue(QueuedEvent {
@@ -376,6 +445,13 @@ impl Dispatcher {
             return;
         };
 
+        // Whatever the handler does with the cancellation, the runtime stops
+        // keeping room for an answer to it once the grace period passes. A handler
+        // that honours it and answers releases what it holds the ordinary way,
+        // well within the grace period.
+        self.reclaims
+            .push_back((Instant::now() + self.reclaim_grace, event_id.clone()));
+
         // A caller that went away leaves an entry nobody will ever read, so it
         // is released here rather than being held until its deadline, which
         // would also produce a second cancellation for the same event. A
@@ -394,6 +470,61 @@ impl Dispatcher {
             .is_err()
         {
             debug!(event_id = %event_id, "could not deliver a cancellation to the handler stream");
+        }
+    }
+
+    /// Takes back what cancelled events are still holding, once the grace period for
+    /// answering has passed.
+    ///
+    /// An event the handler answered in time is already gone from `holders`, so
+    /// what is left here is what nothing came back for. Doing this is what
+    /// keeps a handler that ignores cancellation from shrinking its stream's
+    /// window one event at a time until it dispatches nothing at all.
+    fn reclaim_abandoned(&mut self) {
+        let now = Instant::now();
+        while self
+            .reclaims
+            .front()
+            .is_some_and(|(due_at, _)| *due_at <= now)
+        {
+            let Some((_, event_id)) = self.reclaims.pop_front() else {
+                break;
+            };
+            let Some(stream_id) = self.holders.remove(&event_id) else {
+                continue;
+            };
+            let Some(stream) = self.streams.get_mut(&stream_id) else {
+                continue;
+            };
+            let Some(handler_tag) = stream.holding.remove(&event_id) else {
+                continue;
+            };
+            if let Some(count) = stream.in_flight.get_mut(&handler_tag) {
+                *count = count.saturating_sub(1);
+            }
+            stream.credit = stream.credit.saturating_add(1);
+            warn!(
+                stream_id,
+                %event_id,
+                %handler_tag,
+                "no answer to a cancelled event within the grace, taking back the place \
+                 it was holding"
+            );
+            // Remembered so that an answer arriving later can still withhold
+            // the place, which is the handler saying it cannot take more.
+            self.reclaimed
+                .push_back((now + self.reclaim_memory, event_id.clone()));
+            self.reclaimed_ids.insert(event_id);
+        }
+
+        while self
+            .reclaimed
+            .front()
+            .is_some_and(|(forget_at, _)| *forget_at <= now)
+        {
+            if let Some((_, event_id)) = self.reclaimed.pop_front() {
+                self.reclaimed_ids.remove(&event_id);
+            }
         }
     }
 
@@ -492,12 +623,15 @@ impl Dispatcher {
                          throughput will be bounded by the buffer"
                     );
                 }
+                let tags: HashSet<String> = registration.handler_tags.into_iter().collect();
+                let default_limit = default_tag_limit(registration.initial_credit, tags.len());
                 self.streams.insert(
                     stream_id,
                     StreamState {
-                        tags: registration.handler_tags.into_iter().collect(),
+                        tags,
                         credit: registration.initial_credit,
                         limits: registration.limits,
+                        default_limit,
                         in_flight: HashMap::new(),
                         holding: HashMap::new(),
                         draining: false,
@@ -526,13 +660,26 @@ impl Dispatcher {
                 credit_grant,
             } => {
                 self.holders.remove(&event_id);
+                let taken_back = self.reclaimed_ids.remove(&event_id);
                 if let Some(stream) = self.streams.get_mut(&stream_id) {
                     if let Some(handler_tag) = stream.holding.remove(&event_id) {
                         if let Some(count) = stream.in_flight.get_mut(&handler_tag) {
                             *count = count.saturating_sub(1);
                         }
+                        stream.credit = stream.credit.saturating_add(credit_grant);
+                    } else if taken_back && credit_grant == 0 {
+                        // The place is already back, so a grant would grow the
+                        // window past what the handler declared and is dropped.
+                        // No grant is a handler withholding though, and it means
+                        // the same whenever it arrives, so the place goes back
+                        // to the handler's account rather than the runtime's.
+                        stream.credit = stream.credit.saturating_sub(1);
+                        debug!(
+                            stream_id,
+                            %event_id,
+                            "a late answer withheld the place that was taken back"
+                        );
                     }
-                    stream.credit = stream.credit.saturating_add(credit_grant);
                 }
             }
             DispatcherCommand::Grant {
@@ -879,7 +1026,10 @@ mod tests {
         let (command_tx, command_rx) = mpsc::channel(16);
         let (shutdown_tx, shutdown_rx) = oneshot::channel();
 
-        let dispatcher = Dispatcher::new(handles.in_flight.clone(), timeouts(), drain_timeout);
+        let mut dispatcher = Dispatcher::new(handles.in_flight.clone(), timeouts(), drain_timeout);
+        // The real grace is measured in seconds, which no test can wait out.
+        dispatcher.reclaim_grace = Duration::from_millis(100);
+        dispatcher.reclaim_memory = Duration::from_secs(30);
         let readiness = dispatcher.readiness();
         tokio::spawn(dispatcher.run(receivers, command_rx, shutdown_rx));
 
@@ -1585,5 +1735,238 @@ mod tests {
             .expect("a waiter should not outlive the dispatcher it waits on");
 
         assert!(!attached);
+    }
+
+    /// Every tag keeps a place, so no tag can take the window and leave the
+    /// others unable to dispatch at all.
+    #[test]
+    fn a_tag_is_held_back_from_taking_the_whole_window() {
+        assert_eq!(default_tag_limit(8, 3), 6);
+        assert_eq!(default_tag_limit(8, 2), 7);
+    }
+
+    /// Nothing to starve, so nothing is held back.
+    #[test]
+    fn a_stream_serving_one_tag_gives_it_everything() {
+        assert_eq!(default_tag_limit(8, 1), 8);
+    }
+
+    /// More tags than credit cannot leave a place for each, so every tag gets
+    /// one and the window itself is what turns them away.
+    #[test]
+    fn a_window_too_small_to_share_still_lets_every_tag_try() {
+        assert_eq!(default_tag_limit(2, 5), 1);
+        assert_eq!(default_tag_limit(0, 3), 1);
+    }
+
+    /// Many handlers on a small window would otherwise cap each of them at a
+    /// single event, which costs whichever one carries the traffic far more
+    /// than the starvation it avoids.
+    #[test]
+    fn a_stream_serving_many_tags_still_keeps_half_the_window_for_one() {
+        assert_eq!(default_tag_limit(8, 20), 4);
+        assert_eq!(default_tag_limit(64, 100), 32);
+    }
+
+    /// A handler that never answers a cancellation does not keep what it was
+    /// holding.
+    ///
+    /// Credit and a per tag place come back when a handler answers, so a
+    /// handler that ignores a cancellation would otherwise leave a stream one
+    /// place smaller for good, and enough of them would stop it dispatching
+    /// anything at all.
+    #[tokio::test]
+    async fn takes_back_what_a_cancelled_event_was_holding_when_nothing_answers() {
+        let harness = start(32);
+        // One place, so what happens to it is the whole of what this observes.
+        let mut stream = attach(&harness, 1, &["work"], 1, HashMap::new()).await;
+
+        harness
+            .queue
+            .enqueue(
+                event("event-1", "work"),
+                admission_wait(Duration::from_secs(60)),
+            )
+            .await
+            .unwrap();
+        let dispatched = recv_dispatch(&mut stream)
+            .await
+            .expect("the first event should be dispatched");
+        assert_eq!(dispatched.event.id, "event-1");
+
+        harness
+            .queue
+            .enqueue(
+                event("event-2", "work"),
+                admission_wait(Duration::from_secs(60)),
+            )
+            .await
+            .unwrap();
+        assert!(
+            recv_dispatch(&mut stream).await.is_none(),
+            "the window is held by the first event, so the second should wait"
+        );
+
+        // The caller has gone. The handler is told to stop and never answers,
+        // which is what a hung or crashed handler looks like from here.
+        drop(harness.queue.cancel_on_drop("event-1".to_string()));
+        match recv(&mut stream).await {
+            Some(StreamFrame::Cancel { event_id, .. }) => assert_eq!(event_id, "event-1"),
+            other => panic!("expected a cancellation, got {other:?}"),
+        }
+
+        tokio::time::sleep(Duration::from_millis(250)).await;
+
+        let second = recv_dispatch(&mut stream)
+            .await
+            .expect("the place the cancelled event held should have come back");
+        assert_eq!(second.event.id, "event-2");
+    }
+
+    /// An answer that arrives after the runtime gave up waiting does not put a
+    /// place back that has already been taken back.
+    ///
+    /// The handler declares its own limits here, generously, so that credit is
+    /// the only thing bounding what can be in flight. Without that the per tag
+    /// limit hides an inflated window rather than the test finding it.
+    #[tokio::test]
+    async fn does_not_credit_an_answer_that_comes_after_the_place_was_taken_back() {
+        let harness = start(32);
+        let mut stream = attach(
+            &harness,
+            1,
+            &["work"],
+            2,
+            HashMap::from([("work".to_string(), 10)]),
+        )
+        .await;
+
+        for index in 0..2 {
+            harness
+                .queue
+                .enqueue(
+                    event(&format!("held-{index}"), "work"),
+                    admission_wait(Duration::from_secs(60)),
+                )
+                .await
+                .unwrap();
+        }
+        for _ in 0..2 {
+            recv_dispatch(&mut stream)
+                .await
+                .expect("both events should be dispatched, which is the whole window");
+        }
+
+        drop(harness.queue.cancel_on_drop("held-0".to_string()));
+        match recv(&mut stream).await {
+            Some(StreamFrame::Cancel { .. }) => {}
+            other => panic!("expected a cancellation, got {other:?}"),
+        }
+        tokio::time::sleep(Duration::from_millis(250)).await;
+
+        // The handler answers late, returning the credit it believes it still
+        // holds. That place is already back, so this must add nothing.
+        harness
+            .commands
+            .send(DispatcherCommand::Completed {
+                stream_id: 1,
+                event_id: "held-0".to_string(),
+                credit_grant: 1,
+            })
+            .await
+            .unwrap();
+
+        for index in 0..2 {
+            harness
+                .queue
+                .enqueue(
+                    event(&format!("later-{index}"), "work"),
+                    admission_wait(Duration::from_secs(60)),
+                )
+                .await
+                .unwrap();
+        }
+
+        assert!(
+            recv_dispatch(&mut stream).await.is_some(),
+            "the place the cancelled event held should have come back"
+        );
+        assert!(
+            recv_dispatch(&mut stream).await.is_none(),
+            "a late answer should not grow the window past what the handler declared"
+        );
+    }
+
+    /// A handler answering late with no credit is still withholding, and the
+    /// place the runtime took back on its behalf goes back to it.
+    ///
+    /// No credit on a result means stop dispatching until a later grant. The
+    /// runtime returned that place when nothing answered in time, so honouring
+    /// the withhold means undoing its own return rather than ignoring what the
+    /// handler asked for and sending it work it said it could not take.
+    #[tokio::test]
+    async fn honours_a_withhold_that_arrives_after_the_place_was_taken_back() {
+        let harness = start(32);
+        let mut stream = attach(
+            &harness,
+            1,
+            &["work"],
+            2,
+            HashMap::from([("work".to_string(), 10)]),
+        )
+        .await;
+
+        for index in 0..2 {
+            harness
+                .queue
+                .enqueue(
+                    event(&format!("held-{index}"), "work"),
+                    admission_wait(Duration::from_secs(60)),
+                )
+                .await
+                .unwrap();
+        }
+        for _ in 0..2 {
+            recv_dispatch(&mut stream)
+                .await
+                .expect("both events should be dispatched, which is the whole window");
+        }
+
+        drop(harness.queue.cancel_on_drop("held-0".to_string()));
+        match recv(&mut stream).await {
+            Some(StreamFrame::Cancel { .. }) => {}
+            other => panic!("expected a cancellation, got {other:?}"),
+        }
+        tokio::time::sleep(Duration::from_millis(250)).await;
+
+        // Late, and withholding. The place the runtime returned is the one the
+        // handler is saying it does not want.
+        harness
+            .commands
+            .send(DispatcherCommand::Completed {
+                stream_id: 1,
+                event_id: "held-0".to_string(),
+                credit_grant: 0,
+            })
+            .await
+            .unwrap();
+        // Waited for rather than raced. A withhold governs what is dispatched
+        // after it is read, and work already waiting when the place came back
+        // may have gone out before it arrived, which is what being late costs.
+        tokio::time::sleep(Duration::from_millis(100)).await;
+
+        harness
+            .queue
+            .enqueue(
+                event("later-0", "work"),
+                admission_wait(Duration::from_secs(60)),
+            )
+            .await
+            .unwrap();
+
+        assert!(
+            recv_dispatch(&mut stream).await.is_none(),
+            "a handler that withheld should not be sent more work, however late it said so"
+        );
     }
 }

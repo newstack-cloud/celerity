@@ -118,6 +118,14 @@ message Dispatch {
 //
 // May arrive for an event that has already completed, which handlers must
 // ignore rather than treat as an error.
+//
+// A cancelled event should still be answered with a Result, which is what
+// returns the place it holds in the credit window. The runtime waits a short
+// grace period and then takes that place back itself, since a handler that has hung or
+// died would otherwise shrink the window for the life of the process. That is
+// not a claim that the handler stopped, only that the runtime will no longer keep
+// room for an answer it asked to be abandoned, a handler that answers
+// promptly never meets it.
 message Cancel {
   string id = 1;
 
@@ -242,6 +250,11 @@ message Result {
   // to stop dispatching to this stream until a later CreditGrant. SDKs should
   // default to 1 and must send this even when the handler panics, since a
   // missed grant drains the window and stalls the stream silently.
+  //
+  // When the runtime has already taken the place back, having cancelled the
+  // event and waited out the grace period, a grant here is ignored, since
+  // returning the same place twice would grow the window. Zero still withholds,
+  // and the runtime gives up the place it returned.
   uint32 credit_grant = 2;
 
   oneof outcome {
