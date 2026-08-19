@@ -54,7 +54,7 @@ use crate::{
     },
     consts::{
         DEFAULT_EVENT_QUEUE_CAPACITY, DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT,
-        DISPATCHER_COMMAND_BUFFER,
+        DISPATCHER_COMMAND_BUFFER, WS_CONNECTION_DEFAULT_HANDLER_CONCURRENCY,
     },
     consumer_handler::{
         ConsumerEventHandler, EventQueueConsumerEventHandler, SharedConsumerEventHandler,
@@ -444,6 +444,10 @@ impl Application {
                         .map(|_| websocket_config.auth_strategy.clone()),
                     connection_auth_guard_names: websocket_config.connection_auth_guard.clone(),
                     connection_auth_guards: self.custom_auth_guards.clone(),
+                    handler_concurrency: self
+                        .runtime_config
+                        .ws_handler_concurrency
+                        .unwrap_or(WS_CONNECTION_DEFAULT_HANDLER_CONCURRENCY),
                     cors: api_config.cors.clone(),
                     resource_store: resource_store.clone(),
                 }),

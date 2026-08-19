@@ -1496,6 +1496,7 @@ mod tests {
             deploy_target: None,
             ws_ack_timeout_ms: None,
             ws_ack_max_attempts: None,
+            ws_handler_concurrency: None,
         }
     }
 

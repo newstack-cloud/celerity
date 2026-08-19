@@ -36,7 +36,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::{
     sync::{mpsc, mpsc::error::SendTimeoutError, Mutex},
-    task::JoinHandle,
+    task::{JoinHandle, JoinSet},
 };
 use tracing::{debug, error, field, info, info_span, warn, Instrument};
 
@@ -78,6 +78,8 @@ pub(crate) struct WebSocketAppState {
     pub connection_auth_guard_names: Option<Vec<String>>,
     pub connection_auth_guards:
         Arc<Mutex<HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>>>>,
+    // How many of this connection's messages may be handled at the same time.
+    pub handler_concurrency: usize,
     pub cors: Option<CelerityApiCors>,
     pub resource_store: Arc<ResourceStore>,
     // What the node has already seen from its clients, so a message resent
@@ -367,14 +369,11 @@ async fn handle_socket(
             return;
         }
 
-        // Messages are processed off this loop, one at a time, by a worker for
-        // this connection. One at a time because that is how they were handled
-        // before, inline in this loop, and a fix for the loop stalling should
-        // not quietly start running an application's messages in parallel.
-        // Ordering is not something the platform promises, a serverless target
-        // runs a function per message with nothing between them, so this is
-        // about leaving behaviour alone rather than a guarantee being made.
-        // The point here is only that reading no longer waits for handling.
+        // Messages are processed off this loop by a worker for this
+        // connection, several at a time unless the deployment asks for one. The
+        // protocol promises nothing about ordering and a serverless target runs
+        // a function per message with nothing between them, so handling them in
+        // order here would be a guarantee only this target could keep.
         //
         // Bounded, so a client that outruns its handlers is pushed back on
         // rather than growing a queue without limit. Once the buffer is full
@@ -388,6 +387,7 @@ async fn handle_socket(
             socket_ref.clone(),
             connection_id.clone(),
             state.clone(),
+            state.handler_concurrency,
         );
 
         let mut connection_alive = true;
@@ -725,26 +725,65 @@ fn create_connect_message(
     }
 }
 
-/// Runs a connection's messages, one at a time, off its read loop.
+/// Runs a connection's messages off its read loop, up to `concurrency` of them
+/// at a time.
+///
+/// A close is settled here rather than alongside the messages it follows, so
+/// the connection ends after them however many were in flight.
 fn spawn_message_worker(
     mut work_rx: mpsc::Receiver<(Message, Option<Value>, WebSocketRequestContext)>,
     socket_ref: Arc<Mutex<WebSocketConnSender>>,
     connection_id: String,
     state: WebSocketAppState,
+    concurrency: usize,
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
+        let mut in_flight = JoinSet::new();
+
         while let Some((message, parsed, request_ctx)) = work_rx.recv().await {
-            if process_message(message, parsed, connection_id.clone(), request_ctx, &state)
-                .await
-                .is_break()
-            {
-                // The connection is finished, and the read loop is waiting on a
-                // socket that may never produce anything again. Closing it is
-                // what wakes the loop so the connection can be torn down.
-                close_connection(socket_ref.clone()).await;
-                return;
+            // Only an application message is worth running beside another. A
+            // close ends the connection and the rest carry no handler, so they
+            // wait for what came before them and are settled here. At a
+            // concurrency of one nothing is ever in flight and this is the only
+            // path, which is what keeps the default exactly as it was.
+            let alongside_others =
+                concurrency > 1 && matches!(message, Message::Text(_) | Message::Binary(_));
+
+            if !alongside_others {
+                while in_flight.join_next().await.is_some() {}
+                if process_message(message, parsed, connection_id.clone(), request_ctx, &state)
+                    .await
+                    .is_break()
+                {
+                    // The connection is finished, and the read loop is waiting on a
+                    // socket that may never produce anything again. Closing it is
+                    // what wakes the loop so the connection can be torn down.
+                    close_connection(socket_ref.clone()).await;
+                    return;
+                }
+                continue;
             }
+
+            // Waits for room rather than queueing behind it, so the buffer the
+            // read loop pushes back on stays the one thing bounding how far a
+            // client can run ahead.
+            while in_flight.len() >= concurrency {
+                in_flight.join_next().await;
+            }
+
+            let connection_id = connection_id.clone();
+            let state = state.clone();
+            in_flight.spawn(async move {
+                // Only a close asks for the connection to end, and a close is
+                // never spawned, so there is no outcome to read here.
+                let _ = process_message(message, parsed, connection_id, request_ctx, &state).await;
+            });
         }
+
+        // The read loop has finished with this connection. What is still
+        // running is left to finish, since teardown waits on this task and
+        // bounds that wait itself.
+        while in_flight.join_next().await.is_some() {}
     })
 }
 
