@@ -422,8 +422,14 @@ impl RuntimeConfig {
 /// deciding what the variable is called.
 pub fn ws_ack_timeout_ms_from_env(env: &impl EnvVars) -> Option<u64> {
     env.var("CELERITY_WS_ACK_TIMEOUT_MS").ok().map(|val| {
-        val.parse()
-            .expect("Invalid WebSocket ack timeout, must be a whole number of milliseconds")
+        let timeout: u64 = val
+            .parse()
+            .expect("Invalid WebSocket ack timeout, must be a whole number of milliseconds");
+        assert!(
+            timeout > 0,
+            "Invalid WebSocket ack timeout, a client needs some time to answer in"
+        );
+        timeout
     })
 }
 
@@ -836,6 +842,14 @@ mod tests {
     #[should_panic(expected = "sent at least once")]
     fn test_no_ack_attempts_at_all_is_refused() {
         RuntimeConfig::from_env(&env(&[("CELERITY_WS_ACK_MAX_ATTEMPTS", "0")]));
+    }
+
+    /// No time at all leaves every message overdue as soon as it is sent, so
+    /// the first check resends it and the attempts run out in milliseconds.
+    #[test]
+    #[should_panic(expected = "some time to answer in")]
+    fn test_an_ack_timeout_of_nothing_is_refused() {
+        RuntimeConfig::from_env(&env(&[("CELERITY_WS_ACK_TIMEOUT_MS", "0")]));
     }
 
     #[test]
