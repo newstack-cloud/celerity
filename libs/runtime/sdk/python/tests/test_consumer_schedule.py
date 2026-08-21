@@ -45,6 +45,26 @@ def _wait_for_file(path: str, timeout: float = 10.0):
     raise TimeoutError(f"File {path} not created within {timeout}s")
 
 
+def _trigger_until_handled(
+    redis_client, stream: str, entry: dict, result_path: str, timeout: float = 30.0
+):
+    """Write a trigger until the handler answers one, then return what it wrote.
+
+    A consumer that starts while the stream already exists begins from the end
+    of it, so a trigger written before it was ready is never seen. The runtime
+    is entitled to do that, since a schedule should not replay whatever it
+    missed while it was down, but it means one write and a wait is a race.
+    """
+    start = time.time()
+    while time.time() - start < timeout:
+        redis_client.xadd(stream, entry)
+        try:
+            return _wait_for_file(result_path, timeout=1.0)
+        except TimeoutError:
+            continue
+    raise TimeoutError(f"File {result_path} not created within {timeout}s")
+
+
 # ---------------------------------------------------------------------------
 # Config-only tests (no external dependencies)
 # ---------------------------------------------------------------------------
@@ -149,16 +169,16 @@ def test_schedule_handler_receives_trigger(consumer_server):
     r = redis_lib.Redis(host=host, port=port)
     try:
         timestamp = str(int(time.time()))
-        r.xadd(
+        result = _trigger_until_handled(
+            r,
             f"celerity:schedules:{schedule_id}",
             {
                 "body": json.dumps({"triggered": True}),
                 "timestamp": timestamp,
                 "message_type": "0",
             },
+            os.path.join(results_dir, "schedule_result.json"),
         )
-
-        result = _wait_for_file(os.path.join(results_dir, "schedule_result.json"))
         assert result["handler_tag"] == "source::dailyCleanup::cleanupHandler"
         assert result["message_id"] is not None
         assert result["schedule_id"] is not None

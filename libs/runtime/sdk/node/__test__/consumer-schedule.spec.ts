@@ -281,20 +281,38 @@ depTest("schedule handler receives trigger from Valkey", async (t) => {
       const scheduleId = config.schedules!.schedules[0].scheduleId;
       const timestamp = String(Math.floor(Date.now() / 1000));
 
-      await redis.xadd(
-        `celerity:schedules:${scheduleId}`,
-        "*",
-        "body",
-        JSON.stringify({ triggered: true }),
-        "timestamp",
-        timestamp,
-        "message_type",
-        "0",
-      );
+      // Written again until it is picked up. A consumer that starts while the
+      // stream already exists begins from the end of it, so a trigger written
+      // before it was ready is never seen. The runtime is entitled to do that,
+      // since a schedule should not replay whatever it missed while it was
+      // down, but it means one write and a wait is a race the test loses about
+      // one run in five.
+      // Generous, because it costs nothing when the trigger lands first time
+      // and a loaded machine has been seen to need most of ten seconds.
+      const deadline = Date.now() + 30_000;
+      let event: JsScheduleEventInput | undefined;
 
-      const timer = setTimeout(() => received.reject(new Error("timeout waiting for schedule handler")), 10_000);
-      const event = await received.promise;
-      clearTimeout(timer);
+      while (event === undefined) {
+        if (Date.now() > deadline) {
+          throw new Error("timeout waiting for schedule handler");
+        }
+
+        await redis.xadd(
+          `celerity:schedules:${scheduleId}`,
+          "*",
+          "body",
+          JSON.stringify({ triggered: true }),
+          "timestamp",
+          timestamp,
+          "message_type",
+          "0",
+        );
+
+        event = await Promise.race([
+          received.promise,
+          new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), 500)),
+        ]);
+      }
 
       t.is(event.handlerTag, "source::dailyCleanup::cleanupHandler");
       t.truthy(event.messageId);
