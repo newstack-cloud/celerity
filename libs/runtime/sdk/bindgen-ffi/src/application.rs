@@ -8,8 +8,8 @@ use celerity_helpers::{
 use celerity_runtime_core::{
     application::Application as RuntimeApp,
     config::{
-        ws_ack_max_attempts_from_env, ws_ack_timeout_ms_from_env, ws_cluster_from_env,
-        ws_handler_concurrency_from_env, ClientIpSource, RuntimeConfig,
+        server_node_name_from_env, ws_ack_max_attempts_from_env, ws_ack_timeout_ms_from_env,
+        ws_cluster_from_env, ws_handler_concurrency_from_env, ClientIpSource, RuntimeConfig,
     },
     errors::{ApplicationStartError, ConfigError},
 };
@@ -71,7 +71,7 @@ pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut
                 ws_ack_timeout_ms: ws_ack_timeout_ms_from_env(&ProcessEnvVars::new()),
                 ws_ack_max_attempts: ws_ack_max_attempts_from_env(&ProcessEnvVars::new()),
                 ws_handler_concurrency: ws_handler_concurrency_from_env(&ProcessEnvVars::new()),
-                server_node_name: std::env::var("CELERITY_SERVER_NODE_NAME").ok(),
+                server_node_name: server_node_name_from_env(&ProcessEnvVars::new()),
                 ws_cluster: ws_cluster_from_env(&ProcessEnvVars::new()),
             },
             Box::new(ProcessEnvVars::new()),
