@@ -13,8 +13,18 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
   valkey:
     container_name: "valkey_celerity_runtime_tests"
-    image: bitnamilegacy/valkey:8.1.3
+    image: valkey/valkey:8.1.3
     ports:
       - "6379:6379"
-    environment:
-      - ALLOW_EMPTY_PASSWORD=yes
+  # A real cluster, for the tests that check what only a cluster can determine,
+  # a script reaching across slots is refused, and keys spread across them
+  # cannot be read or written in one request.
+  valkey-cluster:
+    container_name: "valkey_cluster_celerity_runtime_tests"
+    image: valkey/valkey:8.1.3
+    ports:
+      - "7100-7105:7100-7105"
+      - "17100-17105:17100-17105"
+    volumes:
+      - ./scripts/valkey-cluster-entrypoint.sh:/entrypoint.sh:ro
+    command: ["sh", "/entrypoint.sh"]

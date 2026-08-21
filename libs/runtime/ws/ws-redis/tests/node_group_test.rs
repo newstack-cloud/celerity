@@ -1,16 +1,6 @@
-use celerity_helpers::redis::{get_redis_connection, ConnectionConfig, ConnectionWrapper};
-use celerity_ws_redis::node_group::{join_or_create, leave, node_key, NodeGroup, NodeGroupConfig};
+use celerity_helpers::{redis::ConnectionWrapper, testing::redis_connection};
 
-async fn connection() -> ConnectionWrapper {
-    let conn_config = ConnectionConfig {
-        nodes: vec!["redis://127.0.0.1:6379/?protocol=resp3".to_string()],
-        password: None,
-        cluster_mode: false,
-    };
-    get_redis_connection(&conn_config, None)
-        .await
-        .expect("must be able to connect to redis for the node group tests")
-}
+use celerity_ws_redis::node_group::{join_or_create, leave, node_key, NodeGroup, NodeGroupConfig};
 
 /// A node's configuration under a key prefix of its own, so tests running
 /// beside each other are not each other's cluster.
@@ -56,7 +46,7 @@ async fn group_ids(conn: &mut ConnectionWrapper, prefix: &str) -> Vec<String> {
 /// Nodes fill a group before starting another one.
 #[test_log::test(tokio::test)]
 async fn test_a_group_is_filled_before_the_next_one_is_started() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-fills-first";
     clear(&mut conn, prefix).await;
 
@@ -104,7 +94,7 @@ async fn test_a_group_is_filled_before_the_next_one_is_started() {
 /// that the place is free.
 #[test_log::test(tokio::test)]
 async fn test_a_node_that_stopped_running_gives_up_its_place() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-expired-node";
     clear(&mut conn, prefix).await;
 
@@ -141,7 +131,7 @@ async fn test_a_node_that_stopped_running_gives_up_its_place() {
 /// group looking fuller than it is until a TTL runs out.
 #[test_log::test(tokio::test)]
 async fn test_leaving_takes_the_membership_and_the_group_with_it() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-graceful-leave";
     clear(&mut conn, prefix).await;
     let node_config = config(prefix, "node-1", 5, 10_000);
@@ -167,7 +157,7 @@ async fn test_leaving_takes_the_membership_and_the_group_with_it() {
 /// counted into another one.
 #[test_log::test(tokio::test)]
 async fn test_a_node_already_in_a_group_keeps_its_place() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-keeps-place";
     clear(&mut conn, prefix).await;
     let node_config = config(prefix, "node-1", 5, 10_000);
@@ -192,7 +182,7 @@ async fn test_a_node_already_in_a_group_keeps_its_place() {
 /// room.
 #[test_log::test(tokio::test)]
 async fn test_a_dropped_node_takes_a_free_place_wherever_it_is() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-dropped-takes-free";
     clear(&mut conn, prefix).await;
 
@@ -239,14 +229,14 @@ async fn test_a_dropped_node_takes_a_free_place_wherever_it_is() {
 /// room that the others were about to take.
 #[test_log::test(tokio::test)]
 async fn test_nodes_starting_together_do_not_overfill_a_group() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-concurrent-join";
     clear(&mut conn, prefix).await;
 
     let joins = (0..12).map(|index| {
         let node_config = config(prefix, &format!("node-{index}"), 2, 10_000);
         async move {
-            let mut conn = connection().await;
+            let mut conn = redis_connection().await;
             join_or_create(&mut conn, &node_config).await.unwrap()
         }
     });

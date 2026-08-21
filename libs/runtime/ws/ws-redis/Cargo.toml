@@ -27,6 +27,10 @@ path = "../ws-registry"
 [dependencies.celerity_helpers]
 path = "../../helpers"
 
+[dev-dependencies.celerity_helpers]
+path = "../../helpers"
+features = ["test-support"]
+
 [dev-dependencies]
 futures = "0.3.30"
 axum = { version = "0.8.4", features = ["ws"] }

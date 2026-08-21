@@ -22,6 +22,12 @@ parser.add_argument('--localdeps', action='store_true',
 parser.add_argument("--package", help="run tests for a specific package")
 
 
+class ValkeyClusterNotReady(Exception):
+    """
+    Raised when the valkey cluster does not form in time.
+    """
+
+
 class LocalstackNotReady(Exception):
     """
     Custom exception type that is raised
@@ -59,30 +65,80 @@ def _run_integration_tests(args: argparse.Namespace) -> None:
     env_copy = os.environ.copy()
     in_ci_env = os.environ.get('GITHUB_ACTIONS')
     test_env_file = '.env.test-ci' if in_ci_env else '.env.test'
-    report_flags = "--lcov --output-path coverage.lcov" if in_ci_env else "--html"
     selection_flags = f"--package {args.package}" if args.package else "--workspace"
     exclude_flags = "--exclude celerity-python-runtime-sdk"
     feature_flags = "--features celerity_local_consumers,celerity_runtime_core/ws_clustering"
+    test_env = {
+        # Integration tests can't share the same env vars (.env) as the API running
+        # in docker as the host endpoints for the AWS service mocks are different.
+        **cast(Dict[str, str], dotenv_values(test_env_file)),
+        **env_copy,
+    }
+
+    # Neither pass reports on its own and the coverage is put together at the
+    # end, so the tests are built once and what the cluster pass covers counts
+    # towards the total.
+    subprocess.run('cargo llvm-cov clean --workspace', shell=True, check=True)
 
     # Use cargo-nextest for cleaner per-test output with a summary at the end.
     # Debug output is only shown for failing tests.
     completed_process = subprocess.run(
-        f'cargo llvm-cov {report_flags} nextest {selection_flags} {exclude_flags} {feature_flags} --no-fail-fast --color always',
-        env={
-            # Integration tests can't share the same env vars (.env) as the API running
-            # in docker as the host endpoints for the AWS service mocks are different.
-            **cast(Dict[str, str], dotenv_values(test_env_file)),
-            **env_copy,
-        },
+        f'cargo llvm-cov --no-report nextest {selection_flags} {exclude_flags} '
+        f'{feature_flags} --no-fail-fast --color always',
+        env=test_env,
         shell=True,
         check=False
     )
+
+    cluster_process = _run_cluster_mode_tests(test_env)
+
+    report_flags = "--lcov --output-path coverage.lcov" if in_ci_env else "--html"
+    subprocess.run(f'cargo llvm-cov report {report_flags}', shell=True, check=False)
+
     if args.localdeps:
         _teardown_local_deps()
     if completed_process.returncode != 0:
         raise TestRunnerFailed(
             f'Tests or test runner failed with code {completed_process.returncode}'
         )
+    if cluster_process.returncode != 0:
+        raise TestRunnerFailed(
+            'Tests against a Redis cluster failed with code '
+            f'{cluster_process.returncode}'
+        )
+
+
+CLUSTER_MODE_PACKAGES = '--package celerity_ws_redis --package celerity_runtime_core'
+
+
+def _run_cluster_mode_tests(test_env: Dict[str, str]) -> subprocess.CompletedProcess:
+    """
+    Runs the Redis-backed tests a second time against a real cluster.
+
+    A cluster is the only place some of the decisions these cover can be wrong
+    such as a script reaching across slots being refused, along with a request carrying keys
+    that belong to different ones. Neither shows up against a single instance,
+    where every key is in the same place.
+
+    Only the tests that touch Redis are run again, and they share the build the
+    first pass made, so this is a second or two rather than a pass over the
+    whole workspace.
+    """
+    print('Running the Redis-backed tests again against a cluster ...')
+    return subprocess.run(
+        f'cargo llvm-cov --no-report nextest {CLUSTER_MODE_PACKAGES} '
+        '--features celerity_local_consumers,celerity_runtime_core/ws_clustering '
+        '--test cluster_test --test forwarded_test --test locations_test '
+        '--test node_group_test --test pubsub_test '
+        '--test websocket_cluster_test --test websocket_shared_dedupe_test '
+        '--no-fail-fast --color always',
+        env={
+            **test_env,
+            'CELERITY_TEST_REDIS_CLUSTER': '1',
+        },
+        shell=True,
+        check=False
+    )
 
 
 DEPS_DOCKER_COMPOSE = 'docker-compose.test-deps.yml'
@@ -104,6 +160,7 @@ def _run_local_deps(context: str) -> None:
 
     print('Waiting for sevices to be ready, tailing LocalStack logs for "Ready." ...')
     _wait_for_localstack(deadline_seconds=60)
+    _wait_for_valkey_cluster(deadline_seconds=60)
 
     _populate_secrets(context)
     _generate_sqs_queues(context)
@@ -140,6 +197,35 @@ def _wait_for_localstack(deadline_seconds: int) -> None:
                 line_str = line.decode('utf-8')
                 if line_str.strip() == 'Ready.':
                     print('LocalStack services are ready, continuing ...')
+                    process.kill()
+                    break
+
+
+def _wait_for_valkey_cluster(deadline_seconds: int) -> None:
+    """
+    Waits for the six servers to agree that they are a cluster.
+
+    They take a moment to find each other, and a test that connects before they
+    have is told there is no cluster rather than being made to wait.
+    """
+    start_time = time.time()
+    with subprocess.Popen(
+        ['docker', 'logs', '-f', 'valkey_cluster_celerity_runtime_tests'],
+        stdout=subprocess.PIPE
+    ) as process:
+        if process.stdout is not None:
+            for line in process.stdout:
+                current_time = time.time()
+                if current_time >= start_time + deadline_seconds:
+                    message = (
+                        'Timed out waiting for the valkey cluster to form after '
+                        f'{deadline_seconds} seconds'
+                    )
+                    print(message)
+                    process.kill()
+                    raise ValkeyClusterNotReady(message)
+                if line.decode('utf-8').strip() == 'cluster ready':
+                    print('Valkey cluster is ready, continuing ...')
                     process.kill()
                     break
 
