@@ -56,7 +56,7 @@ COPY --from=runtime sdk/ ./sdk/
 # Install napi-cli and build the native addon for this platform
 WORKDIR /build/sdk/node
 RUN npm install
-RUN npx napi build --platform --features celerity_local_consumers
+RUN npx napi build --platform --features celerity_local_consumers,ws_clustering
 
 # -----------------------------------------------------------------------------
 # Stage 1b: Lightweight cache — only the final NAPI artifacts (~100 MB vs ~14 GB)
