@@ -1,0 +1,10 @@
+# Pinned so that a Rust release cannot turn unrelated work red.
+#
+# CI takes whatever stable is on the day it runs, so a new lint or a lint that
+# has grown stricter arrives without anybody choosing it, and it arrives on
+# whichever branch happens to build next. Moving this file is how the toolchain
+# changes, which makes the fallout a change somebody reviews rather than a
+# surprise on an unrelated pull request.
+[toolchain]
+channel = "1.98.0"
+components = ["clippy", "rustfmt"]
