@@ -17,7 +17,11 @@ use axum::{
     routing::get,
     Router,
 };
-use celerity_helpers::redis::{get_redis_connection, ConnectionConfig, ConnectionWrapper};
+use celerity_helpers::{
+    redis::ConnectionWrapper,
+    testing::{redis_config, redis_connection},
+};
+
 use celerity_ws_redis::{
     forwarded::ForwardedMessages,
     locations::ConnectionLocations,
@@ -35,21 +39,6 @@ use futures::StreamExt;
 use nanoid::nanoid;
 use tokio::sync::{mpsc::channel, Mutex};
 use tokio_tungstenite::tungstenite;
-
-const NODES: &str = "redis://127.0.0.1:6379/?protocol=resp3";
-
-async fn connection() -> ConnectionWrapper {
-    get_redis_connection(
-        &ConnectionConfig {
-            nodes: vec![NODES.to_string()],
-            password: None,
-            cluster_mode: false,
-        },
-        None,
-    )
-    .await
-    .expect("must be able to connect to redis for the cluster tests")
-}
 
 /// Clears anything a previous run left behind under a prefix, including the
 /// message ids the run will use.
@@ -88,7 +77,7 @@ struct ClusterNode {
 /// Starts a node with everything a deployment wires up, in the order
 /// `Application::run` wires it.
 async fn start_node(prefix: &str, name: &str, capacity: usize) -> ClusterNode {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let group_config = NodeGroupConfig {
         server_node_name: name.to_string(),
         capacity,
@@ -121,9 +110,9 @@ async fn start_node(prefix: &str, name: &str, capacity: usize) -> ClusterNode {
         PubSubConnectionConfig {
             server_node_name: name.to_string(),
             key_prefix: prefix.to_string(),
-            nodes: vec![NODES.to_string()],
-            password: None,
-            cluster_mode: false,
+            nodes: redis_config().nodes,
+            password: redis_config().password,
+            cluster_mode: redis_config().cluster_mode,
             migration_grace_ms: 5_000,
         },
         group.clone(),
@@ -225,7 +214,7 @@ async fn connect_client(
 /// that it arrived.
 #[test_log::test(tokio::test)]
 async fn test_a_message_reaches_a_client_held_by_another_node() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-cluster-delivery";
     clear(&mut conn, prefix, &["m-1"]).await;
 
@@ -272,7 +261,7 @@ async fn test_a_message_reaches_a_client_held_by_another_node() {
 /// are told.
 #[test_log::test(tokio::test)]
 async fn test_a_message_for_a_client_nobody_holds_is_declared_lost() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-cluster-loss";
     clear(&mut conn, prefix, &["m-1"]).await;
 
@@ -324,7 +313,7 @@ async fn test_a_message_for_a_client_nobody_holds_is_declared_lost() {
 /// goes, which is what lets the other nodes find it and stop trying.
 #[test_log::test(tokio::test)]
 async fn test_a_client_is_findable_while_it_is_connected() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-cluster-locations";
     clear(&mut conn, prefix, &[]).await;
 
@@ -363,7 +352,7 @@ async fn test_a_client_is_findable_while_it_is_connected() {
 /// a message that did arrive as lost.
 #[test_log::test(tokio::test)]
 async fn test_a_resent_message_is_acknowledged_again_and_delivered_once() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-cluster-duplicates";
     clear(&mut conn, prefix, &["m-1"]).await;
 

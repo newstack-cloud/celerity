@@ -1,27 +1,14 @@
 use std::time::Duration;
 
-use celerity_helpers::redis::{get_redis_connection, ConnectionConfig, ConnectionWrapper};
+use celerity_helpers::testing::redis_connection;
 use celerity_ws_redis::forwarded::ForwardedMessages;
 use celerity_ws_registry::registry::ForwardedMessageStore;
-
-async fn connection() -> ConnectionWrapper {
-    get_redis_connection(
-        &ConnectionConfig {
-            nodes: vec!["redis://127.0.0.1:6379/?protocol=resp3".to_string()],
-            password: None,
-            cluster_mode: false,
-        },
-        None,
-    )
-    .await
-    .expect("must be able to connect to redis for the forwarded message tests")
-}
 
 /// The first node to forward a message records it, and any node asking
 /// afterwards is told it has already gone out.
 #[test_log::test(tokio::test)]
 async fn test_a_message_is_recognised_after_it_has_been_forwarded() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-forwarded-recognise";
     conn.del(&format!("{prefix}:msg:m-1")).await.unwrap();
 
@@ -38,7 +25,7 @@ async fn test_a_message_is_recognised_after_it_has_been_forwarded() {
 
     // Another node, which is the case that matters as a resend arrives wherever
     // the connection is now, not necessarily where it was.
-    let elsewhere = ForwardedMessages::new(connection().await, prefix.to_string(), 10_000);
+    let elsewhere = ForwardedMessages::new(redis_connection().await, prefix.to_string(), 10_000);
     assert!(elsewhere.record_and_check_forwarded("m-1").await.unwrap());
 
     assert!(
@@ -56,7 +43,7 @@ async fn test_a_message_is_recognised_after_it_has_been_forwarded() {
 /// memory for as long as the resends continued.
 #[test_log::test(tokio::test)]
 async fn test_a_forwarded_message_is_forgotten_on_its_own_schedule() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-forwarded-expiry";
     conn.del(&format!("{prefix}:msg:m-1")).await.unwrap();
 

@@ -1,6 +1,10 @@
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
-use celerity_helpers::redis::{get_redis_connection, ConnectionConfig, ConnectionWrapper};
+use celerity_helpers::{
+    redis::{get_redis_connection, ConnectionWrapper},
+    testing::{redis_config, redis_connection},
+};
+
 use celerity_ws_redis::{
     locations::ConnectionLocations,
     node_group::{join_or_create, leave, node_key, NodeGroup, NodeGroupConfig},
@@ -11,21 +15,6 @@ use celerity_ws_registry::{
     types::{AckMessage, Message, MessageType, WebSocketMessage},
 };
 use tokio::sync::mpsc::{channel, Receiver, Sender};
-
-const NODES: &str = "redis://127.0.0.1:6379/?protocol=resp3";
-
-async fn connection() -> ConnectionWrapper {
-    get_redis_connection(
-        &ConnectionConfig {
-            nodes: vec![NODES.to_string()],
-            password: None,
-            cluster_mode: false,
-        },
-        None,
-    )
-    .await
-    .expect("must be able to connect to redis for the pubsub tests")
-}
 
 /// Clears anything a previous run left behind under a prefix, since a test that
 /// fails never reaches its own cleanup.
@@ -53,7 +42,7 @@ struct Node {
 }
 
 async fn start_node(prefix: &str, name: &str, capacity: usize) -> Node {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let config = NodeGroupConfig {
         server_node_name: name.to_string(),
         capacity,
@@ -73,9 +62,9 @@ async fn start_node(prefix: &str, name: &str, capacity: usize) -> Node {
         PubSubConnectionConfig {
             server_node_name: name.to_string(),
             key_prefix: prefix.to_string(),
-            nodes: vec![NODES.to_string()],
-            password: None,
-            cluster_mode: false,
+            nodes: redis_config().nodes,
+            password: redis_config().password,
+            cluster_mode: redis_config().cluster_mode,
             // Short, so a test watching the old channel go quiet is not waiting
             // on a production grace period.
             migration_grace_ms: 300,
@@ -102,7 +91,7 @@ async fn start_node(prefix: &str, name: &str, capacity: usize) -> Node {
 /// only hears what is addressed to a connection its group holds.
 #[test_log::test(tokio::test)]
 async fn test_messages_reach_the_group_holding_the_connection() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-pubsub-routing";
     clear(&mut conn, prefix).await;
 
@@ -243,7 +232,7 @@ async fn test_messages_reach_the_group_holding_the_connection() {
 /// the message would lose it for a client that is there.
 #[test_log::test(tokio::test)]
 async fn test_a_message_for_an_unrecorded_connection_reaches_every_group() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-pubsub-fanout";
     clear(&mut conn, prefix).await;
 
@@ -289,7 +278,7 @@ async fn test_a_message_for_an_unrecorded_connection_reaches_every_group() {
 /// the wrong channel, so this watches the channel rather than the node.
 #[test_log::test(tokio::test)]
 async fn test_an_acknowledgement_goes_to_the_ack_mirror_of_the_senders_group() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-pubsub-ack-channel";
     clear(&mut conn, prefix).await;
 
@@ -300,16 +289,9 @@ async fn test_an_acknowledgement_goes_to_the_ack_mirror_of_the_senders_group() {
     // Watching the sender's ack mirror directly, as another implementation
     // following the protocol would.
     let (push_tx, mut push_rx) = tokio::sync::mpsc::unbounded_channel();
-    let mut watcher = get_redis_connection(
-        &ConnectionConfig {
-            nodes: vec![NODES.to_string()],
-            password: None,
-            cluster_mode: false,
-        },
-        Some(push_tx),
-    )
-    .await
-    .unwrap();
+    let mut watcher = get_redis_connection(&redis_config(), Some(push_tx))
+        .await
+        .unwrap();
     watcher.subscribe(&sender.group.ack_channel).await.unwrap();
 
     holder
@@ -356,7 +338,7 @@ async fn test_an_acknowledgement_goes_to_the_ack_mirror_of_the_senders_group() {
 /// messages are always in flight against a mapping that has just changed.
 #[test_log::test(tokio::test)]
 async fn test_a_node_that_moves_group_hears_both_until_the_grace_is_up() {
-    let mut conn = connection().await;
+    let mut conn = redis_connection().await;
     let prefix = "test-pubsub-migration";
     clear(&mut conn, prefix).await;
 
