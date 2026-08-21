@@ -331,6 +331,61 @@ async fn test_an_acknowledgement_goes_to_the_ack_mirror_of_the_senders_group() {
         .unwrap();
 }
 
+/// A node dropped from its group and then given a place back in it before the
+/// grace period is up keeps listening to it.
+///
+/// Giving up the old channels is scheduled when a node moves, and by the time
+/// that comes around the node may be back where it started. Giving them up then
+/// would leave it unable to receive messages from the group it is actually in,
+/// with nothing to tell it so, since it believes it is subscribed.
+#[test_log::test(tokio::test)]
+async fn test_a_node_that_comes_back_to_the_group_it_left_keeps_receiveing_messages_from_it() {
+    let mut conn = redis_connection().await;
+    let prefix = "test-pubsub-return";
+    clear(&mut conn, prefix).await;
+
+    let sender = start_node(prefix, "api-node-1", 5).await;
+    let mut mover = start_node(prefix, "api-node-2", 5).await;
+    let home = mover.group.clone();
+
+    let elsewhere = NodeGroup::new(prefix, "somewhere-else".to_string());
+    conn.sadd(
+        &format!("{prefix}:{{group-meta}}:node-groups"),
+        &elsewhere.id,
+    )
+    .await
+    .unwrap();
+
+    // Away and back again, both inside the grace period the first move started.
+    mover.moved.send(elsewhere.clone()).await.unwrap();
+    mover.locations.set_group(elsewhere.id.clone());
+    mover.moved.send(home.clone()).await.unwrap();
+    mover.locations.set_group(home.id.clone());
+    mover.locations.record("2").await.unwrap();
+
+    // Long enough for the first move's grace period to have come and gone.
+    tokio::time::sleep(Duration::from_millis(600)).await;
+
+    sender
+        .tx
+        .send(Message::WebSocket(WebSocketMessage {
+            connection_id: "2".to_string(),
+            message_id: "back-where-it-started".to_string(),
+            message_type: MessageType::Json,
+            source_node: sender.name.clone(),
+            message: r#"{"event":"back"}"#.to_string(),
+            inform_clients_on_loss: None,
+            caller: None,
+        }))
+        .await
+        .unwrap();
+    assert_eq!(
+        next_message_id(&mut mover.rx).await,
+        "back-where-it-started",
+        "a node back in the group it left should still be listening to it"
+    );
+}
+
 /// A node that moves group hears its new channel straight away, and its old one
 /// until the grace period is up.
 ///

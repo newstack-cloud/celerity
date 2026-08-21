@@ -1,4 +1,8 @@
-use std::{error::Error, sync::Arc, time::Duration};
+use std::{
+    error::Error,
+    sync::{Arc, RwLock},
+    time::Duration,
+};
 
 use celerity_helpers::redis::{get_redis_connection, ConnectionConfig, ConnectionWrapper};
 use celerity_ws_registry::types::Message;
@@ -141,6 +145,10 @@ pub async fn connect(
 
     tokio::spawn(async move {
         let mut group = group;
+        // Read by the tasks giving up the channels of groups this node has
+        // left, so one of them waiting out its grace period can tell that the
+        // node has since come back to the group it was about to give up.
+        let listening_to = Arc::new(RwLock::new(group.id.clone()));
         // The group this node has taken a place in but is not yet listening to.
         // Held until it is subscribed to, since the connection entries have
         // already moved and messages are being published there.
@@ -187,10 +195,10 @@ pub async fn connect(
                 }
                 Some(joined) = moved.recv() => {
                     joining = Some(joined);
-                    follow(&mut conn, &mut joining, &mut group, conn_config.migration_grace_ms).await;
+                    follow(&mut conn, &mut joining, &mut group, &listening_to, &conn_config).await;
                 }
                 _ = retry.tick(), if joining.is_some() => {
-                    follow(&mut conn, &mut joining, &mut group, conn_config.migration_grace_ms).await;
+                    follow(&mut conn, &mut joining, &mut group, &listening_to, &conn_config).await;
                 }
                 else => break,
             }
@@ -213,7 +221,8 @@ async fn follow(
     conn: &mut ConnectionWrapper,
     joining: &mut Option<NodeGroup>,
     group: &mut NodeGroup,
-    grace_ms: u64,
+    listening_to: &Arc<RwLock<String>>,
+    conn_config: &PubSubConnectionConfig,
 ) {
     let Some(joined) = joining.clone() else {
         return;
@@ -232,7 +241,13 @@ async fn follow(
     *joining = None;
 
     debug!(node_group = %joined.id, "following this node into another group");
-    leave_behind(conn.clone(), std::mem::replace(group, joined), grace_ms);
+    *listening_to.write().unwrap() = joined.id.clone();
+    leave_behind(
+        conn.clone(),
+        std::mem::replace(group, joined),
+        listening_to.clone(),
+        conn_config.migration_grace_ms,
+    );
 }
 
 async fn subscribe_to(conn: &mut ConnectionWrapper, group: &NodeGroup) -> redis::RedisResult<()> {
@@ -245,9 +260,29 @@ async fn subscribe_to(conn: &mut ConnectionWrapper, group: &NodeGroup) -> redis:
 ///
 /// The wait covers a sender that read the old mapping just before it changed
 /// and published a moment later.
-fn leave_behind(mut conn: ConnectionWrapper, group: NodeGroup, grace_ms: u64) {
+///
+/// The group is read again once the wait is over rather than trusted from when
+/// this was scheduled, because a node can be dropped from a group and take a
+/// place back in the one it came from within a single grace period, and giving
+/// up those channels would leave it deaf to the group it is in.
+fn leave_behind(
+    mut conn: ConnectionWrapper,
+    group: NodeGroup,
+    listening_to: Arc<RwLock<String>>,
+    grace_ms: u64,
+) {
     tokio::spawn(async move {
         tokio::time::sleep(Duration::from_millis(grace_ms)).await;
+
+        let back_in_it = *listening_to.read().unwrap() == group.id;
+        if back_in_it {
+            debug!(
+                node_group = %group.id,
+                "this node is back in the group it left, keeping its channels"
+            );
+            return;
+        }
+
         for channel in [&group.channel, &group.ack_channel] {
             if let Err(err) = conn.unsubscribe(channel).await {
                 error!(channel = %channel, "failed to give up a channel after moving group: {err}");
