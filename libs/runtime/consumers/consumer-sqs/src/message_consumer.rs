@@ -369,6 +369,11 @@ impl SQSMessageConsumer {
         }
     }
 
+    // The error is the SDK's own, and the lint's advice is to make it smaller,
+    // which is not ours to do. Boxing it here instead would change how every
+    // caller matches on it, to save a hundred and change bytes on the path
+    // where a network call has already failed.
+    #[allow(clippy::result_large_err)]
     async fn terminate_visibility_timeout(&self, messages: &[MessageHandle]) -> Result<(), Error> {
         if !self.config.terminate_visibility_timeout {
             debug!("sqs consumer not configured to terminate visibility timeout, moving on");
@@ -387,6 +392,8 @@ impl SQSMessageConsumer {
         Ok(())
     }
 
+    // The error is the SDK's own, as above.
+    #[allow(clippy::result_large_err)]
     async fn delete_messages(
         &self,
         messages: &[MessageHandle],
@@ -438,6 +445,11 @@ impl SQSMessageConsumer {
     }
 
     #[instrument(skip(self))]
+    // The error is the SDK's own, and the lint's advice is to make it smaller,
+    // which is not ours to do. Boxing it here instead would change how every
+    // caller matches on it, to save a hundred and change bytes on the path
+    // where a network call has already failed.
+    #[allow(clippy::result_large_err)]
     async fn receive_messages(&self) -> Result<(), SdkError<ReceiveMessageError>> {
         let rcv_message_output = self
             .client

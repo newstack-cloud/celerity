@@ -82,6 +82,10 @@ impl VisibilityTimeoutExtender {
         }
     }
 
+    // The error is the SDK's own, and shrinking it is not ours to do. Boxing it
+    // would change how the caller matches on it, to save bytes on the path
+    // where a call to AWS has already failed.
+    #[allow(clippy::result_large_err)]
     pub async fn change_visibility_timeout(
         &self,
         messages: &[MessageHandle],
