@@ -313,7 +313,8 @@ async fn handle_socket(
         // causing the TCP connection to linger.
         state
             .connections
-            .add_connection(connection_id.clone(), socket_ref.clone());
+            .register_connection(connection_id.clone(), socket_ref.clone())
+            .await;
         ws_connections_counter().add(1, &[]);
 
         // Send the capabilities signal, this is a binary frame that indicates the server
@@ -364,7 +365,10 @@ async fn handle_socket(
             // No disconnect handler runs. The connect handler turned this
             // connection down, so from the application's side it never
             // connected.
-            state.connections.remove_connection(connection_id.clone());
+            state
+                .connections
+                .deregister_connection(connection_id.clone())
+                .await;
             ws_connections_counter().add(-1, &[]);
             return;
         }
@@ -568,7 +572,10 @@ async fn handle_socket(
         }
 
         let _ = on_disconnect(connection_id.clone(), &state, &request_ctx).await;
-        state.connections.remove_connection(connection_id.clone());
+        state
+            .connections
+            .deregister_connection(connection_id.clone())
+            .await;
         ws_connections_counter().add(-1, &[]);
     }
     .instrument(info_span!("websocket_connection", connection_id = %connection_id))

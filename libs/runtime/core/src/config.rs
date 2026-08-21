@@ -202,6 +202,72 @@ pub struct RuntimeConfig {
     /// connection rather than the process.
     /// Set via `CELERITY_WS_HANDLER_CONCURRENCY`.
     pub ws_handler_concurrency: Option<usize>,
+    /// Names this node among the others serving the same WebSocket API.
+    ///
+    /// This must be different for every node, since it is what an acknowledgement
+    /// from another node is addressed to. Leave unset to take the host name,
+    /// which is the pod or container name on the deployment targets, and a
+    /// generated id where there is none.
+    /// Set via `CELERITY_SERVER_NODE_NAME`.
+    pub server_node_name: Option<String>,
+    /// How the nodes of a WebSocket API find each other, or `None` for a
+    /// single node.
+    ///
+    /// A single node needs no shared store, because every connection it is
+    /// asked about is either its own or nowhere.
+    pub ws_cluster: Option<WsClusterConfig>,
+}
+
+/// How a WebSocket API's nodes reach each other and how much they tell each
+/// other.
+#[derive(Debug, Clone)]
+pub struct WsClusterConfig {
+    /// The Redis deployment the nodes cluster over, as one URL or several for
+    /// a cluster.
+    /// Set via `CELERITY_WS_CLUSTER_REDIS_NODES`, comma separated.
+    pub redis_nodes: Vec<String>,
+    /// Set via `CELERITY_WS_CLUSTER_REDIS_PASSWORD`.
+    pub redis_password: Option<String>,
+    /// Whether a Redis cluster is to be connected to rather than a single instance.
+    /// Set via `CELERITY_WS_CLUSTER_REDIS_CLUSTER_MODE`.
+    pub redis_cluster_mode: bool,
+    /// What the keys and channels the nodes share are named under.
+    ///
+    /// Nodes sharing this are one cluster, so it must be the same across an
+    /// application's nodes and different between applications. Leave unset to
+    /// take the service name, which is both.
+    /// Set via `CELERITY_WS_CLUSTER_KEY_PREFIX`.
+    pub key_prefix: Option<String>,
+    /// How many nodes a node group holds before a new one is started.
+    ///
+    /// Bounds how many nodes are told about a message for a connection none of
+    /// them may be holding. Leave unset to use the default of five as per the
+    /// protocol spec.
+    /// Set via `CELERITY_WS_CLUSTER_NODE_GROUP_CAPACITY`.
+    pub node_group_capacity: Option<usize>,
+    /// How long a node goes without announcing it is running before the others
+    /// treat it as gone.
+    ///
+    /// Announced three times inside this window, so two can be missed to a stall or
+    /// a slow round trip. Leave unset for thirty seconds.
+    /// Set via `CELERITY_WS_CLUSTER_NODE_TTL_MS`.
+    pub node_ttl_ms: Option<u64>,
+    /// How long a node keeps listening to the group it has left after moving to
+    /// another one.
+    ///
+    /// Covers a sender that read where a connection was just before it moved.
+    /// Leave unset for five seconds.
+    /// Set via `CELERITY_WS_CLUSTER_MIGRATION_GRACE_MS`.
+    pub migration_grace_ms: Option<u64>,
+    /// How long the cluster remembers that a message was forwarded to its
+    /// client, which is how far apart two copies can arrive and still be
+    /// recognised as one message.
+    ///
+    /// Must outlast a message's whole life as its sender sees it, which is the
+    /// acknowledgement timeout multiplied by the attempts allowed. Leave unset
+    /// for five minutes.
+    /// Set via `CELERITY_WS_CLUSTER_FORWARDED_TTL_MS`.
+    pub forwarded_ttl_ms: Option<u64>,
 }
 
 impl RuntimeConfig {
@@ -372,6 +438,8 @@ impl RuntimeConfig {
         let ws_ack_timeout_ms = ws_ack_timeout_ms_from_env(env);
         let ws_ack_max_attempts = ws_ack_max_attempts_from_env(env);
         let ws_handler_concurrency = ws_handler_concurrency_from_env(env);
+        let server_node_name = env.var("CELERITY_SERVER_NODE_NAME").ok();
+        let ws_cluster = ws_cluster_from_env(env);
 
         RuntimeConfig {
             blueprint_config_path,
@@ -403,6 +471,8 @@ impl RuntimeConfig {
             ws_ack_timeout_ms,
             ws_ack_max_attempts,
             ws_handler_concurrency,
+            server_node_name,
+            ws_cluster,
         }
     }
 
@@ -423,6 +493,93 @@ impl RuntimeConfig {
             RuntimePlatform::Local | RuntimePlatform::Other => self.deploy_target.as_deref(),
         }
     }
+}
+
+/// Reads how the nodes of a WebSocket API reach each other, or `None` where no
+/// Redis deployment is configured.
+///
+/// Configuring a Redis deployment is what turns clustering on. Everything else
+/// here refines a decision that has already been made, so it can all be left
+/// unset.
+///
+/// See [`ws_ack_timeout_ms_from_env`] for why this is not only read in
+/// [`RuntimeConfig::from_env`].
+pub fn ws_cluster_from_env(env: &impl EnvVars) -> Option<WsClusterConfig> {
+    // A comma separated list, since a single instance is the usual case and a
+    // cluster is given as several. Empty entries are dropped, so a trailing
+    // comma is not a node called nothing.
+    let redis_nodes: Vec<String> = env
+        .var("CELERITY_WS_CLUSTER_REDIS_NODES")
+        .ok()?
+        .split(',')
+        .map(str::trim)
+        .filter(|node| !node.is_empty())
+        .map(str::to_string)
+        .collect();
+    if redis_nodes.is_empty() {
+        return None;
+    }
+
+    Some(WsClusterConfig {
+        redis_nodes,
+        redis_password: env.var("CELERITY_WS_CLUSTER_REDIS_PASSWORD").ok(),
+        redis_cluster_mode: env
+            .var("CELERITY_WS_CLUSTER_REDIS_CLUSTER_MODE")
+            .map(|val| {
+                val.parse().expect(
+                    "Invalid WebSocket cluster mode value, must be either \"true\" or \"false\"",
+                )
+            })
+            .unwrap_or(false),
+        key_prefix: env.var("CELERITY_WS_CLUSTER_KEY_PREFIX").ok(),
+        node_group_capacity: env
+            .var("CELERITY_WS_CLUSTER_NODE_GROUP_CAPACITY")
+            .ok()
+            .map(|val| {
+                let capacity: usize = val
+                    .parse()
+                    .expect("Invalid WebSocket node group capacity, must be a whole number");
+                assert!(
+                    capacity > 0,
+                    "Invalid WebSocket node group capacity, a group has to hold at least one node"
+                );
+                capacity
+            }),
+        node_ttl_ms: env.var("CELERITY_WS_CLUSTER_NODE_TTL_MS").ok().map(|val| {
+            let ttl: u64 = val
+                .parse()
+                .expect("Invalid WebSocket node TTL, must be a whole number of milliseconds");
+            assert!(
+                ttl > 0,
+                "Invalid WebSocket node TTL, a node needs some time to say it is running in"
+            );
+            ttl
+        }),
+        migration_grace_ms: env
+            .var("CELERITY_WS_CLUSTER_MIGRATION_GRACE_MS")
+            .ok()
+            .map(|val| {
+                val.parse().expect(
+                    "Invalid WebSocket migration grace period, must be a whole number of \
+                     milliseconds",
+                )
+            }),
+        forwarded_ttl_ms: env
+            .var("CELERITY_WS_CLUSTER_FORWARDED_TTL_MS")
+            .ok()
+            .map(|val| {
+                let ttl: u64 = val.parse().expect(
+                    "Invalid WebSocket forwarded message TTL, must be a whole number of \
+                     milliseconds",
+                );
+                assert!(
+                    ttl > 0,
+                    "Invalid WebSocket forwarded message TTL, a message forgotten immediately \
+                     is never recognised as one already sent"
+                );
+                ttl
+            }),
+    })
 }
 
 /// Reads the WebSocket acknowledgement timeout from the environment.
@@ -884,6 +1041,94 @@ mod tests {
     #[should_panic(expected = "whole number of milliseconds")]
     fn test_an_ack_timeout_that_is_not_a_number_is_refused() {
         RuntimeConfig::from_env(&env(&[("CELERITY_WS_ACK_TIMEOUT_MS", "ten seconds")]));
+    }
+
+    /// No Redis deployment configured means a single node, which is the shape
+    /// most deployments have.
+    #[test]
+    fn test_a_deployment_with_no_redis_configured_is_a_single_node() {
+        assert!(RuntimeConfig::from_env(&env(&[])).ws_cluster.is_none());
+    }
+
+    /// An empty list is nothing configured, rather than a cluster of no nodes.
+    #[test]
+    fn test_an_empty_redis_list_is_a_single_node() {
+        assert!(
+            RuntimeConfig::from_env(&env(&[("CELERITY_WS_CLUSTER_REDIS_NODES", " , ")]))
+                .ws_cluster
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn test_the_cluster_settings_are_read_from_the_environment() {
+        let config = RuntimeConfig::from_env(&env(&[
+            ("CELERITY_SERVER_NODE_NAME", "api-node-1"),
+            (
+                "CELERITY_WS_CLUSTER_REDIS_NODES",
+                "redis://one:6379, redis://two:6379,",
+            ),
+            ("CELERITY_WS_CLUSTER_REDIS_PASSWORD", "hunter2"),
+            ("CELERITY_WS_CLUSTER_REDIS_CLUSTER_MODE", "true"),
+            ("CELERITY_WS_CLUSTER_KEY_PREFIX", "chat"),
+            ("CELERITY_WS_CLUSTER_NODE_GROUP_CAPACITY", "3"),
+            ("CELERITY_WS_CLUSTER_NODE_TTL_MS", "15000"),
+            ("CELERITY_WS_CLUSTER_MIGRATION_GRACE_MS", "2000"),
+        ]));
+
+        assert_eq!(config.server_node_name, Some("api-node-1".to_string()));
+        let cluster = config.ws_cluster.expect("the nodes should be clustered");
+        // Trimmed, and the trailing comma is not a node called nothing.
+        assert_eq!(
+            cluster.redis_nodes,
+            vec![
+                "redis://one:6379".to_string(),
+                "redis://two:6379".to_string()
+            ]
+        );
+        assert_eq!(cluster.redis_password, Some("hunter2".to_string()));
+        assert!(cluster.redis_cluster_mode);
+        assert_eq!(cluster.key_prefix, Some("chat".to_string()));
+        assert_eq!(cluster.node_group_capacity, Some(3));
+        assert_eq!(cluster.node_ttl_ms, Some(15000));
+        assert_eq!(cluster.migration_grace_ms, Some(2000));
+    }
+
+    /// Configuring a Redis deployment is the whole decision, so everything else
+    /// can be left to the runtime.
+    #[test]
+    fn test_configuring_a_redis_is_enough_to_cluster() {
+        let config = RuntimeConfig::from_env(&env(&[(
+            "CELERITY_WS_CLUSTER_REDIS_NODES",
+            "redis://one:6379",
+        )]));
+
+        let cluster = config.ws_cluster.expect("the nodes should be clustered");
+        assert!(!cluster.redis_cluster_mode);
+        assert_eq!(cluster.key_prefix, None);
+        assert_eq!(cluster.node_group_capacity, None);
+        assert_eq!(cluster.node_ttl_ms, None);
+        assert_eq!(cluster.migration_grace_ms, None);
+    }
+
+    /// A group holding nothing has nowhere to put the node that is asking.
+    #[test]
+    #[should_panic(expected = "at least one node")]
+    fn test_a_node_group_holding_nothing_is_refused() {
+        RuntimeConfig::from_env(&env(&[
+            ("CELERITY_WS_CLUSTER_REDIS_NODES", "redis://one:6379"),
+            ("CELERITY_WS_CLUSTER_NODE_GROUP_CAPACITY", "0"),
+        ]));
+    }
+
+    /// No time at all leaves a node dead the moment it says it is running.
+    #[test]
+    #[should_panic(expected = "some time to say it is running in")]
+    fn test_a_node_ttl_of_nothing_is_refused() {
+        RuntimeConfig::from_env(&env(&[
+            ("CELERITY_WS_CLUSTER_REDIS_NODES", "redis://one:6379"),
+            ("CELERITY_WS_CLUSTER_NODE_TTL_MS", "0"),
+        ]));
     }
 
     #[test]

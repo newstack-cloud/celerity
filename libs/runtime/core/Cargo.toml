@@ -78,6 +78,10 @@ optional = true
 [dependencies.celerity_ws_registry]
 path = "../ws/ws-registry"
 
+[dependencies.celerity_ws_redis]
+path = "../ws/ws-redis"
+optional = true
+
 [dev-dependencies]
 # tonic 0.14 builds on tower 0.5 while the crate itself still uses 0.4, so
 # the test connector needs the newer one under a name that cannot collide.
@@ -108,3 +112,6 @@ gcloud_consumers = [
     "dep:celerity_consumer_gcloud_tasks",
 ]
 celerity_local_consumers = ["dep:celerity_consumer_redis"]
+# Lets a WebSocket API be deployed as more than one node. Compiling it in
+# changes nothing until a Redis deployment is configured to cluster over.
+ws_clustering = ["dep:celerity_ws_redis"]
