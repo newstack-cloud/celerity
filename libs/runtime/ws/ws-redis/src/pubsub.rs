@@ -4,13 +4,23 @@ use celerity_helpers::redis::{get_redis_connection, ConnectionConfig, Connection
 use celerity_ws_registry::types::Message;
 use redis::{FromRedisValue, PushKind};
 use serde::{Deserialize, Serialize};
-use tokio::sync::mpsc::{channel, unbounded_channel, Receiver, Sender};
+use tokio::{
+    sync::mpsc::{channel, unbounded_channel, Receiver, Sender},
+    time::{interval, MissedTickBehavior},
+};
 use tracing::{debug, error, warn};
 
 use crate::{
     locations::ConnectionLocations,
     node_group::{group_index_key, node_key, NodeGroup},
 };
+
+/// How long to wait before trying again to take up the channels of a group this
+/// node has moved into.
+///
+/// Short, because the node is missing messages for its own connections until it
+/// succeeds.
+const RESUBSCRIBE_RETRY_MS: u64 = 500;
 
 /// How a node reaches the rest of the cluster, and how it is named within it.
 #[derive(Debug, Clone)]
@@ -131,6 +141,12 @@ pub async fn connect(
 
     tokio::spawn(async move {
         let mut group = group;
+        // The group this node has taken a place in but is not yet listening to.
+        // Held until it is subscribed to, since the connection entries have
+        // already moved and messages are being published there.
+        let mut joining: Option<NodeGroup> = None;
+        let mut retry = interval(Duration::from_millis(RESUBSCRIBE_RETRY_MS));
+        retry.set_missed_tick_behavior(MissedTickBehavior::Delay);
 
         loop {
             tokio::select! {
@@ -170,16 +186,11 @@ pub async fn connect(
                     publish(&mut conn, &conn_config, &locations, message).await;
                 }
                 Some(joined) = moved.recv() => {
-                    // Subscribed before the old one is given up, so the node is
-                    // listening to both while any sender still holds the
-                    // mapping it read a moment ago.
-                    if let Err(err) = subscribe_to(&mut conn, &joined).await {
-                        error!(node_group = %joined.id, "failed to subscribe to a new node group: {err}");
-                        continue;
-                    }
-                    debug!(node_group = %joined.id, "following this node into another group");
-                    leave_behind(conn.clone(), group, conn_config.migration_grace_ms);
-                    group = joined;
+                    joining = Some(joined);
+                    follow(&mut conn, &mut joining, &mut group, conn_config.migration_grace_ms).await;
+                }
+                _ = retry.tick(), if joining.is_some() => {
+                    follow(&mut conn, &mut joining, &mut group, conn_config.migration_grace_ms).await;
                 }
                 else => break,
             }
@@ -187,6 +198,41 @@ pub async fn connect(
     });
 
     Ok((caller_tx, caller_rx))
+}
+
+/// Takes up the channels of the group this node has moved into, and gives up
+/// the ones it left.
+///
+/// A node that has moved is already having messages published to the new
+/// group, since its connection entries moved with it. Staying on the old
+/// channels would lose every one of them, and nothing asks a second time
+/// because the node is a member of the new group as far as anything else can
+/// tell. So a move that could not be subscribed to is left outstanding to be
+/// tried again rather than given up on.
+async fn follow(
+    conn: &mut ConnectionWrapper,
+    joining: &mut Option<NodeGroup>,
+    group: &mut NodeGroup,
+    grace_ms: u64,
+) {
+    let Some(joined) = joining.clone() else {
+        return;
+    };
+
+    // Subscribed before the old one is given up, so the node is listening to
+    // both while any sender still holds the mapping it read a moment ago.
+    if let Err(err) = subscribe_to(conn, &joined).await {
+        error!(
+            node_group = %joined.id,
+            "could not subscribe to the group this node moved into, trying again in a moment: \
+             {err}"
+        );
+        return;
+    }
+    *joining = None;
+
+    debug!(node_group = %joined.id, "following this node into another group");
+    leave_behind(conn.clone(), std::mem::replace(group, joined), grace_ms);
 }
 
 async fn subscribe_to(conn: &mut ConnectionWrapper, group: &NodeGroup) -> redis::RedisResult<()> {
