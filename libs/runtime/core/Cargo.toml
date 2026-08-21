@@ -82,6 +82,10 @@ path = "../ws/ws-registry"
 path = "../ws/ws-redis"
 optional = true
 
+[dev-dependencies.celerity_helpers]
+path = "../helpers"
+features = ["test-support"]
+
 [dev-dependencies]
 # tonic 0.14 builds on tower 0.5 while the crate itself still uses 0.4, so
 # the test connector needs the newer one under a name that cannot collide.

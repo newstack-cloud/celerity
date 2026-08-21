@@ -35,4 +35,6 @@ pub mod types;
 pub(crate) mod utils;
 mod value_sources;
 pub mod websocket;
+#[cfg(feature = "ws_clustering")]
+pub mod websocket_cluster;
 pub mod websocket_dedupe;
