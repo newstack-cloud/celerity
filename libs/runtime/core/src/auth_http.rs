@@ -144,6 +144,11 @@ fn token_source_needs_body(guard_config: &CelerityApiAuthGuard) -> bool {
 
 /// Buffers the request body as JSON, reconstructing the request for downstream handlers.
 /// Returns `Err` with a 413 response if the body exceeds `MAX_AUTH_BODY_BUFFER_SIZE`.
+//
+// Not boxed, unlike the guard chain below. What comes back on success is a
+// request and its body, which is larger than the response, so moving the
+// response to the heap would shrink nothing.
+#[allow(clippy::result_large_err)]
 async fn buffer_request_body(
     request: axum::extract::Request,
 ) -> Result<(serde_json::Value, axum::extract::Request), Response> {
@@ -255,7 +260,7 @@ pub async fn http_auth_middleware(
             request.extensions_mut().insert(auth_context);
             next.run(request).await
         }
-        Err(response) => response,
+        Err(response) => *response,
     }
 }
 
@@ -265,7 +270,7 @@ async fn execute_guard_chain(
     guard_chain: &[String],
     state: &HttpAuthState,
     elements: &HttpAuthRequestElements,
-) -> Result<serde_json::Map<String, serde_json::Value>, Response> {
+) -> Result<serde_json::Map<String, serde_json::Value>, Box<Response>> {
     let mut accumulated_auth = serde_json::Map::new();
 
     for guard_name in guard_chain {
@@ -273,11 +278,13 @@ async fn execute_guard_chain(
             Some(config) => config,
             None => {
                 warn!(guard = %guard_name, "auth guard referenced but not defined in API auth configuration");
-                return Err((
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Auth guard misconfigured",
-                )
-                    .into_response());
+                return Err(Box::new(
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Auth guard misconfigured",
+                    )
+                        .into_response(),
+                ));
             }
         };
 
@@ -298,7 +305,7 @@ async fn validate_single_guard(
     state: &HttpAuthState,
     elements: &HttpAuthRequestElements,
     accumulated_auth: &serde_json::Map<String, serde_json::Value>,
-) -> Result<serde_json::Value, Response> {
+) -> Result<serde_json::Value, Box<Response>> {
     match guard_config.guard_type {
         CelerityApiAuthGuardType::Jwt => {
             crate::auth_jwt::validate_jwt_on_http_request(
@@ -312,7 +319,7 @@ async fn validate_single_guard(
             .await
             .map_err(|e| {
                 warn!(guard = %guard_name, request_id = %elements.request_id.0, client_ip = %elements.client_ip, "JWT auth failed: {e}");
-                (StatusCode::UNAUTHORIZED, "Unauthorized").into_response()
+                Box::new((StatusCode::UNAUTHORIZED, "Unauthorized").into_response())
             })
         }
         CelerityApiAuthGuardType::Custom => {
@@ -337,15 +344,17 @@ async fn validate_single_guard(
                 elements.handler_name.clone(),
             )
             .await
-            .map_err(|e| match e {
-                AuthGuardValidateError::Forbidden(_) => {
-                    warn!(guard = %guard_name, request_id = %elements.request_id.0, client_ip = %elements.client_ip, "custom auth forbidden: {e}");
-                    (StatusCode::FORBIDDEN, "Forbidden").into_response()
-                }
-                _ => {
-                    warn!(guard = %guard_name, request_id = %elements.request_id.0, client_ip = %elements.client_ip, "custom auth failed: {e}");
-                    (StatusCode::UNAUTHORIZED, "Unauthorized").into_response()
-                }
+            .map_err(|e| {
+                Box::new(match e {
+                    AuthGuardValidateError::Forbidden(_) => {
+                        warn!(guard = %guard_name, request_id = %elements.request_id.0, client_ip = %elements.client_ip, "custom auth forbidden: {e}");
+                        (StatusCode::FORBIDDEN, "Forbidden").into_response()
+                    }
+                    _ => {
+                        warn!(guard = %guard_name, request_id = %elements.request_id.0, client_ip = %elements.client_ip, "custom auth failed: {e}");
+                        (StatusCode::UNAUTHORIZED, "Unauthorized").into_response()
+                    }
+                })
             })
         }
         CelerityApiAuthGuardType::NoGuardType => Ok(serde_json::Value::Null),
