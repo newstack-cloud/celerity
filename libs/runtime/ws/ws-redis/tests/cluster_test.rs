@@ -320,13 +320,25 @@ async fn test_a_client_is_findable_while_it_is_connected() {
     let node = start_node(prefix, "api-node-1", 1).await;
     let (mut client, connection_id) = connect_client(&node).await;
 
-    assert_eq!(
-        conn.get(&format!("{prefix}:conn:{connection_id}"))
+    // Waited on rather than read once, because a connection is put in the
+    // node's own map before the record of where it is has been written, and
+    // connecting only waits for the first of those.
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+    loop {
+        let recorded: String = conn
+            .get(&format!("{prefix}:conn:{connection_id}"))
             .await
-            .unwrap(),
-        node.group_id,
-        "a connected client should be recorded against the group holding it"
-    );
+            .unwrap();
+        if recorded == node.group_id {
+            break;
+        }
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "a connected client should be recorded against the group holding it, found \
+             {recorded:?}"
+        );
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
 
     client.close(None).await.unwrap();
 
