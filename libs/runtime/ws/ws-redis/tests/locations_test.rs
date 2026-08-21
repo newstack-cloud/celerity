@@ -243,3 +243,29 @@ async fn test_shutting_down_takes_everything_the_node_wrote_with_it() {
         "a node that shut down should not leave its connections claimed by a group it has left"
     );
 }
+
+/// A connection whose entry could not be written still has to be one the node
+/// keeps alive, since the refresh is the only thing that will ever write it.
+/// Dropping it there would leave the connection unreachable from any other node
+/// for as long as it lasted.
+///
+/// The write is made to fail by asking for an expiry of nothing, which Redis
+/// refuses.
+#[test_log::test(tokio::test)]
+async fn test_a_connection_is_kept_alive_even_where_its_entry_could_not_be_written() {
+    let conn = redis_connection().await;
+    let prefix = "test-locations-unwritable";
+
+    let locations = ConnectionLocations::new(conn, prefix.to_string(), "group-1".to_string(), 0);
+
+    assert!(
+        locations.record("conn-1").await.is_err(),
+        "an expiry of nothing should be refused, otherwise this test proves nothing"
+    );
+
+    assert_eq!(
+        locations.forget_all().await.unwrap(),
+        1,
+        "the connection should be one of this node's to keep alive and to take away"
+    );
+}

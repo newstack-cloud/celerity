@@ -150,15 +150,18 @@ impl ConnectionLocations {
 #[async_trait]
 impl ConnectionLocationStore for ConnectionLocations {
     async fn record(&self, connection_id: &str) -> Result<(), WebSocketConnError> {
+        // Taken as this node's before the write, so a write that fails is
+        // repaired by the next refresh rather than leaving a connection no
+        // other node can reach for as long as it lasts.
+        self.recorded
+            .write()
+            .unwrap()
+            .insert(connection_id.to_string());
         let group_id = self.group();
         self.connection()
             .pset_ex(&self.key(connection_id), &group_id, self.ttl_ms)
             .await
             .map_err(location_error)?;
-        self.recorded
-            .write()
-            .unwrap()
-            .insert(connection_id.to_string());
         Ok(())
     }
 
