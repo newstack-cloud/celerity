@@ -9,5 +9,7 @@ pub mod retries;
 pub mod runtime_types;
 pub mod scanner;
 pub mod telemetry;
+#[cfg(feature = "test-support")]
+pub mod testing;
 pub mod time;
 pub mod websockets;
