@@ -86,7 +86,7 @@ use crate::{
     types::ApiAppState,
     utils::get_epoch_seconds,
     websocket::{self, WebSocketMessageHandler},
-    websocket_dedupe::{InMemoryMessageIdStore, DEFAULT_MESSAGE_ID_TTL_MS},
+    websocket_dedupe::{SeenMessages, DEFAULT_MESSAGE_ID_TTL_MS},
 };
 
 /// Shutdown signal for a consumer — either oneshot (SQS) or broadcast (Redis).
@@ -98,6 +98,8 @@ enum ConsumerShutdownSignal {
 
 type ConsumerShutdownSignals = HashMap<String, ConsumerShutdownSignal>;
 
+#[cfg(feature = "ws_clustering")]
+use crate::websocket_dedupe::SharedMessageIdStore;
 /// Provides an application that can run a HTTP server, WebSocket server,
 /// queue/message broker consumer or a hybrid app that combines any of the
 /// above.
@@ -140,7 +142,7 @@ pub struct Application {
     // Kept for `run` to start its sweep, for the same reason as the registry
     // above. The store itself is built in setup, since building it spawns
     // nothing.
-    ws_seen_messages: Option<Arc<InMemoryMessageIdStore>>,
+    ws_seen_messages: Option<Arc<SeenMessages>>,
     ws_app_routes: Arc<AsyncMutex<HashMap<String, Arc<dyn WebSocketMessageHandler + Send + Sync>>>>,
     custom_auth_guards: Arc<AsyncMutex<HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>>>>,
     server_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
@@ -441,7 +443,7 @@ impl Application {
             // mean spawning, and this runs outside the async runtime when in FFI mode.
             self.ws_conn_registry = Some(conn_registry.clone());
 
-            let seen_messages = Arc::new(InMemoryMessageIdStore::new(DEFAULT_MESSAGE_ID_TTL_MS));
+            let seen_messages = SeenMessages::new(DEFAULT_MESSAGE_ID_TTL_MS);
             self.ws_seen_messages = Some(seen_messages.clone());
 
             // As with HTTP routes, the FFI call mode has the SDK register these
@@ -836,6 +838,24 @@ impl Application {
             .set_locations(locations.clone())
             .map_err(|err| cluster_setup_error("could not attach the connection store", err))?;
 
+        // The other direction of the same idea: a client resending to whichever
+        // node it reconnected to, rather than a node relaying to a client.
+        if let Some(seen_messages) = self.ws_seen_messages.take() {
+            seen_messages
+                .attach_shared(SharedMessageIdStore::new(
+                    conn.clone(),
+                    key_prefix.clone(),
+                    cluster_config
+                        .seen_ttl_ms
+                        .unwrap_or(DEFAULT_MESSAGE_ID_TTL_MS),
+                ))
+                .map_err(|_| {
+                    ApplicationStartError::WebSocketClusterSetup(
+                        "the store for messages seen from clients was already shared".to_string(),
+                    )
+                })?;
+        }
+
         // Shared, because a message resent after its acknowledgement went
         // missing arrives at whichever node holds the connection now, which may
         // not be the node that delivered it the first time.
@@ -911,7 +931,7 @@ impl Application {
             conn_registry.start_client_ack_worker();
         }
 
-        if let Some(seen_messages) = self.ws_seen_messages.take() {
+        if let Some(seen_messages) = self.ws_seen_messages.clone() {
             seen_messages.start_eviction();
         }
 
