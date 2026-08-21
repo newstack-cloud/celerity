@@ -62,7 +62,7 @@ def _run_integration_tests(args: argparse.Namespace) -> None:
     report_flags = "--lcov --output-path coverage.lcov" if in_ci_env else "--html"
     selection_flags = f"--package {args.package}" if args.package else "--workspace"
     exclude_flags = "--exclude celerity-python-runtime-sdk"
-    feature_flags = "--features celerity_local_consumers"
+    feature_flags = "--features celerity_local_consumers,celerity_runtime_core/ws_clustering"
 
     # Use cargo-nextest for cleaner per-test output with a summary at the end.
     # Debug output is only shown for failing tests.

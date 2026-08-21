@@ -23,6 +23,10 @@ tracing = "=0.1.44"
 
 [dependencies.celerity_runtime_core]
 path = "../../../libs/runtime/core"
+# Shipped with the image so a deployment turns clustering on with environment
+# variables rather than a rebuild. With no Redis deployment configured it stays
+# a single node.
+features = ["ws_clustering"]
 
 [dependencies.celerity_helpers]
 path = "../../../libs/runtime/helpers"

@@ -367,6 +367,7 @@ dependencies = [
  "bytes",
  "celerity_blueprint_config_parser",
  "celerity_helpers",
+ "celerity_ws_redis",
  "celerity_ws_registry",
  "form_urlencoded",
  "futures",
@@ -393,6 +394,23 @@ dependencies = [
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "celerity_ws_redis"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "celerity_helpers",
+ "celerity_ws_registry",
+ "futures",
+ "jsonpath-rust",
+ "nanoid",
+ "redis",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
