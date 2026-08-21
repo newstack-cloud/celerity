@@ -70,6 +70,10 @@ pub(crate) fn define(lib: &mut LibraryBuilder) -> BackTraced<SharedDefinitions> 
             "application_start_consumer_setup_error",
             "Error starting the application due to failure in setting up message consumers"
         )?
+        .add_error(
+            "application_start_websocket_cluster_setup_error",
+            "Error starting the application due to failure in joining the other nodes serving the same WebSocket API"
+        )?
         .doc("General error type used throughout the library")?
         .build()?;
 
