@@ -310,3 +310,21 @@ pub const CELERITY_CONSUMER_DLQ_MAX_ATTEMPTS_ANNOTATION_NAME: &str =
 
 // The leeway for JWT validation in seconds.
 pub const JWT_VALIDATION_CLOCK_SKEW_LEEWAY: u64 = 60;
+
+// How many nodes a node group holds before a new one is started, which is the
+// number that the scalable WebSockets protocol suggests.
+pub const DEFAULT_WS_NODE_GROUP_CAPACITY: usize = 5;
+
+// How long a node goes without saying it is running before the rest of the
+// cluster treats it as gone.
+//
+// Long enough to ride out a stalled task or a slow round trip, since a node
+// beats three times inside it, and short enough that a node which has really
+// gone stops attracting messages promptly.
+pub const DEFAULT_WS_CLUSTER_NODE_TTL_MS: u64 = 30_000;
+
+// How long a node keeps listening to the group it has left after moving.
+//
+// Covers a sender that read where a connection was just before it moved and
+// published a moment later.
+pub const DEFAULT_WS_CLUSTER_MIGRATION_GRACE_MS: u64 = 5_000;

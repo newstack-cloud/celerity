@@ -1497,6 +1497,8 @@ mod tests {
             ws_ack_timeout_ms: None,
             ws_ack_max_attempts: None,
             ws_handler_concurrency: None,
+            server_node_name: None,
+            ws_cluster: None,
         }
     }
 

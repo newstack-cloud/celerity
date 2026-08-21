@@ -78,6 +78,10 @@ pub enum ApplicationStartError {
     HttpClient(reqwest::Error),
     ConsumerSetup(String),
     OpenTelemetryMetrics(String),
+    // The nodes of a WebSocket API could not be joined up. Fatal rather than
+    // logged, since a node that starts anyway serves clients whose messages
+    // silently never reach the connections held elsewhere.
+    WebSocketClusterSetup(String),
 }
 
 impl fmt::Display for ApplicationStartError {
@@ -112,6 +116,12 @@ impl fmt::Display for ApplicationStartError {
             }
             ApplicationStartError::OpenTelemetryMetrics(msg) => {
                 write!(f, "application start error: metrics setup failed: {msg}")
+            }
+            ApplicationStartError::WebSocketClusterSetup(msg) => {
+                write!(
+                    f,
+                    "application start error: websocket cluster setup failed: {msg}"
+                )
             }
         }
     }

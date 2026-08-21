@@ -101,6 +101,15 @@ type ConsumerShutdownSignals = HashMap<String, ConsumerShutdownSignal>;
 /// Provides an application that can run a HTTP server, WebSocket server,
 /// queue/message broker consumer or a hybrid app that combines any of the
 /// above.
+#[cfg(feature = "ws_clustering")]
+use celerity_ws_redis::forwarded::DEFAULT_FORWARDED_TTL_MS;
+
+#[cfg(feature = "ws_clustering")]
+use crate::consts::{
+    DEFAULT_WS_CLUSTER_MIGRATION_GRACE_MS, DEFAULT_WS_CLUSTER_NODE_TTL_MS,
+    DEFAULT_WS_NODE_GROUP_CAPACITY,
+};
+
 pub struct Application {
     runtime_config: RuntimeConfig,
     env_vars: Box<dyn EnvVars>,
@@ -138,6 +147,8 @@ pub struct Application {
     consumer_shutdown_signals: Option<Arc<Mutex<ConsumerShutdownSignals>>>,
     resource_store: Option<Arc<ResourceStore>>,
     resource_store_cleanup_task_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
+    #[cfg(feature = "ws_clustering")]
+    ws_cluster_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     http_auth_state: Option<HttpAuthState>,
     api_cors: Option<CelerityApiCors>,
     handler_names: HashMap<(String, String), String>,
@@ -154,6 +165,32 @@ pub struct Application {
     /// Registry mapping handler names to invokers for handler-to-handler invocation
     /// and the invoke API.
     handler_invoke_registry: HandlerInvokeRegistry,
+}
+
+/// One shape for every way joining a cluster can fail, so a message names the
+/// step rather than only the error.
+#[cfg(feature = "ws_clustering")]
+fn cluster_setup_error<E: std::fmt::Debug>(message: &str, err: E) -> ApplicationStartError {
+    ApplicationStartError::WebSocketClusterSetup(format!("{message}: {err:?}"))
+}
+
+/// Names this node among the others serving the same WebSocket API.
+///
+/// Taken from the configuration, then the host name, which is the pod name on
+/// Kubernetes and the container id under Docker, and finally a generated id so
+/// that a node always has a name of its own. Two nodes sharing one would each
+/// take the other's acknowledgements.
+fn resolve_server_node_name(runtime_config: &RuntimeConfig, env_vars: &dyn EnvVars) -> String {
+    runtime_config
+        .server_node_name
+        .clone()
+        .or_else(|| {
+            env_vars
+                .var("HOSTNAME")
+                .ok()
+                .filter(|hostname| !hostname.is_empty())
+        })
+        .unwrap_or_else(|| nanoid::nanoid!())
 }
 
 impl Application {
@@ -182,6 +219,8 @@ impl Application {
             custom_auth_guards: Arc::new(AsyncMutex::new(HashMap::new())),
             resource_store: None,
             resource_store_cleanup_task_shutdown_signal: None,
+            #[cfg(feature = "ws_clustering")]
+            ws_cluster_shutdown_signal: None,
             http_auth_state: None,
             api_cors: None,
             handler_names: HashMap::new(),
@@ -389,7 +428,10 @@ impl Application {
                         message_timeout_ms: self.runtime_config.ws_ack_timeout_ms,
                         max_attempts: self.runtime_config.ws_ack_max_attempts,
                     }),
-                    server_node_name: "node1".to_string(),
+                    server_node_name: resolve_server_node_name(
+                        &self.runtime_config,
+                        self.env_vars.as_ref(),
+                    ),
                 },
                 None,
             ));
@@ -719,6 +761,131 @@ impl Application {
         Ok(())
     }
 
+    /// Joins this node to the others serving the same WebSocket API.
+    ///
+    /// Nothing here runs unless a Redis deployment is configured to cluster
+    /// over, so an application with the feature compiled in serves a single
+    /// node until it is told otherwise.
+    ///
+    /// A failure stops the runtime starting. A node that carried on would serve
+    /// its clients while every message for a connection held elsewhere went
+    /// nowhere, which is worse than not starting.
+    #[cfg(feature = "ws_clustering")]
+    async fn join_websocket_cluster(&mut self) -> Result<(), ApplicationStartError> {
+        use celerity_helpers::redis::{get_redis_connection, ConnectionConfig};
+        use celerity_ws_redis::{
+            forwarded::ForwardedMessages,
+            locations::ConnectionLocations,
+            node_group::{join_or_create, spawn_heartbeat, NodeGroupConfig},
+            pubsub::{connect, PubSubConnectionConfig},
+        };
+
+        let (Some(cluster_config), Some(registry)) = (
+            self.runtime_config.ws_cluster.clone(),
+            self.ws_conn_registry.take(),
+        ) else {
+            return Ok(());
+        };
+
+        // Fallback to the service name as an application's nodes share it and two
+        // separate applications do not.
+        let key_prefix = cluster_config
+            .key_prefix
+            .clone()
+            .unwrap_or_else(|| self.runtime_config.service_name.clone());
+        let group_config = NodeGroupConfig {
+            server_node_name: resolve_server_node_name(
+                &self.runtime_config,
+                self.env_vars.as_ref(),
+            ),
+            capacity: cluster_config
+                .node_group_capacity
+                .unwrap_or(DEFAULT_WS_NODE_GROUP_CAPACITY),
+            node_ttl_ms: cluster_config
+                .node_ttl_ms
+                .unwrap_or(DEFAULT_WS_CLUSTER_NODE_TTL_MS),
+            key_prefix: key_prefix.clone(),
+        };
+
+        let mut conn = get_redis_connection(
+            &ConnectionConfig {
+                nodes: cluster_config.redis_nodes.clone(),
+                password: cluster_config.redis_password.clone(),
+                cluster_mode: cluster_config.redis_cluster_mode,
+            },
+            None,
+        )
+        .await
+        .map_err(|err| {
+            cluster_setup_error(
+                "could not reach the redis deployment the nodes cluster over",
+                err,
+            )
+        })?;
+
+        let group = join_or_create(&mut conn, &group_config)
+            .await
+            .map_err(|err| cluster_setup_error("could not join a node group", err))?;
+        let locations = ConnectionLocations::new(
+            conn.clone(),
+            key_prefix.clone(),
+            group.id.clone(),
+            group_config.node_ttl_ms,
+        );
+        registry
+            .set_locations(locations.clone())
+            .map_err(|err| cluster_setup_error("could not attach the connection store", err))?;
+
+        // Shared, because a message resent after its acknowledgement went
+        // missing arrives at whichever node holds the connection now, which may
+        // not be the node that delivered it the first time.
+        registry
+            .set_forwarded_messages(ForwardedMessages::new(
+                conn.clone(),
+                key_prefix.clone(),
+                cluster_config
+                    .forwarded_ttl_ms
+                    .unwrap_or(DEFAULT_FORWARDED_TTL_MS),
+            ))
+            .map_err(|err| {
+                cluster_setup_error("could not attach the forwarded message store", err)
+            })?;
+
+        let (moved_tx, moved_rx) = tokio::sync::mpsc::channel(4);
+        let (broadcaster, from_other_nodes) = connect(
+            PubSubConnectionConfig {
+                server_node_name: group_config.server_node_name.clone(),
+                key_prefix,
+                nodes: cluster_config.redis_nodes,
+                password: cluster_config.redis_password,
+                cluster_mode: cluster_config.redis_cluster_mode,
+                migration_grace_ms: cluster_config
+                    .migration_grace_ms
+                    .unwrap_or(DEFAULT_WS_CLUSTER_MIGRATION_GRACE_MS),
+            },
+            group.clone(),
+            locations.clone(),
+            moved_rx,
+        )
+        .await
+        .map_err(|err| cluster_setup_error("could not subscribe to the node group", err))?;
+
+        // We need to initialise the registry in this order because the ack worker
+        // only starts where there is a broadcaster to resend through,
+        // and listening before either would take in a message with nowhere to put it.
+        registry
+            .set_broadcaster(broadcaster)
+            .map_err(|err| cluster_setup_error("could not attach the broadcaster", err))?;
+        registry.clone().start_ack_worker();
+        registry.listen(from_other_nodes);
+
+        let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel();
+        spawn_heartbeat(conn, group_config, group, locations, moved_tx, shutdown_rx);
+        self.ws_cluster_shutdown_signal = Some(shutdown_tx);
+
+        Ok(())
+    }
+
     pub async fn run(&mut self, block: bool) -> Result<AppInfo, ApplicationStartError> {
         // Tracing setup is in `run` instead of `setup` because
         // we need to be in an async context (tokio runtime) in order to set up tracing.
@@ -740,13 +907,16 @@ impl Application {
         // consumers are, spawning needs a runtime and `setup` is called from
         // outside one. Before anything serves, so that no message can go out
         // before there is anything waiting to hear it was received.
-        if let Some(conn_registry) = self.ws_conn_registry.take() {
+        if let Some(conn_registry) = self.ws_conn_registry.clone() {
             conn_registry.start_client_ack_worker();
         }
 
         if let Some(seen_messages) = self.ws_seen_messages.take() {
             seen_messages.start_eviction();
         }
+
+        #[cfg(feature = "ws_clustering")]
+        self.join_websocket_cluster().await?;
 
         self.run_ipc_stream_server().await?;
 
@@ -1424,6 +1594,13 @@ impl Application {
             tx.send(())
                 .expect("failed to send shutdown signal to resource store cleanup task");
         }
+        #[cfg(feature = "ws_clustering")]
+        if let Some(tx) = self.ws_cluster_shutdown_signal.take() {
+            // The heartbeat leaves the node group and takes this node's
+            // connection entries away when it sees this.
+            let _ = tx.send(());
+        }
+
         if let Some(consumer_shutdown_signals_lock) = self.consumer_shutdown_signals.take() {
             let mut consumer_shutdown_signals = consumer_shutdown_signals_lock
                 .lock()
