@@ -37,6 +37,7 @@ celerity_local_consumers = ["celerity_runtime_core/celerity_local_consumers"]
 aws_consumers = ["celerity_runtime_core/aws_consumers"]
 azure_consumers = ["celerity_runtime_core/azure_consumers"]
 gcloud_consumers = ["celerity_runtime_core/gcloud_consumers"]
+ws_clustering = ["celerity_runtime_core/ws_clustering"]
 
 [dependencies.celerity_runtime_core]
 path = "../../core"
