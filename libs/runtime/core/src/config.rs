@@ -220,7 +220,10 @@ pub struct RuntimeConfig {
 
 /// How a WebSocket API's nodes reach each other and how much they tell each
 /// other.
-#[derive(Debug, Clone)]
+///
+/// Debug is written out by hand rather than derived, so that a credential
+/// cannot reach a log through anything that prints a config.
+#[derive(Clone)]
 pub struct WsClusterConfig {
     /// The Redis deployment the nodes cluster over, as one URL or several for
     /// a cluster.
@@ -274,6 +277,61 @@ pub struct WsClusterConfig {
     /// Leave unset for five minutes.
     /// Set via `CELERITY_WS_CLUSTER_SEEN_TTL_MS`.
     pub seen_ttl_ms: Option<u64>,
+}
+
+/// What stands in for a credential that has been kept out of a log.
+const REDACTED: &str = "<redacted>";
+
+impl std::fmt::Debug for WsClusterConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WsClusterConfig")
+            .field(
+                "redis_nodes",
+                &self
+                    .redis_nodes
+                    .iter()
+                    .map(|node| redact_url_credentials(node))
+                    .collect::<Vec<String>>(),
+            )
+            .field(
+                "redis_password",
+                &self.redis_password.as_ref().map(|_| REDACTED),
+            )
+            .field("redis_cluster_mode", &self.redis_cluster_mode)
+            .field("key_prefix", &self.key_prefix)
+            .field("node_group_capacity", &self.node_group_capacity)
+            .field("node_ttl_ms", &self.node_ttl_ms)
+            .field("migration_grace_ms", &self.migration_grace_ms)
+            .field("forwarded_ttl_ms", &self.forwarded_ttl_ms)
+            .field("seen_ttl_ms", &self.seen_ttl_ms)
+            .finish()
+    }
+}
+
+/// Takes the credentials out of a URL, leaving enough of it to tell one node
+/// from another.
+///
+/// A managed Redis deployment usually hands out its address with the password
+/// already in it, so the address is as much a secret as the password field is.
+fn redact_url_credentials(node: &str) -> String {
+    let Some(scheme_end) = node.find("://") else {
+        return node.to_string();
+    };
+    let authority_start = scheme_end + "://".len();
+    // Only the authority, since a later part of the URL is not a credential
+    // however much it looks like one.
+    let authority_end = node[authority_start..]
+        .find('/')
+        .map_or(node.len(), |offset| authority_start + offset);
+    let Some(offset) = node[authority_start..authority_end].rfind('@') else {
+        return node.to_string();
+    };
+
+    format!(
+        "{}{REDACTED}{}",
+        &node[..authority_start],
+        &node[authority_start + offset..]
+    )
 }
 
 impl RuntimeConfig {
@@ -978,6 +1036,71 @@ mod tests {
             vars.insert(key, value.to_string());
         }
         MapEnv(vars)
+    }
+
+    /// A config reaches a log through anything that prints it, so the
+    /// credentials have to be gone before they are written out rather than at
+    /// each place that writes.
+    #[test]
+    fn test_a_password_is_kept_out_of_what_is_written_about_a_cluster() {
+        let config = RuntimeConfig::from_env(&env(&[
+            ("CELERITY_WS_CLUSTER_REDIS_NODES", "redis://127.0.0.1:6379"),
+            ("CELERITY_WS_CLUSTER_REDIS_PASSWORD", "hunter2"),
+        ]));
+
+        let written = format!("{config:?}");
+
+        assert!(!written.contains("hunter2"), "written out as {written}");
+        assert!(written.contains("redis_password: Some(\"<redacted>\")"));
+        assert_eq!(
+            config.ws_cluster.and_then(|cluster| cluster.redis_password),
+            Some("hunter2".to_string()),
+            "the password still has to be there to connect with"
+        );
+    }
+
+    /// A managed deployment hands out an address with the password already in
+    /// it, so an address is as much a secret as the password field.
+    #[test]
+    fn test_a_password_carried_by_an_address_is_kept_out_too() {
+        let config = ws_cluster_from_env(&env(&[(
+            "CELERITY_WS_CLUSTER_REDIS_NODES",
+            "redis://user:hunter2@cache.example.com:6379,rediss://:hunter3@other.example.com:6380",
+        )]))
+        .expect("configuring a redis deployment should turn clustering on");
+
+        let written = format!("{config:?}");
+
+        assert!(!written.contains("hunter2"), "written out as {written}");
+        assert!(!written.contains("hunter3"), "written out as {written}");
+        assert!(
+            written.contains("cache.example.com:6379")
+                && written.contains("other.example.com:6380"),
+            "enough of an address should be left to tell one node from another, {written}"
+        );
+    }
+
+    /// An address carrying no credentials is left as it is, so the usual case
+    /// reads as it was configured.
+    #[test]
+    fn test_an_address_with_nothing_to_hide_is_written_out_as_it_is() {
+        let config = ws_cluster_from_env(&env(&[(
+            "CELERITY_WS_CLUSTER_REDIS_NODES",
+            "redis://127.0.0.1:6379",
+        )]))
+        .expect("configuring a redis deployment should turn clustering on");
+
+        assert!(format!("{config:?}").contains("redis://127.0.0.1:6379"));
+    }
+
+    /// The part of a URL after the authority is not a credential however much
+    /// it looks like one.
+    #[test]
+    fn test_only_the_authority_of_an_address_is_taken_as_a_credential() {
+        assert_eq!(
+            redact_url_credentials("redis://127.0.0.1:6379/0@notacredential"),
+            "redis://127.0.0.1:6379/0@notacredential"
+        );
     }
 
     #[test]
