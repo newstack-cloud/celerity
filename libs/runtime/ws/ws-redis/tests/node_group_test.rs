@@ -272,3 +272,40 @@ async fn test_nodes_starting_together_do_not_overfill_a_group() {
         .unwrap();
     }
 }
+
+/// A node leaving a group others are still in takes only its own place, and
+/// leaves the group where the rest can be found.
+#[test_log::test(tokio::test)]
+async fn test_leaving_a_group_others_are_in_leaves_the_group_alone() {
+    let mut conn = redis_connection().await;
+    let prefix = "test-leave-with-others";
+    clear(&mut conn, prefix).await;
+
+    let leaving = config(prefix, "node-1", 5, 10_000);
+    let staying = config(prefix, "node-2", 5, 10_000);
+    let group = join_or_create(&mut conn, &leaving).await.unwrap();
+    assert_eq!(
+        join_or_create(&mut conn, &staying).await.unwrap(),
+        group,
+        "both nodes should be in the one group for this to test anything"
+    );
+
+    leave(&mut conn, &leaving, &group).await.unwrap();
+
+    assert_eq!(
+        members(&mut conn, prefix, &group).await,
+        vec!["node-2".to_string()],
+        "only the node that left should have given up its place"
+    );
+    assert_eq!(
+        group_ids(&mut conn, prefix).await,
+        vec![group.id.clone()],
+        "a group still holding a node should stay where the next node can find it"
+    );
+    assert!(
+        conn.exists(&node_key(prefix, "node-2")).await.unwrap(),
+        "a node that did not leave should still be saying it is running"
+    );
+
+    clear(&mut conn, prefix).await;
+}
