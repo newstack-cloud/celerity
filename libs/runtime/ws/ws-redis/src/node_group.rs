@@ -42,6 +42,15 @@ const MIN_HEARTBEAT_MS: u64 = 20;
 /// has to be kept for it.
 const JOIN_SCRIPT: &str = include_str!("scripts/join_node_group.lua");
 
+/// Gives up a place and takes the group with it where it was the last one in
+/// it, without another node being able to join in between.
+///
+/// Counting the members and taking an empty group out of the index have to
+/// happen together. A node joining between the two would be left holding a
+/// group that has just been taken out of the index, which nothing else can find
+/// and nothing prunes, so its membership would outlive it.
+const LEAVE_SCRIPT: &str = include_str!("scripts/leave_node_group.lua");
+
 /// What a node needs to decide which group to join and to stay a member of it.
 #[derive(Debug, Clone)]
 pub struct NodeGroupConfig {
@@ -84,17 +93,14 @@ impl NodeGroup {
             id,
         }
     }
-
-    fn members_key(&self, prefix: &str) -> String {
-        format!("{}:node-group-members:{}", meta_prefix(prefix), self.id)
-    }
 }
 
 /// What the keys holding group membership are named under.
 ///
-/// The brace is a Redis Cluster hash tag, which puts every key the join script
-/// touches in one slot. A script reaching across slots is refused, and these
-/// keys are few and small enough that one shard holding them costs nothing.
+/// The brace is a Redis Cluster hash tag, which puts every key the join and
+/// leave scripts touch in one slot. A script reaching across slots is refused,
+/// and these keys are few and small enough that one shard holding them does
+/// not have a significant cost.
 /// Connection entries are deliberately outside it, since there is one per client
 /// and they belong spread across the cluster.
 fn meta_prefix(prefix: &str) -> String {
@@ -167,23 +173,21 @@ pub async fn leave(
     config: &NodeGroupConfig,
     group: &NodeGroup,
 ) -> RedisResult<()> {
-    conn.srem(
-        &group.members_key(&config.key_prefix),
-        &config.server_node_name,
-    )
-    .await?;
-    conn.del(&node_key(&config.key_prefix, &config.server_node_name))
+    // An empty group is taken out of the index by the same script, since it
+    // exists only as somewhere for nodes to be.
+    let removed: i64 = conn
+        .eval_script(
+            LEAVE_SCRIPT,
+            &[&group_index_key(&config.key_prefix)],
+            &[
+                &meta_prefix(&config.key_prefix),
+                &config.server_node_name,
+                &group.id,
+            ],
+        )
         .await?;
 
-    // An empty group is taken out of the index, since it exists only as
-    // somewhere for nodes to be.
-    if conn
-        .smembers(&group.members_key(&config.key_prefix))
-        .await?
-        .is_empty()
-    {
-        conn.srem(&group_index_key(&config.key_prefix), &group.id)
-            .await?;
+    if removed == 1 {
         debug!(node_group = %group.id, "last node left the group, removing it");
     }
 
