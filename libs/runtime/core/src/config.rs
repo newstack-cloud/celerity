@@ -444,7 +444,7 @@ impl RuntimeConfig {
         let ws_ack_timeout_ms = ws_ack_timeout_ms_from_env(env);
         let ws_ack_max_attempts = ws_ack_max_attempts_from_env(env);
         let ws_handler_concurrency = ws_handler_concurrency_from_env(env);
-        let server_node_name = env.var("CELERITY_SERVER_NODE_NAME").ok();
+        let server_node_name = server_node_name_from_env(env);
         let ws_cluster = ws_cluster_from_env(env);
 
         RuntimeConfig {
@@ -650,6 +650,21 @@ pub fn ws_handler_concurrency_from_env(env: &impl EnvVars) -> Option<usize> {
         );
         concurrency
     })
+}
+
+/// Reads the name this node is known by to the others serving the same API.
+///
+/// Surrounding whitespace is taken off and a name left empty is treated as one
+/// that was never configured, since an empty name would have every node of a
+/// cluster answering to the same one.
+///
+/// See [`ws_ack_timeout_ms_from_env`] for why this is not only read in
+/// [`RuntimeConfig::from_env`].
+pub fn server_node_name_from_env(env: &impl EnvVars) -> Option<String> {
+    env.var("CELERITY_SERVER_NODE_NAME")
+        .ok()
+        .map(|name| name.trim().to_string())
+        .filter(|name| !name.is_empty())
 }
 
 #[derive(Debug)]
@@ -963,6 +978,35 @@ mod tests {
             vars.insert(key, value.to_string());
         }
         MapEnv(vars)
+    }
+
+    #[test]
+    fn test_takes_the_node_name_it_is_given() {
+        let config = RuntimeConfig::from_env(&env(&[("CELERITY_SERVER_NODE_NAME", "node-a")]));
+
+        assert_eq!(config.server_node_name, Some("node-a".to_string()));
+    }
+
+    #[test]
+    fn test_takes_the_surrounding_whitespace_off_a_node_name() {
+        let config = RuntimeConfig::from_env(&env(&[("CELERITY_SERVER_NODE_NAME", "  node-a  ")]));
+
+        assert_eq!(config.server_node_name, Some("node-a".to_string()));
+    }
+
+    /// An empty name has to fall through to the hostname rather than be taken
+    /// as the identity, since every node of a cluster would otherwise answer to
+    /// the same one.
+    #[test]
+    fn test_treats_an_empty_node_name_as_one_that_was_never_configured() {
+        for value in ["", "   "] {
+            let config = RuntimeConfig::from_env(&env(&[("CELERITY_SERVER_NODE_NAME", value)]));
+
+            assert_eq!(
+                config.server_node_name, None,
+                "{value:?} should not be a name"
+            );
+        }
     }
 
     #[test]

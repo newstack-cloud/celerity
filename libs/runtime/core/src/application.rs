@@ -172,6 +172,7 @@ fn resolve_server_node_name(runtime_config: &RuntimeConfig, env_vars: &dyn EnvVa
             env_vars
                 .var("HOSTNAME")
                 .ok()
+                .map(|hostname| hostname.trim().to_string())
                 .filter(|hostname| !hostname.is_empty())
         })
         .unwrap_or_else(|| nanoid::nanoid!())
