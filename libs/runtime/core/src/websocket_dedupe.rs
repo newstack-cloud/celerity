@@ -1,11 +1,16 @@
 use std::{
     collections::HashMap,
-    sync::{Arc, RwLock},
+    sync::{Arc, OnceLock, RwLock},
     time::{Duration, Instant},
 };
 
 use async_trait::async_trait;
 use tracing::debug;
+
+#[cfg(feature = "ws_clustering")]
+use celerity_helpers::redis::ConnectionWrapper;
+#[cfg(feature = "ws_clustering")]
+use tracing::error;
 
 /// How long a message id is remembered for, which is how far apart two copies
 /// of a message can arrive and still be recognised as the same one.
@@ -99,6 +104,121 @@ impl MessageIdStore for InMemoryMessageIdStore {
     }
 }
 
+/// The store a connection asks, which is the shared one once a cluster has been
+/// joined and this node's own memory until then.
+///
+/// The store cannot simply be chosen on construction, because reaching a shared one
+/// means connecting to it, which needs a runtime, and the API is built before
+/// there is one. So a connection holds this and the answer changes underneath
+/// it when the cluster is joined.
+#[derive(Debug)]
+pub struct SeenMessages {
+    local: Arc<InMemoryMessageIdStore>,
+    shared: OnceLock<Arc<dyn MessageIdStore>>,
+}
+
+impl SeenMessages {
+    pub fn new(ttl_ms: u64) -> Arc<Self> {
+        Arc::new(Self {
+            local: Arc::new(InMemoryMessageIdStore::new(ttl_ms)),
+            shared: OnceLock::new(),
+        })
+    }
+
+    /// Hands over to a store the rest of the cluster can see.
+    ///
+    /// Refused twice, since the second would answer for messages the first has
+    /// already been told about. The store that was refused comes back, so a
+    /// caller can say what it was holding.
+    pub fn attach_shared(
+        &self,
+        shared: Arc<dyn MessageIdStore>,
+    ) -> Result<(), Arc<dyn MessageIdStore>> {
+        self.shared.set(shared)
+    }
+
+    /// Clears out ids this node has remembered past their time.
+    ///
+    /// Only what this node holds. A shared store expires its own entries.
+    pub fn start_eviction(self: &Arc<Self>) {
+        self.local.clone().start_eviction();
+    }
+}
+
+#[async_trait]
+impl MessageIdStore for SeenMessages {
+    async fn record_and_check_seen(&self, message_id: &str) -> bool {
+        match self.shared.get() {
+            Some(shared) => shared.record_and_check_seen(message_id).await,
+            None => self.local.record_and_check_seen(message_id).await,
+        }
+    }
+}
+
+/// The store holding what every node of a cluster has already
+/// been sent by its clients.
+///
+/// A client resends when it does not hear that its message arrived, and a
+/// client that reconnected first may resend to a different node. Only a record
+/// the whole cluster can read recognises that as the message it already acted
+/// on.
+///
+/// Kept apart from the record of what the cluster has forwarded to clients,
+/// which is the same idea in the other direction. An application chooses its own
+/// message ids in both, so one keyspace would let a client's id collide with a
+/// server's.
+#[cfg(feature = "ws_clustering")]
+#[derive(Debug)]
+pub struct SharedMessageIdStore {
+    conn: ConnectionWrapper,
+    key_prefix: String,
+    ttl_ms: u64,
+}
+
+#[cfg(feature = "ws_clustering")]
+impl SharedMessageIdStore {
+    pub fn new(conn: ConnectionWrapper, key_prefix: String, ttl_ms: u64) -> Arc<Self> {
+        Arc::new(Self {
+            conn,
+            key_prefix,
+            ttl_ms,
+        })
+    }
+
+    fn key(&self, message_id: &str) -> String {
+        format!("{}:client-msg:{}", self.key_prefix, message_id)
+    }
+}
+
+#[cfg(feature = "ws_clustering")]
+#[async_trait]
+impl MessageIdStore for SharedMessageIdStore {
+    /// Sets the id only where it is not already there, which answers and
+    /// records in one round trip.
+    ///
+    /// A store that cannot answer is taken as never having seen the message, so
+    /// a failed lookup costs a message handled twice rather than a message a
+    /// client sent and nothing acted on.
+    async fn record_and_check_seen(&self, message_id: &str) -> bool {
+        match self
+            .conn
+            .clone()
+            .pset_ex_nx(&self.key(message_id), "1", self.ttl_ms)
+            .await
+        {
+            Ok(recorded) => !recorded,
+            Err(err) => {
+                error!(
+                    message_id = %message_id,
+                    "could not tell whether this message has been seen before, handling it \
+                     rather than dropping it: {err}"
+                );
+                false
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -149,5 +269,40 @@ mod tests {
         let seen = store.seen.read().unwrap();
         assert!(!seen.contains_key("old"), "an expired id should be swept");
         assert!(seen.contains_key("new"), "a live id should be kept");
+    }
+
+    /// Until a cluster is joined a node answers from its own memory, and
+    /// afterwards from the store the rest of the cluster can see.
+    #[test_log::test(tokio::test)]
+    async fn test_the_shared_store_takes_over_once_it_is_attached() {
+        let seen = SeenMessages::new(DEFAULT_MESSAGE_ID_TTL_MS);
+
+        assert!(!seen.record_and_check_seen("m-1").await);
+        assert!(
+            seen.record_and_check_seen("m-1").await,
+            "this node should recognise a message it has already handled"
+        );
+
+        seen.attach_shared(Arc::new(AlwaysNew)).unwrap();
+        assert!(
+            !seen.record_and_check_seen("m-1").await,
+            "the shared store should be answering, not the memory of this node"
+        );
+        assert!(
+            seen.attach_shared(Arc::new(AlwaysNew)).is_err(),
+            "a second shared store would answer for messages the first was told about"
+        );
+    }
+
+    /// Stands in for a shared store, and answers differently from the local one
+    /// so a test can tell which was asked.
+    #[derive(Debug)]
+    struct AlwaysNew;
+
+    #[async_trait]
+    impl MessageIdStore for AlwaysNew {
+        async fn record_and_check_seen(&self, _message_id: &str) -> bool {
+            false
+        }
     }
 }

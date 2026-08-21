@@ -268,6 +268,12 @@ pub struct WsClusterConfig {
     /// for five minutes.
     /// Set via `CELERITY_WS_CLUSTER_FORWARDED_TTL_MS`.
     pub forwarded_ttl_ms: Option<u64>,
+    /// How long the cluster remembers a message it was sent by a client, so a
+    /// client that resends to another node is not acted on twice.
+    ///
+    /// Leave unset for five minutes.
+    /// Set via `CELERITY_WS_CLUSTER_SEEN_TTL_MS`.
+    pub seen_ttl_ms: Option<u64>,
 }
 
 impl RuntimeConfig {
@@ -564,6 +570,17 @@ pub fn ws_cluster_from_env(env: &impl EnvVars) -> Option<WsClusterConfig> {
                      milliseconds",
                 )
             }),
+        seen_ttl_ms: env.var("CELERITY_WS_CLUSTER_SEEN_TTL_MS").ok().map(|val| {
+            let ttl: u64 = val.parse().expect(
+                "Invalid WebSocket seen message TTL, must be a whole number of milliseconds",
+            );
+            assert!(
+                ttl > 0,
+                "Invalid WebSocket seen message TTL, a message forgotten immediately is never \
+                 recognised as one already handled"
+            );
+            ttl
+        }),
         forwarded_ttl_ms: env
             .var("CELERITY_WS_CLUSTER_FORWARDED_TTL_MS")
             .ok()
