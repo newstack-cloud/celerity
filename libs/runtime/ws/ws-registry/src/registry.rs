@@ -29,6 +29,40 @@ use crate::{
 /// makes that ownership impossible to get wrong.
 pub type WebSocketConnSender = SplitSink<WebSocket, Message>;
 
+/// What this node has already forwarded to a client, shared with the other
+/// nodes so that a message resent because an acknowledgement went missing is
+/// not delivered a second time.
+///
+/// A resend arrives at whichever node holds the connection now, which may not
+/// be the node that delivered it the first time, so remembering it in one
+/// process is not enough.
+#[async_trait]
+pub trait ForwardedMessageStore: Send + Sync + Debug {
+    /// Records a message as forwarded and says whether it already was.
+    ///
+    /// One call rather than a check and a write. The answer is needed before
+    /// the message goes out, so a deferred write would only leave a window in
+    /// which two copies both find it absent.
+    async fn record_and_check_forwarded(
+        &self,
+        message_id: &str,
+    ) -> Result<bool, WebSocketConnError>;
+}
+
+/// Where the cluster records which node group holds a connection.
+///
+/// The registry knows a connection is here; only the deployment's shared store
+/// can make that fact reachable from another node. Implemented outside this
+/// crate by whatever that store is.
+#[async_trait]
+pub trait ConnectionLocationStore: Send + Sync + Debug {
+    /// Records that this node holds a connection.
+    async fn record(&self, connection_id: &str) -> Result<(), WebSocketConnError>;
+
+    /// Takes the record away, once the client has gone.
+    async fn forget(&self, connection_id: &str) -> Result<(), WebSocketConnError>;
+}
+
 // Additional context for sending messages to a connection in a WebSocket registry.
 #[derive(Default)]
 pub struct SendContext {
@@ -98,7 +132,19 @@ pub struct WebSocketConnRegistry {
     // for in-process broadcasting. Typically, there will be a single receiver in the same process
     // that will broadcast messages to all other nodes in the cluster via a pub/sub mechanism
     // over a network protocol.
-    broadcaster: Option<Sender<RegistryMessage>>,
+    //
+    // Written once, and possibly after the registry is already serving, because
+    // reaching whatever carries messages between nodes is asynchronous and the
+    // registry is built before there is a runtime to do it in.
+    broadcaster: OnceLock<Sender<RegistryMessage>>,
+    // Where each connection is, for a deployment whose nodes have to find each
+    // other's clients. Absent on a single node, which needs no such record
+    // because every connection it is asked about is either its own or nowhere.
+    locations: OnceLock<Arc<dyn ConnectionLocationStore>>,
+    // What has already been forwarded to a client, shared across the cluster.
+    // Absent on a single node, where a message is only ever relayed to this
+    // node once because there is nowhere else for it to come from.
+    forwarded: OnceLock<Arc<dyn ForwardedMessageStore>>,
     // The name of the server node that the registry is running on.
     // This is used to identify the source node of a message when broadcasting
     // messages to other nodes in the cluster.
@@ -110,14 +156,71 @@ impl WebSocketConnRegistry {
         config: WebSocketConnRegistryConfig,
         broadcaster: Option<Sender<RegistryMessage>>,
     ) -> Self {
+        let broadcaster_slot = OnceLock::new();
+        if let Some(broadcaster) = broadcaster {
+            let _ = broadcaster_slot.set(broadcaster);
+        }
+
         Self {
             ack_worker_config: config.ack_worker_config,
             connections: Arc::new(RwLock::new(HashMap::new())),
             ack_sender: Mutex::new(None),
             client_ack_sender: OnceLock::new(),
-            broadcaster,
+            broadcaster: broadcaster_slot,
+            locations: OnceLock::new(),
+            forwarded: OnceLock::new(),
             server_node_name: config.server_node_name,
         }
+    }
+
+    /// Hands the registry the channel that carries its messages to the other
+    /// nodes.
+    ///
+    /// This is separate from construction because reaching that channel means
+    /// connecting to a shared store, which needs a runtime, and the registry is
+    /// built before there is one. A registry serves a single node until this is
+    /// set, and a cluster afterwards.
+    ///
+    /// A second one is refused, since it would take over messages the first is
+    /// still waiting on acknowledgements for.
+    pub fn set_broadcaster(
+        &self,
+        broadcaster: Sender<RegistryMessage>,
+    ) -> Result<(), WebSocketConnError> {
+        self.broadcaster.set(broadcaster).map_err(|_| {
+            WebSocketConnError::AlreadyAttached(
+                "the registry already has something carrying its messages between nodes"
+                    .to_string(),
+            )
+        })
+    }
+
+    /// Hands the registry where it should record what it has forwarded.
+    ///
+    /// Set alongside the broadcaster and refused twice for the same reason.
+    pub fn set_forwarded_messages(
+        &self,
+        forwarded: Arc<dyn ForwardedMessageStore>,
+    ) -> Result<(), WebSocketConnError> {
+        self.forwarded.set(forwarded).map_err(|_| {
+            WebSocketConnError::AlreadyAttached(
+                "the registry already has somewhere to record what it has forwarded".to_string(),
+            )
+        })
+    }
+
+    /// Hands the registry where it should record the connections it holds.
+    ///
+    /// Set alongside the broadcaster and refused twice for the same reason.
+    pub fn set_locations(
+        &self,
+        locations: Arc<dyn ConnectionLocationStore>,
+    ) -> Result<(), WebSocketConnError> {
+        self.locations.set(locations).map_err(|_| {
+            WebSocketConnError::AlreadyAttached(
+                "the registry already has somewhere to record its connections".to_string(),
+            )
+        })
     }
 
     /// Starts the worker that tracks acknowledgements from clients.
@@ -279,7 +382,7 @@ impl WebSocketConnRegistry {
     /// to other nodes in the cluster, this must be called before setting up the listener
     /// and any `send_message` calls.
     pub fn start_ack_worker(self: Arc<Self>) {
-        if self.broadcaster.is_some() {
+        if self.broadcaster.get().is_some() {
             // Only start the ack worker if the broadcaster is present as the extra
             // resilience provided by the ack worker is only needed when broadcasting
             // messages to other nodes in the cluster.
@@ -347,22 +450,39 @@ impl WebSocketConnRegistry {
                 match message {
                     RegistryMessage::WebSocket(message) => {
                         debug!(connection_id = %message.connection_id, "received message from other node");
-                        if self.has_received_ack(message.message_id.clone()).await {
-                            info!(message_id = %message.message_id, "already received acknowledgement for message from other node, skipping duplicate message");
-                            continue;
-                        }
-
                         if let Some(connection) = self.get_connection(message.connection_id.clone())
                         {
+                            // Asked here rather than on the way in, because
+                            // every node in the group receives the message and
+                            // only this one holds the connection. A node that
+                            // cannot deliver would otherwise claim the message
+                            // as forwarded, leaving the node that can to treat
+                            // its first delivery as a duplicate.
+                            let already_forwarded =
+                                self.already_forwarded(&message.message_id).await;
                             debug!(
                                 connection_id = %message.connection_id,
                                 "acquiring lock to send message to connection: {}",
                                 message.connection_id.clone()
                             );
-                            let mut connection = connection.lock().await;
-                            debug!(connection_id = %message.connection_id, "sending message to connection: {}", message.connection_id);
-                            let ws_message =
-                                match create_ws_message(message.message_type, message.message) {
+                            // Acknowledged either way, and only the delivery is
+                            // skipped. Staying silent would have the sender
+                            // resend until its attempts ran out and then report
+                            // a message that did arrive as lost, which is worse
+                            // than the duplicate this avoids.
+                            if already_forwarded {
+                                info!(
+                                    message_id = %message.message_id,
+                                    "this message has already been forwarded to its client, \
+                                     acknowledging it again without sending it again"
+                                );
+                            } else {
+                                let mut connection = connection.lock().await;
+                                debug!(connection_id = %message.connection_id, "sending message to connection: {}", message.connection_id);
+                                let ws_message = match create_ws_message(
+                                    message.message_type,
+                                    message.message,
+                                ) {
                                     Ok(msg) => msg,
                                     Err(e) => {
                                         error!(
@@ -372,15 +492,16 @@ impl WebSocketConnRegistry {
                                         continue;
                                     }
                                 };
-                            let send_result = connection.send(ws_message).await;
-                            if let Err(e) = send_result {
-                                error!(
-                                    connection_id = %message.connection_id,
-                                    "failed to send message to websocket connection: {e:?}"
-                                );
+                                let send_result = connection.send(ws_message).await;
+                                if let Err(e) = send_result {
+                                    error!(
+                                        connection_id = %message.connection_id,
+                                        "failed to send message to websocket connection: {e:?}"
+                                    );
+                                }
                             }
 
-                            if let Some(broadcaster) = &self.broadcaster {
+                            if let Some(broadcaster) = self.broadcaster.get() {
                                 if broadcaster
                                     .send(RegistryMessage::Ack(AckMessage {
                                         message_id: message.message_id.clone(),
@@ -404,6 +525,75 @@ impl WebSocketConnRegistry {
                 }
             }
         });
+    }
+
+    /// Takes a connection, and tells the rest of the cluster where it is.
+    ///
+    /// A failure to record it is logged rather than returned. The connection
+    /// works either way, and what a caller could do with the error is refuse a
+    /// client whose only problem is that other nodes cannot reach it yet, which
+    /// the next heartbeat repairs.
+    pub async fn register_connection(
+        &self,
+        connection_id: String,
+        ws: Arc<Mutex<WebSocketConnSender>>,
+    ) {
+        self.add_connection(connection_id.clone(), ws);
+
+        if let Some(locations) = self.locations.get() {
+            if let Err(err) = locations.record(&connection_id).await {
+                error!(
+                    connection_id = %connection_id,
+                    "failed to record where a connection is, so other nodes cannot reach it \
+                     until the next heartbeat: {err}"
+                );
+            }
+        }
+    }
+
+    /// Drops a connection, and takes away the record of where it was.
+    ///
+    /// Removed locally first, so a message can never be handed to a connection
+    /// this node has already stopped holding.
+    pub async fn deregister_connection(&self, connection_id: String) {
+        self.remove_connection(connection_id.clone());
+
+        if let Some(locations) = self.locations.get() {
+            if let Err(err) = locations.forget(&connection_id).await {
+                error!(
+                    connection_id = %connection_id,
+                    "failed to take away the record of where a connection was, so messages will \
+                     be published here for it until the record expires: {err}"
+                );
+            }
+        }
+    }
+
+    /// Takes a connection without telling anything else about it.
+    ///
+    /// For a single node, and for the callers inside this crate that have
+    /// already dealt with the record.
+    /// Whether this message has already been forwarded to its client.
+    ///
+    /// A store that cannot answer is taken as a no. Forwarding twice is a
+    /// nuisance; refusing to forward on the strength of a failed lookup is a
+    /// message the client never gets.
+    async fn already_forwarded(&self, message_id: &str) -> bool {
+        let Some(forwarded) = self.forwarded.get() else {
+            return false;
+        };
+
+        match forwarded.record_and_check_forwarded(message_id).await {
+            Ok(already) => already,
+            Err(err) => {
+                error!(
+                    message_id = %message_id,
+                    "could not tell whether this message has already been forwarded, \
+                     sending it rather than holding it back: {err}"
+                );
+                false
+            }
+        }
     }
 
     pub fn add_connection(&self, connection_id: String, ws: Arc<Mutex<WebSocketConnSender>>) {
@@ -433,22 +623,6 @@ impl WebSocketConnRegistry {
             .iter()
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect()
-    }
-
-    async fn has_received_ack(&self, message_id: String) -> bool {
-        if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
-            let (ack_tx, ack_rx) = tokio::sync::oneshot::channel();
-            ack_sender
-                .send(AckWorkerMessage::Check(message_id.clone(), ack_tx))
-                .await
-                .expect("ack worker channel unexpectedly closed");
-            let ack_status = ack_rx
-                .await
-                .expect("oneshot channel for ack status check unexpectedly closed");
-            ack_status == AckStatus::Received
-        } else {
-            false
-        }
     }
 
     async fn record_received_ack(&self, message_id: String) {
@@ -568,7 +742,7 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
             debug!(connection_id = %connection_id, "sending message to connection: {}", connection_id);
             let ws_message = create_ws_message(message_type, message)?;
             connection.send(ws_message).await?;
-        } else if let Some(broadcaster) = &self.broadcaster {
+        } else if let Some(broadcaster) = self.broadcaster.get() {
             let send_ctx = ctx.unwrap_or_default();
             debug!(connection_id = %connection_id, "connection not found locally, preparing to send message to broadcaster");
             self.record_pending_ack(
@@ -1417,7 +1591,9 @@ mod tests {
             let registry = conn_info.registry.clone();
             async move {
                 let (socket_tx, _socket_rx) = socket.split();
-                registry.add_connection(nanoid!(), Arc::new(Mutex::new(socket_tx)));
+                registry
+                    .register_connection(nanoid!(), Arc::new(Mutex::new(socket_tx)))
+                    .await;
             }
             .boxed()
         }
@@ -1428,6 +1604,27 @@ mod tests {
         ws: WebSocketUpgrade,
     ) -> Response {
         ws.on_upgrade(create_unwatched_socket(conn_info))
+    }
+
+    /// Serves the unwatched handler, returning where to connect to it.
+    async fn serve_unwatched(registry: Arc<WebSocketConnRegistry>) -> SocketAddr {
+        let app: Router = Router::new()
+            .route("/ws", get(unwatched_connection_handler))
+            .with_state(ConnectionInfo {
+                connection_id: None,
+                other_connection_id: None,
+                missing_connection_id: None,
+                registry,
+            });
+
+        let listener = tokio::net::TcpListener::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0)))
+            .await
+            .unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        addr
     }
 
     /// A client that has gone does not cost the others their notification.
@@ -1527,5 +1724,140 @@ mod tests {
         assert_eq!(bytes[..4], [0x1, 0x3, 0x0, 0x0]);
         let body: MessageLostBody = serde_json::from_slice(&bytes[4..]).unwrap();
         assert_eq!(body.message_id, "m-1");
+    }
+
+    /// Somewhere to record connections that remembers what it was told, and can
+    /// be asked to fail.
+    #[derive(Debug, Default)]
+    struct RecordingLocations {
+        recorded: std::sync::Mutex<Vec<String>>,
+        forgotten: std::sync::Mutex<Vec<String>>,
+        failing: bool,
+    }
+
+    #[async_trait]
+    impl ConnectionLocationStore for RecordingLocations {
+        async fn record(&self, connection_id: &str) -> Result<(), WebSocketConnError> {
+            self.recorded
+                .lock()
+                .unwrap()
+                .push(connection_id.to_string());
+            if self.failing {
+                return Err(WebSocketConnError::ConnectionLocationError(
+                    "the store is not answering".to_string(),
+                ));
+            }
+            Ok(())
+        }
+
+        async fn forget(&self, connection_id: &str) -> Result<(), WebSocketConnError> {
+            self.forgotten
+                .lock()
+                .unwrap()
+                .push(connection_id.to_string());
+            if self.failing {
+                return Err(WebSocketConnError::ConnectionLocationError(
+                    "the store is not answering".to_string(),
+                ));
+            }
+            Ok(())
+        }
+    }
+
+    fn local_registry() -> Arc<WebSocketConnRegistry> {
+        Arc::new(WebSocketConnRegistry::new(
+            WebSocketConnRegistryConfig {
+                ack_worker_config: None,
+                server_node_name: "node1".to_string(),
+            },
+            None,
+        ))
+    }
+
+    /// A connection is recorded where the rest of the cluster can find it, and
+    /// the record goes when the connection does.
+    #[test_log::test(tokio::test)]
+    async fn test_a_connection_is_recorded_and_then_forgotten() {
+        let registry = local_registry();
+        let locations = Arc::new(RecordingLocations::default());
+        registry.set_locations(locations.clone()).unwrap();
+
+        let addr = serve_unwatched(registry.clone()).await;
+        let (_socket, _response) = tokio_tungstenite::connect_async(format!("ws://{addr}/ws"))
+            .await
+            .unwrap();
+        wait_for_connection_count(&registry, 1).await;
+        let connection_id = registry.get_connections()[0].0.clone();
+
+        assert_eq!(
+            *locations.recorded.lock().unwrap(),
+            vec![connection_id.clone()],
+            "the cluster should have been told where the connection is"
+        );
+
+        registry.deregister_connection(connection_id.clone()).await;
+        assert_eq!(*locations.forgotten.lock().unwrap(), vec![connection_id]);
+        assert!(registry.get_connections().is_empty());
+    }
+
+    /// A store that cannot be written to does not cost the client its
+    /// connection.
+    ///
+    /// The connection works locally either way, and the record is written again
+    /// by the next heartbeat. Refusing a client over it would turn a repairable
+    /// fault into a visible one.
+    #[test_log::test(tokio::test)]
+    async fn test_a_connection_survives_a_store_that_is_not_answering() {
+        let registry = local_registry();
+        registry
+            .set_locations(Arc::new(RecordingLocations {
+                failing: true,
+                ..Default::default()
+            }))
+            .unwrap();
+
+        let addr = serve_unwatched(registry.clone()).await;
+        let (mut socket, _response) = tokio_tungstenite::connect_async(format!("ws://{addr}/ws"))
+            .await
+            .unwrap();
+        wait_for_connection_count(&registry, 1).await;
+
+        // Still usable, which is the point. A record nothing could write is
+        // repaired by the next heartbeat.
+        socket
+            .send(tungstenite::Message::Text("still here".to_string()))
+            .await
+            .unwrap();
+    }
+
+    /// What carries messages between nodes can be attached after the registry
+    /// is built, and only once.
+    #[test_log::test(tokio::test)]
+    async fn test_the_broadcaster_is_attached_once_and_then_used() {
+        let registry = local_registry();
+        let (tx, mut rx) = tokio::sync::mpsc::channel(4);
+        registry.set_broadcaster(tx.clone()).unwrap();
+        assert!(
+            registry.set_broadcaster(tx).is_err(),
+            "a second broadcaster would take over messages the first is waiting on"
+        );
+
+        registry
+            .send_message(
+                "a-connection-on-another-node".to_string(),
+                "m-1".to_string(),
+                MessageType::Json,
+                r#"{"event":"update"}"#.to_string(),
+                None,
+            )
+            .await
+            .unwrap();
+
+        let sent = rx.recv().await.expect("the message should have been sent");
+        let RegistryMessage::WebSocket(sent) = sent else {
+            panic!("expected a websocket message, got {sent:?}");
+        };
+        assert_eq!(sent.connection_id, "a-connection-on-another-node");
+        assert_eq!(sent.message_id, "m-1");
     }
 }

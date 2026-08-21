@@ -99,7 +99,6 @@ pub enum AckWorkerMessage {
         message_id: String,
         connection_id: String,
     },
-    Check(String, Sender<AckStatus>),
     Wait(String, Sender<AckStatus>),
 }
 
@@ -194,21 +193,6 @@ impl Worker {
                             connection_id,
                         }) => {
                             self.record_client_ack(message_id, connection_id).await;
-                        }
-                        Some(AckWorkerMessage::Check(message_id, tx)) => {
-                            let acks_guard = self.acks.lock().await;
-                            let detailed_ack_status = acks_guard.get(&message_id).cloned();
-                            let final_ack_status = match detailed_ack_status {
-                                Some(detailed_ack_status) => detailed_ack_status.status,
-                                None => AckStatus::Lost,
-                            };
-                            if tx.send(final_ack_status).is_err() {
-                                error!(
-                                    "sender dropped before receiving acknowledgement \
-                                    status for message {}",
-                                    message_id
-                                );
-                            }
                         }
                         Some(AckWorkerMessage::Wait(message_id, tx)) => {
                             // Spawn a separate task to handle the ack wait without blocking
