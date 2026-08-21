@@ -227,6 +227,19 @@ impl ConnectionWrapper {
         }
     }
 
+    /// Stops receiving from a channel.
+    ///
+    /// A subscription outlives the reason it was taken out, so a node that
+    /// moves between groups has to give up the old one rather than quietly go
+    /// on being sent its traffic.
+    /// [Redis Docs](https://redis.io/commands/UNSUBSCRIBE)
+    pub async fn unsubscribe(&mut self, channel_name: &str) -> RedisResult<()> {
+        match self {
+            ConnectionWrapper::Cluster(conn) => conn.unsubscribe(channel_name).await,
+            ConnectionWrapper::SingleNode(conn) => conn.unsubscribe(channel_name).await,
+        }
+    }
+
     /// Posts a message to the given channel.
     /// [Redis Docs](https://redis.io/commands/PUBLISH)
     pub async fn publish(&mut self, channel_name: &str, message: String) -> RedisResult<i32> {
@@ -234,6 +247,55 @@ impl ConnectionWrapper {
             ConnectionWrapper::Cluster(conn) => conn.publish(channel_name, message).await,
             ConnectionWrapper::SingleNode(conn) => conn.publish(channel_name, message).await,
         }
+    }
+
+    /// Adds a member to a set, returning whether it was not already there.
+    /// [Redis Docs](https://redis.io/commands/SADD)
+    pub async fn sadd(&mut self, key: &str, member: &str) -> RedisResult<bool> {
+        let added: i64 = match self {
+            ConnectionWrapper::Cluster(conn) => conn.sadd(key, member).await?,
+            ConnectionWrapper::SingleNode(conn) => conn.sadd(key, member).await?,
+        };
+        Ok(added > 0)
+    }
+
+    /// Removes a member from a set, returning whether it was there to remove.
+    /// [Redis Docs](https://redis.io/commands/SREM)
+    pub async fn srem(&mut self, key: &str, member: &str) -> RedisResult<bool> {
+        let removed: i64 = match self {
+            ConnectionWrapper::Cluster(conn) => conn.srem(key, member).await?,
+            ConnectionWrapper::SingleNode(conn) => conn.srem(key, member).await?,
+        };
+        Ok(removed > 0)
+    }
+
+    /// Reads every member of a set. A set that does not exist reads as empty,
+    /// which is the same answer as a set that has had every member removed.
+    /// [Redis Docs](https://redis.io/commands/SMEMBERS)
+    pub async fn smembers(&mut self, key: &str) -> RedisResult<Vec<String>> {
+        match self {
+            ConnectionWrapper::Cluster(conn) => conn.smembers(key).await,
+            ConnectionWrapper::SingleNode(conn) => conn.smembers(key).await,
+        }
+    }
+
+    /// Reports whether a key is present.
+    /// [Redis Docs](https://redis.io/commands/EXISTS)
+    pub async fn exists(&mut self, key: &str) -> RedisResult<bool> {
+        match self {
+            ConnectionWrapper::Cluster(conn) => conn.exists(key).await,
+            ConnectionWrapper::SingleNode(conn) => conn.exists(key).await,
+        }
+    }
+
+    /// Removes a key, returning whether it was there to remove.
+    /// [Redis Docs](https://redis.io/commands/DEL)
+    pub async fn del(&mut self, key: &str) -> RedisResult<bool> {
+        let removed: i64 = match self {
+            ConnectionWrapper::Cluster(conn) => conn.del(key).await?,
+            ConnectionWrapper::SingleNode(conn) => conn.del(key).await?,
+        };
+        Ok(removed > 0)
     }
 }
 
