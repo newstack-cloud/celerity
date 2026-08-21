@@ -18,6 +18,8 @@ redis = { version = "0.32.3", features = [
     "cluster-async",
 ] }
 tracing = "0.1.40"
+nanoid = "0.4.0"
+futures = "0.3.30"
 
 [dependencies.celerity_ws_registry]
 path = "../ws-registry"
@@ -26,6 +28,9 @@ path = "../ws-registry"
 path = "../../helpers"
 
 [dev-dependencies]
+futures = "0.3.30"
+axum = { version = "0.8.4", features = ["ws"] }
+tokio-tungstenite = "0.23.1"
 test-log = { version = "0.2.16", features = ["log", "trace"] }
 pretty_assertions = "1.4.0"
 coverage-helper = "0.2.2"
