@@ -27,6 +27,11 @@ redis = { version = "0.32.5", features = [
 ] }
 rand = "0.8.5"
 
+[features]
+# Helpers for the tests of crates that build on this one. Never enabled by a
+# runtime, only by a dev-dependency.
+test-support = []
+
 [dev-dependencies]
 test-log = { version = "0.2.16", features = ["log", "trace"] }
 pretty_assertions = "1.4.0"
