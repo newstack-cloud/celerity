@@ -32,7 +32,7 @@ ARG NAPI_IMAGE=napi-cache
 # -----------------------------------------------------------------------------
 # Stage 1: Build the runtime NAPI addon from local Rust source
 # -----------------------------------------------------------------------------
-FROM rust:1.93-bookworm AS rust-builder
+FROM rust:1.97-bookworm AS rust-builder
 
 # Install Node.js 24 for napi-cli
 RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
