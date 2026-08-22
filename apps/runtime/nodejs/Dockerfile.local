@@ -74,7 +74,7 @@ FROM ${NAPI_IMAGE} AS napi
 # -----------------------------------------------------------------------------
 # Stage 3: Install all dependencies from the registry
 # -----------------------------------------------------------------------------
-FROM dhi.io/node:24-debian13-dev AS deps
+FROM dhi.io/node:26-debian13-dev AS deps
 
 WORKDIR /opt/celerity
 
@@ -88,7 +88,7 @@ RUN corepack yarn install --immutable 2>/dev/null || corepack yarn install
 # -----------------------------------------------------------------------------
 # Stage 4: Dev image with local SDK overrides
 # -----------------------------------------------------------------------------
-FROM dhi.io/node:24-debian13-dev
+FROM dhi.io/node:26-debian13-dev
 
 WORKDIR /opt/celerity
 
