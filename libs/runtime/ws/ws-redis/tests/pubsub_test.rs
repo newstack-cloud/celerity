@@ -520,11 +520,14 @@ async fn wait_until_listening(
         .await
         .unwrap();
 
-        if tokio::time::timeout(Duration::from_millis(5), rx.recv())
-            .await
-            .is_ok()
+        // The probe itself, rather than whatever else may be queued, since
+        // anything else says nothing about the group just moved into.
+        if let Ok(Some(Message::WebSocket(received))) =
+            tokio::time::timeout(Duration::from_millis(5), rx.recv()).await
         {
-            break;
+            if received.connection_id == "probe" && received.message_id == "probe" {
+                break;
+            }
         }
         assert!(
             tokio::time::Instant::now() < deadline,
