@@ -25,7 +25,7 @@ redis = { version = "0.32.5", features = [
     "aio",
     "cluster-async",
 ] }
-rand = "0.8.5"
+rand = "0.9.2"
 
 [features]
 # Helpers for the tests of crates that build on this one. Never enabled by a
