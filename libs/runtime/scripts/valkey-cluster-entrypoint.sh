@@ -20,8 +20,18 @@ for port in $PORTS; do
     --daemonize yes
 done
 
-# Give them a moment to come up before asking them to form a cluster.
-sleep 2
+# Waited for rather than paused on, since a machine under load can take longer than
+# any fixed pause and forming the cluster would then fail outright.
+deadline=$(( $(date +%s) + 30 ))
+for port in $PORTS; do
+  until valkey-cli -p "$port" ping 2>/dev/null | grep -q PONG; do
+    if [ "$(date +%s)" -ge "$deadline" ]; then
+      echo "valkey on port $port was not accepting connections after 30 seconds" >&2
+      exit 1
+    fi
+    sleep 0.1
+  done
+done
 
 valkey-cli --cluster create \
   127.0.0.1:7100 127.0.0.1:7101 127.0.0.1:7102 \
