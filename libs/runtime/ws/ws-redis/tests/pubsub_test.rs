@@ -103,7 +103,7 @@ async fn start_node(prefix: &str, name: &str, capacity: usize) -> Node {
 async fn test_messages_reach_the_group_holding_the_connection() {
     let mut conn = redis_connection().await;
     let prefix = "test-pubsub-routing";
-    clear(&mut conn, prefix, &["1", "2", "7"]).await;
+    clear(&mut conn, prefix, &["1", "2", "7", "probe"]).await;
 
     // Capacity of one, so the two nodes are in separate groups and a message
     // only arrives by being routed rather than by everyone hearing everything.
@@ -244,7 +244,7 @@ async fn test_messages_reach_the_group_holding_the_connection() {
 async fn test_a_message_for_an_unrecorded_connection_reaches_every_group() {
     let mut conn = redis_connection().await;
     let prefix = "test-pubsub-fanout";
-    clear(&mut conn, prefix, &["1", "2", "7"]).await;
+    clear(&mut conn, prefix, &["1", "2", "7", "probe"]).await;
 
     let node1 = start_node(prefix, "api-node-1", 1).await;
     let mut node2 = start_node(prefix, "api-node-2", 1).await;
@@ -290,7 +290,7 @@ async fn test_a_message_for_an_unrecorded_connection_reaches_every_group() {
 async fn test_an_acknowledgement_goes_to_the_ack_mirror_of_the_senders_group() {
     let mut conn = redis_connection().await;
     let prefix = "test-pubsub-ack-channel";
-    clear(&mut conn, prefix, &["1", "2", "7"]).await;
+    clear(&mut conn, prefix, &["1", "2", "7", "probe"]).await;
 
     let sender = start_node(prefix, "api-node-1", 1).await;
     let holder = start_node(prefix, "api-node-2", 1).await;
@@ -352,7 +352,7 @@ async fn test_an_acknowledgement_goes_to_the_ack_mirror_of_the_senders_group() {
 async fn test_a_node_that_comes_back_to_the_group_it_left_keeps_receiveing_messages_from_it() {
     let mut conn = redis_connection().await;
     let prefix = "test-pubsub-return";
-    clear(&mut conn, prefix, &["1", "2", "7"]).await;
+    clear(&mut conn, prefix, &["1", "2", "7", "probe"]).await;
 
     let sender = start_node(prefix, "api-node-1", 5).await;
     let mut mover = start_node(prefix, "api-node-2", 5).await;
@@ -405,7 +405,7 @@ async fn test_a_node_that_comes_back_to_the_group_it_left_keeps_receiveing_messa
 async fn test_a_node_that_moves_group_hears_both_until_the_grace_is_up() {
     let mut conn = redis_connection().await;
     let prefix = "test-pubsub-migration";
-    clear(&mut conn, prefix, &["1", "2", "7"]).await;
+    clear(&mut conn, prefix, &["1", "2", "7", "probe"]).await;
 
     let sender = start_node(prefix, "api-node-1", 5).await;
     let mut mover = start_node(prefix, "api-node-2", 5).await;
@@ -419,6 +419,7 @@ async fn test_a_node_that_moves_group_hears_both_until_the_grace_is_up() {
     mover.moved.send(joined.clone()).await.unwrap();
     mover.locations.set_group(joined.id.clone());
     mover.locations.record("2").await.unwrap();
+    wait_until_listening(&sender.tx, &mut mover.rx, &sender.name, &mover.locations).await;
 
     // Addressed to the group it moved into.
     sender
@@ -485,6 +486,58 @@ async fn test_a_node_that_moves_group_hears_both_until_the_grace_is_up() {
             .is_err(),
         "a node should have given up the group it left once the grace period was up"
     );
+}
+
+/// Waits until a node is listening to the group it has just moved into, by
+/// offering it a message until one arrives.
+///
+/// Being told it has moved and taking up the new group's channels are separate
+/// steps, and nothing says when the second has happened. Redis cannot be asked
+/// either, since it answers only for the subscribers of the node asked, which
+/// in a cluster is not the one holding this subscription.
+///
+/// Offered often, because the grace period on the group left behind is already
+/// running by the time the first one lands.
+async fn wait_until_listening(
+    tx: &Sender<Message>,
+    rx: &mut Receiver<Message>,
+    source_node: &str,
+    locations: &Arc<ConnectionLocations>,
+) {
+    locations.record("probe").await.unwrap();
+
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+    loop {
+        tx.send(Message::WebSocket(WebSocketMessage {
+            connection_id: "probe".to_string(),
+            message_id: "probe".to_string(),
+            message_type: MessageType::Json,
+            source_node: source_node.to_string(),
+            message: r#"{"event":"probe"}"#.to_string(),
+            inform_clients_on_loss: None,
+            caller: None,
+        }))
+        .await
+        .unwrap();
+
+        if tokio::time::timeout(Duration::from_millis(5), rx.recv())
+            .await
+            .is_ok()
+        {
+            break;
+        }
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "the node should have taken up the channels of the group it moved into"
+        );
+    }
+
+    // Whatever else was offered before the one that landed.
+    while tokio::time::timeout(Duration::from_millis(20), rx.recv())
+        .await
+        .is_ok()
+    {}
+    locations.forget("probe").await.unwrap();
 }
 
 async fn next_message_id(rx: &mut Receiver<Message>) -> String {
