@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/newstack-cloud/celerity/compare/runtime-consumers/v0.3.0...runtime-consumers/v0.3.1) (2026-08-22)
+
+
+### Bug Fixes
+
+* **lib-rt-consumer-sqs:** quieten the large error lint on the sdk's errors ([ae8ec0b](https://github.com/newstack-cloud/celerity/commit/ae8ec0bea60390182eb884447743c7aa531a47fa))
+
 ## [0.3.0](https://github.com/newstack-cloud/celerity/compare/runtime-consumers/v0.2.1...runtime-consumers/v0.3.0) (2026-03-16)
 
 
