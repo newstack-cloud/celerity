@@ -18,7 +18,17 @@ use tokio::sync::mpsc::{channel, Receiver, Sender};
 
 /// Clears anything a previous run left behind under a prefix, since a test that
 /// fails never reaches its own cleanup.
-async fn clear(conn: &mut ConnectionWrapper, prefix: &str) {
+///
+/// The connections are named rather than matched, because their entries are
+/// spread across a cluster's slots by design and no one request reaches all of
+/// them.
+async fn clear(conn: &mut ConnectionWrapper, prefix: &str, connection_ids: &[&str]) {
+    for connection_id in connection_ids {
+        conn.del(&format!("{prefix}:conn:{connection_id}"))
+            .await
+            .unwrap();
+    }
+
     let index_key = format!("{prefix}:{{group-meta}}:node-groups");
     for group_id in conn.smembers(&index_key).await.unwrap() {
         let members_key = format!("{prefix}:{{group-meta}}:node-group-members:{group_id}");
@@ -93,7 +103,7 @@ async fn start_node(prefix: &str, name: &str, capacity: usize) -> Node {
 async fn test_messages_reach_the_group_holding_the_connection() {
     let mut conn = redis_connection().await;
     let prefix = "test-pubsub-routing";
-    clear(&mut conn, prefix).await;
+    clear(&mut conn, prefix, &["1", "2", "7"]).await;
 
     // Capacity of one, so the two nodes are in separate groups and a message
     // only arrives by being routed rather than by everyone hearing everything.
@@ -234,7 +244,7 @@ async fn test_messages_reach_the_group_holding_the_connection() {
 async fn test_a_message_for_an_unrecorded_connection_reaches_every_group() {
     let mut conn = redis_connection().await;
     let prefix = "test-pubsub-fanout";
-    clear(&mut conn, prefix).await;
+    clear(&mut conn, prefix, &["1", "2", "7"]).await;
 
     let node1 = start_node(prefix, "api-node-1", 1).await;
     let mut node2 = start_node(prefix, "api-node-2", 1).await;
@@ -280,7 +290,7 @@ async fn test_a_message_for_an_unrecorded_connection_reaches_every_group() {
 async fn test_an_acknowledgement_goes_to_the_ack_mirror_of_the_senders_group() {
     let mut conn = redis_connection().await;
     let prefix = "test-pubsub-ack-channel";
-    clear(&mut conn, prefix).await;
+    clear(&mut conn, prefix, &["1", "2", "7"]).await;
 
     let sender = start_node(prefix, "api-node-1", 1).await;
     let holder = start_node(prefix, "api-node-2", 1).await;
@@ -342,7 +352,7 @@ async fn test_an_acknowledgement_goes_to_the_ack_mirror_of_the_senders_group() {
 async fn test_a_node_that_comes_back_to_the_group_it_left_keeps_receiveing_messages_from_it() {
     let mut conn = redis_connection().await;
     let prefix = "test-pubsub-return";
-    clear(&mut conn, prefix).await;
+    clear(&mut conn, prefix, &["1", "2", "7"]).await;
 
     let sender = start_node(prefix, "api-node-1", 5).await;
     let mut mover = start_node(prefix, "api-node-2", 5).await;
@@ -395,7 +405,7 @@ async fn test_a_node_that_comes_back_to_the_group_it_left_keeps_receiveing_messa
 async fn test_a_node_that_moves_group_hears_both_until_the_grace_is_up() {
     let mut conn = redis_connection().await;
     let prefix = "test-pubsub-migration";
-    clear(&mut conn, prefix).await;
+    clear(&mut conn, prefix, &["1", "2", "7"]).await;
 
     let sender = start_node(prefix, "api-node-1", 5).await;
     let mut mover = start_node(prefix, "api-node-2", 5).await;
