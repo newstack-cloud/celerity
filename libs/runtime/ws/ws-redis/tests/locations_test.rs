@@ -20,7 +20,17 @@ fn config(prefix: &str, node: &str, node_ttl_ms: u64) -> NodeGroupConfig {
 
 /// Clears anything a previous run left behind under a prefix, since a test that
 /// fails never reaches its own cleanup.
-async fn clear(conn: &mut ConnectionWrapper, prefix: &str) {
+///
+/// The connections are named rather than matched, because their entries are
+/// spread across a cluster's slots by design and no one request reaches all of
+/// them.
+async fn clear(conn: &mut ConnectionWrapper, prefix: &str, connection_ids: &[&str]) {
+    for connection_id in connection_ids {
+        conn.del(&format!("{prefix}:conn:{connection_id}"))
+            .await
+            .unwrap();
+    }
+
     let index_key = format!("{prefix}:{{group-meta}}:node-groups");
     for group_id in conn.smembers(&index_key).await.unwrap() {
         let members_key = format!("{prefix}:{{group-meta}}:node-group-members:{group_id}");
@@ -64,7 +74,7 @@ fn heartbeat(
 async fn test_a_connection_is_found_where_it_was_recorded() {
     let mut conn = redis_connection().await;
     let prefix = "test-locations-record";
-    clear(&mut conn, prefix).await;
+    clear(&mut conn, prefix, &["conn-1"]).await;
 
     let locations = ConnectionLocations::new(
         conn.clone(),
@@ -99,7 +109,7 @@ async fn test_a_connection_is_found_where_it_was_recorded() {
 async fn test_an_entry_nothing_refreshes_expires() {
     let mut conn = redis_connection().await;
     let prefix = "test-locations-expiry";
-    clear(&mut conn, prefix).await;
+    clear(&mut conn, prefix, &["conn-1"]).await;
 
     let locations =
         ConnectionLocations::new(conn.clone(), prefix.to_string(), "group-1".to_string(), 200);
@@ -123,7 +133,7 @@ async fn test_an_entry_nothing_refreshes_expires() {
 async fn test_the_heartbeat_keeps_a_node_and_its_connections_alive() {
     let mut conn = redis_connection().await;
     let prefix = "test-heartbeat-alive";
-    clear(&mut conn, prefix).await;
+    clear(&mut conn, prefix, &["conn-1"]).await;
 
     let node_config = config(prefix, "node-1", 300);
     let group = join_or_create(&mut conn, &node_config).await.unwrap();
@@ -168,7 +178,7 @@ async fn test_the_heartbeat_keeps_a_node_and_its_connections_alive() {
 async fn test_a_node_dropped_from_its_group_rejoins_it() {
     let mut conn = redis_connection().await;
     let prefix = "test-heartbeat-rejoin";
-    clear(&mut conn, prefix).await;
+    clear(&mut conn, prefix, &["conn-1"]).await;
 
     let node_config = config(prefix, "node-1", 300);
     let group = join_or_create(&mut conn, &node_config).await.unwrap();
@@ -213,7 +223,7 @@ async fn test_a_node_dropped_from_its_group_rejoins_it() {
 async fn test_shutting_down_takes_everything_the_node_wrote_with_it() {
     let mut conn = redis_connection().await;
     let prefix = "test-heartbeat-shutdown";
-    clear(&mut conn, prefix).await;
+    clear(&mut conn, prefix, &["conn-1"]).await;
 
     let node_config = config(prefix, "node-1", 10_000);
     let group = join_or_create(&mut conn, &node_config).await.unwrap();
