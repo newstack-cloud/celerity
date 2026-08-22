@@ -140,6 +140,12 @@ pub struct Application {
     resource_store_cleanup_task_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     #[cfg(feature = "ws_clustering")]
     ws_cluster_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
+    /// What this node is called among the others serving the same API.
+    ///
+    /// This is determined once and kept, because a name that had to be generated is a
+    /// different one every time it is worked out, and the registry and the
+    /// cluster have to agree on what this node is called.
+    server_node_name: String,
     http_auth_state: Option<HttpAuthState>,
     api_cors: Option<CelerityApiCors>,
     handler_names: HashMap<(String, String), String>,
@@ -180,7 +186,9 @@ fn resolve_server_node_name(runtime_config: &RuntimeConfig, env_vars: &dyn EnvVa
 
 impl Application {
     pub fn new(runtime_config: RuntimeConfig, env_vars: Box<dyn EnvVars>) -> Self {
+        let server_node_name = resolve_server_node_name(&runtime_config, env_vars.as_ref());
         Application {
+            server_node_name,
             runtime_config,
             env_vars,
             app_tracing_enabled: false,
@@ -413,10 +421,7 @@ impl Application {
                         message_timeout_ms: self.runtime_config.ws_ack_timeout_ms,
                         max_attempts: self.runtime_config.ws_ack_max_attempts,
                     }),
-                    server_node_name: resolve_server_node_name(
-                        &self.runtime_config,
-                        self.env_vars.as_ref(),
-                    ),
+                    server_node_name: self.server_node_name.clone(),
                 },
                 None,
             ));
@@ -760,15 +765,13 @@ impl Application {
             return Ok(());
         };
 
-        let server_node_name =
-            resolve_server_node_name(&self.runtime_config, self.env_vars.as_ref());
         self.ws_cluster_shutdown_signal = Some(
             crate::websocket_cluster::join_cluster(
                 registry,
                 self.ws_seen_messages.take(),
                 cluster_config,
                 &self.runtime_config.service_name,
-                &server_node_name,
+                &self.server_node_name,
             )
             .await?,
         );
@@ -1941,4 +1944,97 @@ async fn restrict_runtime_socket_dir(path: &std::path::Path) -> std::io::Result<
     use std::os::unix::fs::PermissionsExt;
 
     tokio::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700)).await
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use super::*;
+
+    #[derive(Clone)]
+    struct MapEnv(HashMap<&'static str, String>);
+
+    impl EnvVars for MapEnv {
+        fn var(&self, key: &str) -> Result<String, std::env::VarError> {
+            self.0
+                .get(key)
+                .cloned()
+                .ok_or(std::env::VarError::NotPresent)
+        }
+
+        fn clone_env_vars(&self) -> Box<dyn EnvVars> {
+            Box::new(self.clone())
+        }
+    }
+
+    /// The smallest environment a runtime config will accept, plus whatever a
+    /// test is about.
+    fn env(overrides: &[(&'static str, &str)]) -> MapEnv {
+        let mut vars: HashMap<&'static str, String> = vec![
+            ("CELERITY_BLUEPRINT", "blueprint.yaml".to_string()),
+            ("CELERITY_SERVICE_NAME", "test".to_string()),
+            ("CELERITY_SERVER_PORT", "8080".to_string()),
+            ("CELERITY_RUNTIME_PLATFORM", "local".to_string()),
+            ("CELERITY_RUNTIME_CALL_MODE", "ipc".to_string()),
+        ]
+        .into_iter()
+        .collect();
+        for (key, value) in overrides {
+            vars.insert(key, value.to_string());
+        }
+        MapEnv(vars)
+    }
+
+    /// A node with nothing to take a name from is given a new one every time it
+    /// is asked, which is why the answer is settled once and kept.
+    ///
+    /// Working it out a second time would have the registry stamp one name on
+    /// the messages it sends while the cluster knows this node by another, and
+    /// an acknowledgement addressed to the first would be delivered to nobody.
+    #[test]
+    fn test_a_generated_node_name_is_a_different_one_every_time() {
+        let vars = env(&[]);
+        let config = RuntimeConfig::from_env(&vars);
+
+        assert_ne!(
+            resolve_server_node_name(&config, &vars),
+            resolve_server_node_name(&config, &vars)
+        );
+    }
+
+    /// Whatever the name is worked out from, the application settles on one and
+    /// hands that same one to everything that needs it.
+    #[test]
+    fn test_an_application_keeps_the_name_it_settled_on() {
+        let vars = env(&[]);
+        let app = Application::new(RuntimeConfig::from_env(&vars), Box::new(vars.clone()));
+
+        assert!(!app.server_node_name.is_empty());
+        assert_ne!(
+            app.server_node_name,
+            resolve_server_node_name(&app.runtime_config, &vars),
+            "a name worked out again is not the one the application is known by"
+        );
+    }
+
+    /// A configured name is taken as it is, so nodes are named by whoever
+    /// deployed them rather than by chance.
+    #[test]
+    fn test_a_configured_node_name_is_the_one_the_application_takes() {
+        let vars = env(&[("CELERITY_SERVER_NODE_NAME", "node-a")]);
+        let app = Application::new(RuntimeConfig::from_env(&vars), Box::new(vars.clone()));
+
+        assert_eq!(app.server_node_name, "node-a");
+    }
+
+    /// Falling back to the hostname names a node after the machine running it,
+    /// which is stable across everything that asks.
+    #[test]
+    fn test_a_node_falls_back_to_the_hostname_it_is_running_on() {
+        let vars = env(&[("HOSTNAME", "container-7")]);
+        let app = Application::new(RuntimeConfig::from_env(&vars), Box::new(vars.clone()));
+
+        assert_eq!(app.server_node_name, "container-7");
+    }
 }
