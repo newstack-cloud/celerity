@@ -207,27 +207,30 @@ def _wait_for_valkey_cluster(deadline_seconds: int) -> None:
 
     They take a moment to find each other, and a test that connects before they
     have is told there is no cluster rather than being made to wait.
+
+    Read again rather than followed, so that a container which has said nothing
+    for a while and one which has stopped saying anything at all are both
+    noticed. Following the logs only wakes up when there is a line, so neither
+    would be.
     """
-    start_time = time.time()
-    with subprocess.Popen(
-        ['docker', 'logs', '-f', 'valkey_cluster_celerity_runtime_tests'],
-        stdout=subprocess.PIPE
-    ) as process:
-        if process.stdout is not None:
-            for line in process.stdout:
-                current_time = time.time()
-                if current_time >= start_time + deadline_seconds:
-                    message = (
-                        'Timed out waiting for the valkey cluster to form after '
-                        f'{deadline_seconds} seconds'
-                    )
-                    print(message)
-                    process.kill()
-                    raise ValkeyClusterNotReady(message)
-                if line.decode('utf-8').strip() == 'cluster ready':
-                    print('Valkey cluster is ready, continuing ...')
-                    process.kill()
-                    break
+    deadline = time.time() + deadline_seconds
+    while time.time() < deadline:
+        logs = subprocess.run(
+            ['docker', 'logs', 'valkey_cluster_celerity_runtime_tests'],
+            capture_output=True,
+            check=False,
+        )
+        if b'cluster ready' in logs.stdout or b'cluster ready' in logs.stderr:
+            print('Valkey cluster is ready, continuing ...')
+            return
+        time.sleep(0.2)
+
+    message = (
+        'Timed out waiting for the valkey cluster to form after '
+        f'{deadline_seconds} seconds'
+    )
+    print(message)
+    raise ValkeyClusterNotReady(message)
 
 
 def _populate_secrets(context: str) -> None:
