@@ -47,6 +47,15 @@ pub trait ForwardedMessageStore: Send + Sync + Debug {
         &self,
         message_id: &str,
     ) -> Result<bool, WebSocketConnError>;
+
+    /// Gives up the record of a message, for one that was taken as forwarded
+    /// and then could not be sent.
+    ///
+    /// The record is written before the message goes out, since two copies
+    /// arriving together must not both find it absent. A copy that then fails
+    /// to send has to revert to the previous state, or the next attempt is recognised
+    /// as a duplicate and acknowledged without ever reaching the client.
+    async fn forget_forwarded(&self, message_id: &str) -> Result<(), WebSocketConnError>;
 }
 
 /// Where the cluster records which node group holds a connection.
@@ -465,40 +474,50 @@ impl WebSocketConnRegistry {
                                 "acquiring lock to send message to connection: {}",
                                 message.connection_id.clone()
                             );
-                            // Acknowledged either way, and only the delivery is
-                            // skipped. Staying silent would have the sender
-                            // resend until its attempts ran out and then report
-                            // a message that did arrive as lost, which is worse
-                            // than the duplicate this avoids.
-                            if already_forwarded {
+                            // A message already forwarded is acknowledged
+                            // again without being sent again. Staying silent
+                            // would have the sender resend until its attempts
+                            // ran out and then report a message that did
+                            // arrive as lost, which is worse than the
+                            // duplicate this avoids.
+                            let delivered = if already_forwarded {
                                 info!(
                                     message_id = %message.message_id,
                                     "this message has already been forwarded to its client, \
                                      acknowledging it again without sending it again"
                                 );
+                                true
                             } else {
                                 let mut connection = connection.lock().await;
                                 debug!(connection_id = %message.connection_id, "sending message to connection: {}", message.connection_id);
-                                let ws_message = match create_ws_message(
-                                    message.message_type,
-                                    message.message,
-                                ) {
-                                    Ok(msg) => msg,
+                                match create_ws_message(message.message_type, message.message) {
+                                    Ok(ws_message) => match connection.send(ws_message).await {
+                                        Ok(()) => true,
+                                        Err(e) => {
+                                            error!(
+                                                connection_id = %message.connection_id,
+                                                "failed to send message to websocket connection: {e:?}"
+                                            );
+                                            false
+                                        }
+                                    },
                                     Err(e) => {
                                         error!(
                                             connection_id = %message.connection_id,
                                             "failed to decode message for cluster relay: {e:?}",
                                         );
-                                        continue;
+                                        false
                                     }
-                                };
-                                let send_result = connection.send(ws_message).await;
-                                if let Err(e) = send_result {
-                                    error!(
-                                        connection_id = %message.connection_id,
-                                        "failed to send message to websocket connection: {e:?}"
-                                    );
                                 }
+                            };
+
+                            if !delivered {
+                                // The record is given back, so the sender's
+                                // next attempt is a first delivery rather than
+                                // a duplicate acknowledgement without the actual message
+                                // being sent.
+                                self.forget_forwarded(&message.message_id).await;
+                                continue;
                             }
 
                             if let Some(broadcaster) = self.broadcaster.get() {
@@ -569,10 +588,6 @@ impl WebSocketConnRegistry {
         }
     }
 
-    /// Takes a connection without telling anything else about it.
-    ///
-    /// For a single node, and for the callers inside this crate that have
-    /// already dealt with the record.
     /// Whether this message has already been forwarded to its client.
     ///
     /// A store that cannot answer is taken as a no. Forwarding twice is a
@@ -596,6 +611,29 @@ impl WebSocketConnRegistry {
         }
     }
 
+    /// Gives up the record of a message this node took as forwarded and then
+    /// could not send.
+    ///
+    /// A failure here leaves the record in place, which costs the message a
+    /// delivery, so it is worth saying loudly.
+    async fn forget_forwarded(&self, message_id: &str) {
+        let Some(forwarded) = self.forwarded.get() else {
+            return;
+        };
+
+        if let Err(err) = forwarded.forget_forwarded(message_id).await {
+            error!(
+                message_id = %message_id,
+                "could not give up the record of a message that was not sent, so a later \
+                 attempt will be taken for one already delivered: {err}"
+            );
+        }
+    }
+
+    /// Takes a connection without telling anything else about it.
+    ///
+    /// For a single node, and for the callers inside this crate that have
+    /// already dealt with the record.
     pub fn add_connection(&self, connection_id: String, ws: Arc<Mutex<WebSocketConnSender>>) {
         self.connections.write().unwrap().insert(connection_id, ws);
     }

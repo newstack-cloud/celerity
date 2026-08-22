@@ -414,3 +414,77 @@ async fn test_a_resent_message_is_acknowledged_again_and_delivered_once() {
         "the client should have been sent the message once, not once per attempt"
     );
 }
+
+/// A message the holding node could not send is not left recorded as one it
+/// forwarded.
+///
+/// The record is written before the message goes out, since two copies arriving
+/// together must not both find it absent. A copy that then fails to send has to
+/// give the record back, or the next attempt is recognised as a duplicate and
+/// acknowledged without ever reaching the client, which reports a message as
+/// delivered that nobody received.
+#[test_log::test(tokio::test)]
+async fn test_a_message_that_could_not_be_sent_is_not_recorded_as_forwarded() {
+    let mut conn = redis_connection().await;
+    let prefix = "test-cluster-undelivered";
+    clear(&mut conn, prefix, &["m-1"]).await;
+
+    let sender = start_node(prefix, "api-node-1", 1).await;
+    let holder = start_node(prefix, "api-node-2", 1).await;
+    assert_ne!(sender.group_id, holder.group_id);
+
+    let (mut client, connection_id) = connect_client(&holder).await;
+
+    // Refused by the holding node when it comes to make a frame of it, which
+    // is a delivery that fails after the message has been taken as forwarded.
+    let sent = tokio::time::timeout(
+        Duration::from_secs(10),
+        sender.registry.send_message(
+            connection_id.clone(),
+            "m-1".to_string(),
+            MessageType::Binary,
+            "not base64 at all".to_string(),
+            Some(SendContext {
+                wait_for_ack: true,
+                caller: None,
+                inform_clients: vec![],
+            }),
+        ),
+    )
+    .await
+    .expect("a message that cannot be sent should run out of attempts rather than hang");
+    assert!(
+        matches!(sent, Err(WebSocketConnError::MessageLost(ref id)) if id == "m-1"),
+        "a message that never reached its client should be declared lost, got {sent:?}"
+    );
+
+    assert!(
+        !conn.exists(&format!("{prefix}:msg:m-1")).await.unwrap(),
+        "a message that was not sent should not be left recorded as forwarded"
+    );
+
+    // The same id again, as a sender retrying at the application level would.
+    // It has to be treated as a first delivery rather than a duplicate.
+    sender
+        .registry
+        .send_message(
+            connection_id,
+            "m-1".to_string(),
+            MessageType::Json,
+            r#"{"event":"second-attempt"}"#.to_string(),
+            None,
+        )
+        .await
+        .unwrap();
+
+    let received = tokio::time::timeout(Duration::from_secs(5), client.next())
+        .await
+        .expect("the client should have been sent the message on the second attempt")
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        received,
+        tungstenite::Message::Text(r#"{"event":"second-attempt"}"#.into()),
+        "a message that failed to send once should still reach its client"
+    );
+}

@@ -63,4 +63,18 @@ impl ForwardedMessageStore for ForwardedMessages {
 
         Ok(!recorded)
     }
+
+    async fn forget_forwarded(&self, message_id: &str) -> Result<(), WebSocketConnError> {
+        self.conn
+            .clone()
+            .del(&self.key(message_id))
+            .await
+            .map_err(|err| {
+                WebSocketConnError::ForwardedMessageError(format!(
+                    "could not give up the record of a forwarded message: {err}"
+                ))
+            })?;
+
+        Ok(())
+    }
 }
