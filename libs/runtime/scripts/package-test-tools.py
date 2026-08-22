@@ -51,7 +51,7 @@ def run_package_test_tools() -> None:
     args = parser.parse_args()
     try:
         _run_integration_tests(args)
-    except (KeyboardInterrupt, LocalstackNotReady):
+    except (KeyboardInterrupt, LocalstackNotReady, ValkeyClusterNotReady):
         if args.localdeps:
             _teardown_local_deps()
 
