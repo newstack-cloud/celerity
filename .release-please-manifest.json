@@ -10,5 +10,5 @@
   "libs/runtime/sdk/python": "0.2.2",
   "apps/runtime/nodejs": "0.8.3",
   "apps/runtime/python": "0.5.2",
-  "apps/runtime/core": "0.1.0"
+  "apps/runtime/core": "0.2.0"
 }
