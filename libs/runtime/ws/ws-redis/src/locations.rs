@@ -166,8 +166,11 @@ impl ConnectionLocationStore for ConnectionLocations {
     }
 
     async fn forget(&self, connection_id: &str) -> Result<(), WebSocketConnError> {
-        // Forgotten here first, so a refresh that overlaps this cannot write
-        // the entry back after it has been taken away.
+        // Forgotten here first, so no later refresh writes the entry back. One
+        // already under way can still land after the delete, which leaves an
+        // entry for a connection that has gone until its expiry takes it. That
+        // costs a message being offered to this node's group rather than to
+        // every group, and either way nothing holds the connection.
         self.recorded.write().unwrap().remove(connection_id);
         self.connection()
             .del(&self.key(connection_id))
