@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.4.0](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.3.5...runtime-sdk-node/v0.4.0) (2026-08-22)
+
+
+### Features
+
+* **lib-rt-core:** serve the handler stream over a unix socket ([d7511c8](https://github.com/newstack-cloud/celerity/commit/d7511c896cec4ab1d2f2ba0c6aff53ffbfec9f70))
+* **lib-rt-sdk-node:** give handlers a way to frame a binary message ([986c7b6](https://github.com/newstack-cloud/celerity/commit/986c7b695973b945ae960dbcec4045ac11cb0fa9))
+* **lib-rt-sdk-node:** read the cluster settings and build with clustering ([5dbdfac](https://github.com/newstack-cloud/celerity/commit/5dbdfaca9d98be88665b4f31e8402922ba80ce3a))
+* **runtime-libs:** carry websocket sends and handler invocation on the stream ([984d0a2](https://github.com/newstack-cloud/celerity/commit/984d0a22bb8f6cc0372d39855f2df36b1249150a))
+* **runtime-libs:** remove the local runtime API ([3525a33](https://github.com/newstack-cloud/celerity/commit/3525a3337f7ebfe8448d3b26d9bec2156cf72c4f))
+* **runtime-libs:** shed, cancel and drain events on the handler stream ([15f8a9c](https://github.com/newstack-cloud/celerity/commit/15f8a9cb362d8888b398bc26cab0ced025a82391))
+
+
+### Bug Fixes
+
+* **lib-rt-sdk-node:** carry the acknowledgement timings through to the runtime ([e64841c](https://github.com/newstack-cloud/celerity/commit/e64841c65f0f1337e3fdffaed235d8ec149c405b))
+* **lib-rt-sdk-node:** carry the handler concurrency through to the runtime ([0ee775e](https://github.com/newstack-cloud/celerity/commit/0ee775e0133f0862b2a481fa2f0bb898021926b9))
+* **runtime-libs:** refuse an empty name as a node's identity ([8320c96](https://github.com/newstack-cloud/celerity/commit/8320c96d8f78355bb6c9f963156d30f23a9c6d42))
+* **runtime-libs:** restrict unix socket permissions and make tcp fallback opt-in ([bf9362e](https://github.com/newstack-cloud/celerity/commit/bf9362e4ffe277b7c6cd67b1f0661270aa3f1ea1))
+
 ## [0.3.5](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.3.4...runtime-sdk-node/v0.3.5) (2026-06-05)
 
 
