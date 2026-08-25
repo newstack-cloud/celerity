@@ -99,6 +99,13 @@ pub enum MessageHandlerError {
     Timeout(Elapsed),
     HandlerFailure(Box<dyn Error + Send + Sync + 'static>),
     PartialBatchFailure(Vec<PartialBatchFailureInfo>),
+    /// The message never reached a handler.
+    ///
+    /// Distinct from a handler failing, because nothing looked at the message
+    /// and nothing about it is known to be wrong. A consumer should return it
+    /// to its source to be delivered again rather than treating it as one a
+    /// handler could not process.
+    NeverProcessed(Box<dyn Error + Send + Sync + 'static>),
 }
 
 impl fmt::Display for MessageHandlerError {
@@ -116,6 +123,9 @@ impl fmt::Display for MessageHandlerError {
             }
             MessageHandlerError::PartialBatchFailure(partial_batch_failure_info) => {
                 write!(f, "message handler failed: {partial_batch_failure_info:?}")
+            }
+            MessageHandlerError::NeverProcessed(error) => {
+                write!(f, "message was never processed: {error}")
             }
         }
     }

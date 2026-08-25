@@ -30,7 +30,7 @@ use opentelemetry::{
 use std::{fmt::Debug, sync::Arc, time::Duration};
 use tokio::time;
 use tokio::time::{timeout, Instant};
-use tracing::{debug, error, field, info, info_span, instrument, Instrument};
+use tracing::{debug, error, field, info, info_span, instrument, warn, Instrument};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 /// Configuration for an SQS message consumer.
@@ -374,9 +374,18 @@ impl SQSMessageConsumer {
     // caller matches on it, to save a hundred and change bytes on the path
     // where a network call has already failed.
     #[allow(clippy::result_large_err)]
-    async fn terminate_visibility_timeout(&self, messages: &[MessageHandle]) -> Result<(), Error> {
+    async fn terminate_visibility_timeout(
+        &self,
+        messages: &[MessageHandle],
+        error: &MessageHandlerError,
+    ) -> Result<(), Error> {
         if !self.config.terminate_visibility_timeout {
             debug!("sqs consumer not configured to terminate visibility timeout, moving on");
+            return Ok(());
+        }
+
+        if !brings_message_back(error) {
+            debug!("leaving the visibility timeout to expire for a message nothing processed");
             return Ok(());
         }
 
@@ -509,12 +518,15 @@ impl SQSMessageConsumer {
                     .add(message_count, &[KeyValue::new("status", "success")]);
             }
             Err(error) => {
-                let _res = self.terminate_visibility_timeout(&message_handles).await;
+                let _res = self
+                    .terminate_visibility_timeout(&message_handles, &error)
+                    .await;
 
                 let error_type = match &error {
                     MessageHandlerError::Timeout(_) => "timeout",
                     MessageHandlerError::MissingHandler => "missing_handler",
                     MessageHandlerError::HandlerFailure(_) => "handler_failure",
+                    MessageHandlerError::NeverProcessed(_) => "never_processed",
                     _ => "unknown",
                 };
                 self.metrics_errors
@@ -534,10 +546,55 @@ impl SQSMessageConsumer {
                     MessageHandlerError::HandlerFailure(handler_error) => {
                         error!("message handler failed: {}", handler_error)
                     }
+                    MessageHandlerError::NeverProcessed(reason) => {
+                        warn!("message was never processed, leaving it to be redelivered: {reason}")
+                    }
                     _ => {}
                 }
             }
         }
         Ok(())
+    }
+}
+
+/// Whether a failure should bring the message back to the queue at once.
+///
+/// A message nothing looked at is left to become visible when its own timeout
+/// expires. Bringing it straight back returns it to a runtime that has already
+/// turned it away, which under sustained overload is a loop rather than the
+/// backpressure shedding applies, and it spends a receive against the redrive
+/// policy each time round.
+fn brings_message_back(error: &MessageHandlerError) -> bool {
+    !matches!(error, MessageHandlerError::NeverProcessed(_))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(Debug)]
+    struct TestError;
+
+    impl std::fmt::Display for TestError {
+        fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            write!(f, "test error")
+        }
+    }
+
+    impl std::error::Error for TestError {}
+
+    #[test]
+    fn a_message_nothing_processed_waits_out_its_visibility_timeout() {
+        assert!(!brings_message_back(&MessageHandlerError::NeverProcessed(
+            Box::new(TestError)
+        )));
+    }
+
+    #[test]
+    fn a_message_a_handler_failed_comes_back_at_once() {
+        assert!(brings_message_back(&MessageHandlerError::HandlerFailure(
+            Box::new(TestError)
+        )));
+        assert!(brings_message_back(&MessageHandlerError::MissingHandler));
     }
 }
