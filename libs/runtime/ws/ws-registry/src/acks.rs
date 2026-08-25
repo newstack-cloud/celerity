@@ -64,6 +64,19 @@ const SETTLED_GRACE_MULTIPLIER: u32 = 1;
 /// The default interval in milliseconds to check for the acknowledgement status of a message.
 pub const ACK_WAIT_CHECK_INTERVAL_MS: u64 = 20;
 
+/// Where a message came from, for one this node is holding the connection for.
+///
+/// The node that forwarded it is waiting to be told how it turned out, and it
+/// is waiting against the id it sent, which doesn't need to be the id inside the
+/// message that the client acknowledges by.
+#[derive(Clone, Debug, PartialEq)]
+pub struct MessageOrigin {
+    /// The node that forwarded the message and is waiting for the outcome.
+    pub node: String,
+    /// The id that node is waiting against.
+    pub message_id: String,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum AckStatus {
     // The message has been sent but no acknowledgement
@@ -76,6 +89,9 @@ pub enum AckStatus {
         // The context the message was sent from, carried so that a client told
         // the message was lost is told what it was for.
         caller: Option<String>,
+        // The node waiting to be told how this turned out, for a message
+        // forwarded here rather than sent from this node.
+        origin: Option<MessageOrigin>,
     },
     // The message has been received by the node that
     // has the connection that the message was sent for.
@@ -94,6 +110,9 @@ pub struct ResendMessageInfo {
     // Carried through the resend so that it is still there if the message is
     // eventually declared lost, rather than being dropped on the first retry.
     pub caller: Option<String>,
+    // Carried for the same reason, so the node waiting on the outcome is still
+    // known after the message has been sent to its client again.
+    pub origin: Option<MessageOrigin>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -107,6 +126,14 @@ pub enum MessageAction {
         message_id: String,
         inform_clients: Vec<String>,
         caller: Option<String>,
+        // Where to report the loss, for a message forwarded here by another
+        // node that is waiting on the outcome.
+        origin: Option<MessageOrigin>,
+    },
+    // The client acknowledged a message forwarded here, which the node that
+    // forwarded it is waiting to be told.
+    Delivered {
+        origin: MessageOrigin,
     },
 }
 
@@ -240,7 +267,22 @@ impl Worker {
                             message_id,
                             connection_id,
                         }) => {
-                            self.record_client_ack(message_id, connection_id).await;
+                            // A message forwarded here leaves another node
+                            // waiting on the outcome, which is only known once
+                            // the client has answered.
+                            if let Some(origin) =
+                                self.record_client_ack(message_id, connection_id).await
+                            {
+                                if message_action_tx
+                                    .send(MessageAction::Delivered { origin })
+                                    .await
+                                    .is_err()
+                                {
+                                    error!(
+                                        "receiver dropped before reporting a message as delivered"
+                                    );
+                                }
+                            }
                         }
                         Some(AckWorkerMessage::Wait(message_id, tx)) => {
                             // Spawn a separate task to handle the ack wait without blocking
@@ -325,7 +367,14 @@ impl Worker {
     /// An acknowledgement naming a message that is waiting on a different
     /// connection is ignored, so one client cannot call off the delivery
     /// guarantees another is relying on.
-    async fn record_client_ack(&mut self, message_id: String, connection_id: String) {
+    ///
+    /// Answers with the node owed the outcome, where the message was forwarded
+    /// here by one.
+    async fn record_client_ack(
+        &mut self,
+        message_id: String,
+        connection_id: String,
+    ) -> Option<MessageOrigin> {
         let mut acks_guard = self.acks.lock().await;
         let Some(existing) = acks_guard.get_mut(&message_id) else {
             debug!(
@@ -333,17 +382,18 @@ impl Worker {
                 connection_id = %connection_id,
                 "a client acknowledged a message nothing is waiting on, ignoring it"
             );
-            return;
+            return None;
         };
 
-        let owed_by = match &existing.status {
+        let (owed_by, origin) = match &existing.status {
             AckStatus::Pending {
                 connection_id: pending_connection_id,
+                origin,
                 ..
-            } => pending_connection_id,
+            } => (pending_connection_id, origin.clone()),
             // Already settled one way or the other, so there is nothing left to
-            // say about it.
-            _ => return,
+            // report about it.
+            _ => return None,
         };
 
         if *owed_by != connection_id {
@@ -352,11 +402,12 @@ impl Worker {
                 connection_id = %connection_id,
                 "a client acknowledged a message owed by another connection, ignoring it"
             );
-            return;
+            return None;
         }
 
         existing.status = AckStatus::Received;
         existing.settled_at = Some(Instant::now());
+        origin
     }
 }
 
@@ -379,6 +430,7 @@ async fn check_for_actions_periodic(
             message_type,
             inform_clients: client_ids,
             caller,
+            origin,
         } = &detailed_ack_status.status
         {
             // Taken on by another node, so it is that node's to handle and
@@ -394,6 +446,7 @@ async fn check_for_actions_periodic(
                         message_id: message_id.clone(),
                         inform_clients: client_ids.clone(),
                         caller: caller.clone(),
+                        origin: origin.clone(),
                     });
                 }
                 continue;
@@ -407,6 +460,7 @@ async fn check_for_actions_periodic(
                             message_id: message_id.clone(),
                             inform_clients: client_ids.clone(),
                             caller: caller.clone(),
+                            origin: origin.clone(),
                         }
                     } else {
                         MessageAction::Resend(ResendMessageInfo {
@@ -416,6 +470,7 @@ async fn check_for_actions_periodic(
                             message: message.clone(),
                             inform_clients_on_loss: client_ids.clone(),
                             caller: caller.clone(),
+                            origin: origin.clone(),
                         })
                     };
                     actions.push(action);
@@ -441,6 +496,7 @@ async fn check_for_actions_periodic(
         let message_id = match &action {
             MessageAction::Resend(ResendMessageInfo { message_id, .. }) => message_id.clone(),
             MessageAction::Lost { message_id, .. } => message_id.clone(),
+            MessageAction::Delivered { origin } => origin.message_id.clone(),
         };
         let is_lost = matches!(action, MessageAction::Lost { .. });
 
@@ -520,6 +576,7 @@ mod tests {
                     message_type: MessageType::Json,
                     inform_clients: vec![],
                     caller: None,
+                    origin: None,
                 },
                 attempts: 0,
                 // Long enough ago that it is due to be retried.
@@ -678,6 +735,7 @@ mod tests {
             message_type: MessageType::Json,
             inform_clients: vec![],
             caller: None,
+            origin: None,
         }
     }
 
