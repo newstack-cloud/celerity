@@ -25,7 +25,7 @@ use celerity_helpers::{
 use celerity_ws_redis::{
     forwarded::ForwardedMessages,
     locations::ConnectionLocations,
-    node_group::{join_or_create, node_key, NodeGroupConfig},
+    node_group::{join_or_create, node_key, NodeGroupConfig, NodeLiveness},
     pubsub::{connect, PubSubConnectionConfig},
 };
 use celerity_ws_registry::{
@@ -141,6 +141,9 @@ async fn start_node_with_ack_timings(
             prefix.to_string(),
             30_000,
         ))
+        .unwrap();
+    registry
+        .set_node_liveness(NodeLiveness::new(conn.clone(), prefix.to_string()))
         .unwrap();
     registry.set_broadcaster(broadcaster).unwrap();
     registry.clone().start_ack_worker();
@@ -800,5 +803,57 @@ async fn test_waiting_on_an_acknowledgement_does_not_hold_the_clients_socket() {
     assert_eq!(
         second,
         tungstenite::Message::Text(r#"{"event":"second"}"#.into())
+    );
+}
+
+/// A node that took a message on and then went is not waited out. Its
+/// connections went with it, so no acknowledgement can arrive, and the cluster
+/// already records that it has stopped running.
+#[test_log::test(tokio::test)]
+async fn test_a_message_held_by_a_node_that_has_gone_is_declared_lost_at_once() {
+    let mut conn = redis_connection().await;
+    let prefix = "test-cluster-holder-gone";
+    clear(&mut conn, prefix, &["m-1"]).await;
+
+    // The sender's own deadline is a long way off, so only reading that the
+    // holding node has gone can settle this in the time the test allows.
+    let sender = start_node_with_ack_timings(prefix, "api-node-1", 1, 1_000, 30).await;
+    let holder = start_node_with_ack_timings(prefix, "api-node-2", 1, 60_000, 30).await;
+    assert_ne!(sender.group_id, holder.group_id);
+
+    let (_client, connection_id) = connect_client(&holder).await;
+
+    let registry = sender.registry.clone();
+    let waiting = tokio::spawn(async move {
+        registry
+            .send_message(
+                connection_id,
+                "m-1".to_string(),
+                MessageType::Json,
+                r#"{"messageId":"m-1","ack":true}"#.to_string(),
+                Some(SendContext {
+                    wait_for_ack: true,
+                    caller: None,
+                    inform_clients: vec![],
+                }),
+            )
+            .await
+    });
+
+    // Taken on, so the sender has stopped forwarding it and is waiting on the
+    // holding node rather than on its own attempts.
+    tokio::time::sleep(Duration::from_millis(1_500)).await;
+
+    // The node stops saying it is running, which is what the rest of the
+    // cluster reads when a node dies.
+    conn.del(&node_key(prefix, "api-node-2")).await.unwrap();
+
+    let settled = tokio::time::timeout(Duration::from_secs(10), waiting)
+        .await
+        .expect("a message held by a node that has gone should not be waited out")
+        .unwrap();
+    assert!(
+        matches!(settled, Err(WebSocketConnError::MessageLost(ref id)) if id == "m-1"),
+        "got {settled:?}"
     );
 }

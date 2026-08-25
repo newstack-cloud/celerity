@@ -73,6 +73,18 @@ pub trait ConnectionLocationStore: Send + Sync + Debug {
     async fn forget(&self, connection_id: &str) -> Result<(), WebSocketConnError>;
 }
 
+/// Whether a node of the cluster is still running.
+///
+/// A message handed to another node is that node's to see through, so a sender
+/// waiting on the outcome needs to be able to tell that the node has gone
+/// rather than waiting out the whole deadline for an answer that cannot come.
+/// Implemented outside this crate by whatever records that a node is running.
+#[async_trait]
+pub trait NodeLivenessStore: Send + Sync + Debug {
+    /// Whether the named node is still saying it is running.
+    async fn is_running(&self, server_node_name: &str) -> Result<bool, WebSocketConnError>;
+}
+
 // Additional context for sending messages to a connection in a WebSocket registry.
 #[derive(Default)]
 pub struct SendContext {
@@ -151,6 +163,10 @@ pub struct WebSocketConnRegistry {
     // other's clients. Absent on a single node, which needs no such record
     // because every connection it is asked about is either its own or nowhere.
     locations: OnceLock<Arc<dyn ConnectionLocationStore>>,
+    // Whether a node of the cluster is still running, for settling a message
+    // handed to a node that has since gone. Absent on a single node, where
+    // nothing is ever handed anywhere.
+    node_liveness: OnceLock<Arc<dyn NodeLivenessStore>>,
     // What has already been forwarded to a client, shared across the cluster.
     // Absent on a single node, where a message is only ever relayed to this
     // node once because there is nowhere else for it to come from.
@@ -179,6 +195,7 @@ impl WebSocketConnRegistry {
             broadcaster: broadcaster_slot,
             locations: OnceLock::new(),
             forwarded: OnceLock::new(),
+            node_liveness: OnceLock::new(),
             server_node_name: config.server_node_name,
         }
     }
@@ -217,6 +234,44 @@ impl WebSocketConnRegistry {
                 "the registry already has somewhere to record what it has forwarded".to_string(),
             )
         })
+    }
+
+    /// Sets the current node as running.
+    ///
+    /// This is only attached for a cluster, since a single node does not hand messages to other nodes
+    /// and has no need to check whether one is still running.
+    pub fn set_node_liveness(
+        &self,
+        node_liveness: Arc<dyn NodeLivenessStore>,
+    ) -> Result<(), WebSocketConnError> {
+        self.node_liveness.set(node_liveness).map_err(|_| {
+            WebSocketConnError::AlreadyAttached(
+                "the registry already has somewhere to read whether a node is running".to_string(),
+            )
+        })
+    }
+
+    /// Whether the node holding a message is still running.
+    ///
+    /// A store that cannot answer is read as the node still running, so an
+    /// unreachable store costs a message a slower loss rather than one wrongly
+    /// declared lost while its client is being waited for.
+    async fn node_is_running(&self, server_node_name: &str) -> bool {
+        let Some(node_liveness) = self.node_liveness.get() else {
+            return true;
+        };
+
+        match node_liveness.is_running(server_node_name).await {
+            Ok(running) => running,
+            Err(err) => {
+                error!(
+                    node = %server_node_name,
+                    "could not read whether a node is still running, waiting on it as though \
+                     it were: {err}"
+                );
+                true
+            }
+        }
     }
 
     /// Hands the registry where it should record the connections it holds.
@@ -326,6 +381,15 @@ impl WebSocketConnRegistry {
                         }
                         self.inform_clients_of_loss(message_id, inform_clients, caller)
                             .await;
+                    }
+                    // Nothing tracked here was handed to another node, so
+                    // there is no holder to ask about.
+                    MessageAction::CheckHolder { holding_node } => {
+                        debug!(
+                            node = %holding_node,
+                            "asked whether a node holds a client acknowledgement, which is \
+                             never tracked across nodes"
+                        );
                     }
                     MessageAction::Delivered { origin } => {
                         debug!(
@@ -458,6 +522,17 @@ impl WebSocketConnRegistry {
                                     "failed to resend message to client: {error:?}"
                                 );
                             }
+                        }
+                        MessageAction::CheckHolder { holding_node } => {
+                            if self.node_is_running(&holding_node).await {
+                                continue;
+                            }
+                            info!(
+                                node = %holding_node,
+                                "the node holding messages sent from here has gone, so they \
+                                 cannot be acknowledged"
+                            );
+                            self.record_holder_gone(holding_node).await;
                         }
                         // A message this node sent has no origin, since
                         // nothing forwarded it here.
@@ -806,6 +881,16 @@ impl WebSocketConnRegistry {
                     message_id,
                     holding_node,
                 })
+                .await
+                .expect("ack worker channel unexpectedly closed");
+        }
+    }
+
+    /// Notes that a node holding messages sent from here has gone.
+    async fn record_holder_gone(&self, holding_node: String) {
+        if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
+            ack_sender
+                .send(AckWorkerMessage::HolderGone { holding_node })
                 .await
                 .expect("ack worker channel unexpectedly closed");
         }

@@ -6,6 +6,9 @@ use redis::RedisResult;
 use tokio::{sync::mpsc::Sender, sync::oneshot, task::JoinHandle};
 use tracing::{debug, error, info};
 
+use async_trait::async_trait;
+use celerity_ws_registry::{errors::WebSocketConnError, registry::NodeLivenessStore};
+
 use crate::locations::ConnectionLocations;
 
 /// The prefix the protocol documents, and the fallback for a caller that names
@@ -281,4 +284,36 @@ async fn beat(
     }
 
     group
+}
+
+/// Reads whether a node of the cluster is still running.
+///
+/// A node refreshes its own key while it runs, so the key being gone is the
+/// same fact the group uses to prune it, read here to settle the messages it
+/// was holding.
+#[derive(Debug)]
+pub struct NodeLiveness {
+    conn: ConnectionWrapper,
+    key_prefix: String,
+}
+
+impl NodeLiveness {
+    pub fn new(conn: ConnectionWrapper, key_prefix: String) -> Arc<Self> {
+        Arc::new(Self { conn, key_prefix })
+    }
+}
+
+#[async_trait]
+impl NodeLivenessStore for NodeLiveness {
+    async fn is_running(&self, server_node_name: &str) -> Result<bool, WebSocketConnError> {
+        self.conn
+            .clone()
+            .exists(&node_key(&self.key_prefix, server_node_name))
+            .await
+            .map_err(|err| {
+                WebSocketConnError::NodeLivenessError(format!(
+                    "could not read whether a node is still running: {err}"
+                ))
+            })
+    }
 }

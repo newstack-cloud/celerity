@@ -1,4 +1,7 @@
-use std::{collections::HashMap, time::Duration};
+use std::{
+    collections::{HashMap, HashSet},
+    time::Duration,
+};
 
 use std::sync::Arc;
 use tokio::{
@@ -135,6 +138,12 @@ pub enum MessageAction {
     Delivered {
         origin: MessageOrigin,
     },
+    // Whether the named node is still running, asked because messages taken on
+    // by it are being waited for. Raised for the node rather than for each
+    // message, since one answer settles all of them.
+    CheckHolder {
+        holding_node: String,
+    },
 }
 
 pub enum AckWorkerMessage {
@@ -143,6 +152,11 @@ pub enum AckWorkerMessage {
     TakenOn {
         message_id: String,
         holding_node: Option<String>,
+    },
+    /// The node holding messages taken on from here has gone, so there is
+    /// nothing left to wait for on any of them.
+    HolderGone {
+        holding_node: String,
     },
     ClientAck {
         message_id: String,
@@ -263,6 +277,16 @@ impl Worker {
                         }) => {
                             self.record_taken_on(message_id, holding_node).await;
                         }
+                        Some(AckWorkerMessage::HolderGone { holding_node }) => {
+                            for lost in self.record_holder_gone(&holding_node).await {
+                                if message_action_tx.send(lost).await.is_err() {
+                                    error!(
+                                        "receiver dropped before reporting messages held by a \
+                                         node that has gone"
+                                    );
+                                }
+                            }
+                        }
                         Some(AckWorkerMessage::ClientAck {
                             message_id,
                             connection_id,
@@ -362,6 +386,47 @@ impl Worker {
         });
     }
 
+    /// Settles every message taken on by a node that has gone.
+    ///
+    /// Its connections went with it, so no acknowledgement can arrive for any
+    /// of them and there is nothing to gain by waiting the deadline out.
+    /// Answers with what to report for each, and takes them out of the map the
+    /// same way the deadline would.
+    async fn record_holder_gone(&mut self, holding_node: &str) -> Vec<MessageAction> {
+        let mut acks_guard = self.acks.lock().await;
+        let mut lost = Vec::new();
+
+        acks_guard.retain(|message_id, held| {
+            let held_by_gone_node = held
+                .taken_on
+                .as_ref()
+                .and_then(|taken_on| taken_on.holding_node.as_deref())
+                == Some(holding_node);
+            let AckStatus::Pending {
+                inform_clients,
+                caller,
+                origin,
+                ..
+            } = &held.status
+            else {
+                return true;
+            };
+            if !held_by_gone_node {
+                return true;
+            }
+
+            lost.push(MessageAction::Lost {
+                message_id: message_id.clone(),
+                inform_clients: inform_clients.clone(),
+                caller: caller.clone(),
+                origin: origin.clone(),
+            });
+            false
+        });
+
+        lost
+    }
+
     /// Settles a message on the word of the client it was sent to.
     ///
     /// An acknowledgement naming a message that is waiting on a different
@@ -420,6 +485,7 @@ async fn check_for_actions_periodic(
     debug!("checking for actions based on ack statuses");
     let now = Instant::now();
     let mut actions = Vec::new();
+    let mut holders_to_check = HashSet::new();
 
     let mut acks_guard = acks.lock().await;
 
@@ -448,6 +514,18 @@ async fn check_for_actions_periodic(
                         caller: caller.clone(),
                         origin: origin.clone(),
                     });
+                    continue;
+                }
+
+                // The deadline is the backstop. Where the node holding it has
+                // gone, its connections went with it and no acknowledgement can
+                // ever arrive, so there is no reason to wait the rest out. One
+                // name is collected however many messages it holds, since one
+                // answer settles all of them.
+                if let Some(holding_node) = &taken_on.holding_node {
+                    if now.duration_since(taken_on.at) > Duration::from_millis(message_timeout_ms) {
+                        holders_to_check.insert(holding_node.clone());
+                    }
                 }
                 continue;
             }
@@ -492,11 +570,24 @@ async fn check_for_actions_periodic(
     // Release the lock before sending actions
     drop(acks_guard);
 
+    for holding_node in holders_to_check {
+        if message_action_tx
+            .send(MessageAction::CheckHolder { holding_node })
+            .await
+            .is_err()
+        {
+            error!("receiver dropped before asking whether a node is still running");
+        }
+    }
+
     for action in actions {
         let message_id = match &action {
             MessageAction::Resend(ResendMessageInfo { message_id, .. }) => message_id.clone(),
             MessageAction::Lost { message_id, .. } => message_id.clone(),
             MessageAction::Delivered { origin } => origin.message_id.clone(),
+            // Asked about a node rather than about one message, and answered
+            // by the caller rather than settling anything here.
+            MessageAction::CheckHolder { .. } => String::new(),
         };
         let is_lost = matches!(action, MessageAction::Lost { .. });
 
