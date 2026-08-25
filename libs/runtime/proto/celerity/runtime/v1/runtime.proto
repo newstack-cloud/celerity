@@ -17,6 +17,16 @@ message Values {
   repeated string values = 1;
 }
 
+// The version of this protocol that one end of the stream speaks.
+//
+// Minor versions are additive, so a handler built against an earlier minor of
+// the same major serves unchanged against a later one. A different major is
+// not compatible in either direction.
+message ProtocolVersion {
+  uint32 major = 1;
+  uint32 minor = 2;
+}
+
 // ─────────────────────────── runtime → handler ───────────────────────────
 
 message RuntimeMessage {
@@ -59,6 +69,10 @@ message Ready {
   // Optional per-tag concurrency caps, so one slow tag cannot consume the whole
   // credit window and starve the others.
   repeated HandlerLimit limits = 4;
+  // The protocol version this handler was built against. Required. A handler
+  // that declares none was built against a version this contract cannot
+  // determine, and is refused rather than assumed to speak the current one.
+  ProtocolVersion protocol_version = 5;
 }
 
 message HandlerLimit {
@@ -75,6 +89,21 @@ message ReadyAck {
   repeated string unknown_tags = 2;
   // Present in the blueprint but not registered by the handler.
   repeated string unhandled_tags = 3;
+
+  enum RefusedReason {
+    REFUSED_REASON_UNSPECIFIED = 0;
+    // The tag lists above say which.
+    REFUSED_REASON_TAG_MISMATCH = 1;
+    // The handler declared no protocol version, or one whose major the runtime
+    // does not serve. The runtime's own version is in RuntimeConfig, which the
+    // handler already has by this point.
+    REFUSED_REASON_PROTOCOL_VERSION = 2;
+  }
+
+  // Unspecified where the handler was accepted, since the tag lists alone
+  // cannot tell a version refusal from an accepted handler with nothing to
+  // report.
+  RefusedReason refused_reason = 4;
 }
 
 // Returns credit to the runtime.
@@ -374,6 +403,10 @@ message RuntimeConfig {
   bool tracing_enabled = 1;
   bool metrics_enabled = 2;
   repeated HandlerConfig handlers = 3;
+  // The protocol version this runtime serves, sent before the handler is asked
+  // for anything so that it can refuse for itself rather than waiting to be
+  // refused.
+  ProtocolVersion protocol_version = 4;
 }
 
 message HandlerConfig {

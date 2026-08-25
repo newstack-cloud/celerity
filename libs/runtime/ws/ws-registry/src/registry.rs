@@ -265,10 +265,11 @@ impl WebSocketConnRegistry {
         self.shutdown.subscribe()
     }
 
-    /// Sets the current node as running.
+    /// Attaches the store this registry reads node liveness from.
     ///
-    /// This is only attached for a cluster, since a single node does not hand messages to other nodes
-    /// and has no need to check whether one is still running.
+    /// This is only attached for a cluster, since a single node does not hand
+    /// messages to other nodes and has no need to check whether one is still
+    /// running.
     pub fn set_node_liveness(
         &self,
         node_liveness: Arc<dyn NodeLivenessStore>,

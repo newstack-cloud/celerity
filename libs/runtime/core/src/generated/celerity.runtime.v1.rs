@@ -9,6 +9,18 @@ pub struct Values {
     #[prost(string, repeated, tag = "1")]
     pub values: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
+/// The version of this protocol that one end of the stream speaks.
+///
+/// Minor versions are additive, so a handler built against an earlier minor of
+/// the same major serves unchanged against a later one. A different major is
+/// not compatible in either direction.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ProtocolVersion {
+    #[prost(uint32, tag = "1")]
+    pub major: u32,
+    #[prost(uint32, tag = "2")]
+    pub minor: u32,
+}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RuntimeMessage {
     #[prost(oneof = "runtime_message::Frame", tags = "1, 2, 3, 4, 5, 6")]
@@ -75,6 +87,11 @@ pub struct Ready {
     /// credit window and starve the others.
     #[prost(message, repeated, tag = "4")]
     pub limits: ::prost::alloc::vec::Vec<HandlerLimit>,
+    /// The protocol version this handler was built against. Required. A handler
+    /// that declares none was built against a version this contract cannot
+    /// determine, and is refused rather than assumed to speak the current one.
+    #[prost(message, optional, tag = "5")]
+    pub protocol_version: ::core::option::Option<ProtocolVersion>,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct HandlerLimit {
@@ -96,6 +113,57 @@ pub struct ReadyAck {
     /// Present in the blueprint but not registered by the handler.
     #[prost(string, repeated, tag = "3")]
     pub unhandled_tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Unspecified where the handler was accepted, since the tag lists alone
+    /// cannot tell a version refusal from an accepted handler with nothing to
+    /// report.
+    #[prost(enumeration = "ready_ack::RefusedReason", tag = "4")]
+    pub refused_reason: i32,
+}
+/// Nested message and enum types in `ReadyAck`.
+pub mod ready_ack {
+    #[derive(
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration
+    )]
+    #[repr(i32)]
+    pub enum RefusedReason {
+        Unspecified = 0,
+        /// The tag lists above say which.
+        TagMismatch = 1,
+        /// The handler declared no protocol version, or one whose major the runtime
+        /// does not serve. The runtime's own version is in RuntimeConfig, which the
+        /// handler already has by this point.
+        ProtocolVersion = 2,
+    }
+    impl RefusedReason {
+        /// String value of the enum field names used in the ProtoBuf definition.
+        ///
+        /// The values are not transformed in any way and thus are considered stable
+        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+        pub fn as_str_name(&self) -> &'static str {
+            match self {
+                Self::Unspecified => "REFUSED_REASON_UNSPECIFIED",
+                Self::TagMismatch => "REFUSED_REASON_TAG_MISMATCH",
+                Self::ProtocolVersion => "REFUSED_REASON_PROTOCOL_VERSION",
+            }
+        }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "REFUSED_REASON_UNSPECIFIED" => Some(Self::Unspecified),
+                "REFUSED_REASON_TAG_MISMATCH" => Some(Self::TagMismatch),
+                "REFUSED_REASON_PROTOCOL_VERSION" => Some(Self::ProtocolVersion),
+                _ => None,
+            }
+        }
+    }
 }
 /// Returns credit to the runtime.
 ///
@@ -525,6 +593,11 @@ pub struct RuntimeConfig {
     pub metrics_enabled: bool,
     #[prost(message, repeated, tag = "3")]
     pub handlers: ::prost::alloc::vec::Vec<HandlerConfig>,
+    /// The protocol version this runtime serves, sent before the handler is asked
+    /// for anything so that it can refuse for itself rather than waiting to be
+    /// refused.
+    #[prost(message, optional, tag = "4")]
+    pub protocol_version: ::core::option::Option<ProtocolVersion>,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct HandlerConfig {

@@ -15,6 +15,7 @@ use celerity_runtime_core::{
         self as proto, handler_message,
         handler_runtime_service_client::HandlerRuntimeServiceClient, runtime_message,
     },
+    ipc_stream::runtime_protocol_version,
 };
 use tokio::{net::UnixStream, sync::mpsc};
 
@@ -144,6 +145,7 @@ impl HandlerStub {
         handler_tx
             .send(proto::HandlerMessage {
                 frame: Some(handler_message::Frame::Ready(proto::Ready {
+                    protocol_version: Some(runtime_protocol_version()),
                     handler_tags: config
                         .handlers
                         .iter()

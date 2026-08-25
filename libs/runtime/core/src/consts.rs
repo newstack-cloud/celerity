@@ -57,6 +57,15 @@ pub const MAX_EVENT_QUEUE_ADMISSION_WAIT_SECS: u64 = 5;
 // budget for the handler that will eventually run.
 pub const EVENT_QUEUE_ADMISSION_WAIT_DIVISOR: u32 = 4;
 
+// The version of the handler IPC protocol this runtime serves.
+//
+// Minor versions are additive, so a handler built against an earlier minor of
+// the same major serves unchanged here. A different major is not compatible in
+// either direction, and a handler declaring one is refused at the handshake
+// rather than left to fail on a frame it cannot read.
+pub const IPC_PROTOCOL_VERSION_MAJOR: u32 = 1;
+pub const IPC_PROTOCOL_VERSION_MINOR: u32 = 0;
+
 // The largest HTTP request body the runtime will buffer into an event in the
 // IPC call mode. Matches axum's own default extractor limit.
 pub const MAX_HTTP_REQUEST_BODY_BYTES: usize = 2 * 1024 * 1024;
