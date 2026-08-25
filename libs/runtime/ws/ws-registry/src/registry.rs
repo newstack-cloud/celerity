@@ -673,6 +673,16 @@ impl WebSocketConnRegistry {
                             )
                             .await;
 
+                            // Already delivered, so this node is either still
+                            // waiting on its client or has settled it and
+                            // reported the outcome. Taking it on a second time
+                            // would put a message its client has already
+                            // acknowledged back among those waiting, and send it
+                            // again.
+                            if already_forwarded {
+                                continue;
+                            }
+
                             // Tracked against the id inside the message, which
                             // is what its client acknowledges by, while the
                             // outcome is reported against the id the node that

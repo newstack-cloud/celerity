@@ -857,3 +857,75 @@ async fn test_a_message_held_by_a_node_that_has_gone_is_declared_lost_at_once() 
         "got {settled:?}"
     );
 }
+
+/// A forwarding that the holding node has already delivered must not be taken on a
+/// second time.
+///
+/// The delivery is skipped, which deduplication takes care of, but taking it on
+/// again would put it back among the messages waiting on their client. The node
+/// would then send a message its client has already acknowledged, which is what
+/// delivery deduplication exists to prevent.
+#[test_log::test(tokio::test)]
+async fn test_a_forward_already_delivered_is_not_taken_on_again() {
+    let mut conn = redis_connection().await;
+    let prefix = "test-cluster-duplicate-taken-on";
+    clear(&mut conn, prefix, &["m-1"]).await;
+
+    let sender = start_node_with_ack_timings(prefix, "api-node-1", 1, 5_000, 3).await;
+    // Short, so that anything left waiting on its client is sent again well
+    // inside what this test watches for.
+    let holder = start_node_with_ack_timings(prefix, "api-node-2", 1, 300, 3).await;
+    assert_ne!(sender.group_id, holder.group_id);
+
+    let (mut client, connection_id) = connect_client(&holder).await;
+
+    let asking = r#"{"messageId":"m-1","ack":true}"#;
+    sender
+        .registry
+        .send_message(
+            connection_id.clone(),
+            "m-1".to_string(),
+            MessageType::Json,
+            asking.to_string(),
+            None,
+        )
+        .await
+        .unwrap();
+
+    let received = tokio::time::timeout(Duration::from_secs(5), client.next())
+        .await
+        .expect("the client should have been sent the message")
+        .unwrap()
+        .unwrap();
+    assert_eq!(received, tungstenite::Message::Text(asking.into()));
+
+    client
+        .send(tungstenite::Message::Text(
+            r#"{"event":"ack","data":{"messageId":"m-1"}}"#.into(),
+        ))
+        .await
+        .unwrap();
+    tokio::time::sleep(Duration::from_millis(100)).await;
+
+    // The same forwarding message again,
+    // which is what a sender that received nothing back in
+    // time produces.
+    sender
+        .registry
+        .send_message(
+            connection_id,
+            "m-1".to_string(),
+            MessageType::Json,
+            asking.to_string(),
+            None,
+        )
+        .await
+        .unwrap();
+
+    assert!(
+        tokio::time::timeout(Duration::from_secs(2), client.next())
+            .await
+            .is_err(),
+        "a message its client has already acknowledged should not be sent again"
+    );
+}
