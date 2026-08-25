@@ -854,6 +854,45 @@ impl WebSocketConnRegistry {
         }
     }
 
+    /// Waits for the client to acknowledge a message this node sent it.
+    ///
+    /// Waited on by the id inside the message, which is what a client
+    /// acknowledges by, while the error names the id the caller knows the
+    /// message as. The two do not need to be the same.
+    ///
+    /// In the case nothing tracks client acknowledgements, there is nothing to wait
+    /// for, and the message is taken as delivered.
+    async fn wait_for_client_ack(
+        &self,
+        ack_id: String,
+        message_id: String,
+    ) -> Result<(), WebSocketConnError> {
+        let Some(ack_sender) = self.client_ack_sender.get() else {
+            return Ok(());
+        };
+
+        let (ack_tx, ack_rx) = tokio::sync::oneshot::channel();
+        if ack_sender
+            .send(AckWorkerMessage::Wait(ack_id, ack_tx))
+            .await
+            .is_err()
+        {
+            error!(
+                message_id = %message_id,
+                "nothing is tracking client acknowledgements any more, so this message \
+                 cannot be waited on"
+            );
+            return Err(WebSocketConnError::MessageLost(message_id));
+        }
+
+        match ack_rx.await {
+            Ok(AckStatus::Received) => Ok(()),
+            // Reported as lost rather than left to hang, for a worker that
+            // stopped before it could answer.
+            _ => Err(WebSocketConnError::MessageLost(message_id)),
+        }
+    }
+
     async fn wait_for_ack(&self, message_id: String) -> Result<(), WebSocketConnError> {
         let (ack_tx, ack_rx) = tokio::sync::oneshot::channel();
 
@@ -918,9 +957,10 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
             );
 
             let send_ctx = ctx.unwrap_or_default();
+            let wait_for_ack = send_ctx.wait_for_ack;
             let awaiting_ack = client_ack_request(&message_type, &message);
 
-            if let Some(ack_id) = awaiting_ack {
+            if let Some(ack_id) = awaiting_ack.clone() {
                 self.record_pending_client_ack(
                     connection_id.clone(),
                     ack_id,
@@ -935,10 +975,22 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
                 .await;
             }
 
-            let mut connection = connection.lock().await;
-            debug!(connection_id = %connection_id, "sending message to connection: {}", connection_id);
-            let ws_message = create_ws_message(message_type, message)?;
-            connection.send(ws_message).await?;
+            {
+                let mut connection = connection.lock().await;
+                debug!(connection_id = %connection_id, "sending message to connection: {}", connection_id);
+                let ws_message = create_ws_message(message_type, message)?;
+                connection.send(ws_message).await?;
+            }
+
+            // Waited on once the socket has been given up, since holding it
+            // would stop anything else being sent to this client for as long as
+            // the acknowledgement takes.
+            //
+            // A message that requires no acknowledgement has nothing to wait
+            // for.
+            if let (true, Some(ack_id)) = (wait_for_ack, awaiting_ack) {
+                return self.wait_for_client_ack(ack_id, message_id).await;
+            }
         } else if let Some(broadcaster) = self.broadcaster.get() {
             let send_ctx = ctx.unwrap_or_default();
             debug!(connection_id = %connection_id, "connection not found locally, preparing to send message to broadcaster");
