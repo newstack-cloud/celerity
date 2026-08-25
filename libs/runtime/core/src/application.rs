@@ -1468,15 +1468,6 @@ impl Application {
     }
 
     pub fn shutdown(&mut self) {
-        // Every task the registry spawned holds the registry, and the registry
-        // holds what those tasks read from, so none of them ends on their own.
-        // A host that builds and discards applications without the process ending
-        // would otherwise keep every registry it ever made, along with the
-        // timers those tasks wake on.
-        if let Some(conn_registry) = self.ws_conn_registry.take() {
-            conn_registry.shutdown();
-        }
-
         if let Some(tx) = self.server_shutdown_signal.take() {
             tx.send(())
                 .expect("failed to send shutdown signal to http server");
@@ -1501,6 +1492,19 @@ impl Application {
             // The heartbeat leaves the node group and takes this node's
             // connection entries away when it sees this.
             let _ = tx.send(());
+        }
+
+        // Every task the registry spawned holds the registry, and the registry
+        // holds what those tasks read from, so none of them end on their own.
+        // A host that builds and discards applications without the process ending
+        // would otherwise keep every registry it ever made, along with the
+        // timers those tasks wake on.
+        //
+        // Released after the server has been told to stop, so that connections
+        // are drawing to a close by the time the workers tracking their
+        // acknowledgements go.
+        if let Some(conn_registry) = self.ws_conn_registry.take() {
+            conn_registry.shutdown();
         }
 
         if let Some(consumer_shutdown_signals_lock) = self.consumer_shutdown_signals.take() {

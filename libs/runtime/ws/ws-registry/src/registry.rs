@@ -128,6 +128,18 @@ pub struct WebSocketConnRegistryConfig {
     pub server_node_name: String,
 }
 
+/// What became of a message handed to the acknowledgement worker.
+#[derive(Debug)]
+enum AckWorkerSend {
+    /// Taken by the worker.
+    Taken,
+    /// Nothing here tracks acknowledgements, which is a single node deployment.
+    NotTracked,
+    /// The worker has stopped, which only happens once the registry has been
+    /// shut down.
+    Stopped,
+}
+
 /// Provides a registry for WebSocket connections.
 /// This allows for sending messages to WebSocket connections
 /// in the current runtime instance and on other nodes in a cluster.
@@ -881,13 +893,29 @@ impl WebSocketConnRegistry {
             .collect()
     }
 
-    async fn record_received_ack(&self, message_id: String) {
-        if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
-            ack_sender
-                .send(AckWorkerMessage::Status(message_id, AckStatus::Received))
-                .await
-                .expect("ack worker channel unexpectedly closed");
+    /// Hands a message to the worker tracking acknowledgements between nodes.
+    ///
+    /// The channel only closes once this registry has been shut down and the
+    /// worker with it, so a message the worker cannot take is dropped rather
+    /// than treated as a fault. Connections are still being served while a
+    /// shutdown runs, and one of them acknowledging a message in that window
+    /// is expected rather than a broken invariant.
+    async fn send_to_ack_worker(&self, message: AckWorkerMessage) -> AckWorkerSend {
+        let Some(ack_sender) = self.ack_sender.lock().await.as_ref().cloned() else {
+            return AckWorkerSend::NotTracked;
+        };
+
+        if ack_sender.send(message).await.is_err() {
+            debug!("the acknowledgement worker has stopped, dropping a message meant for it");
+            return AckWorkerSend::Stopped;
         }
+
+        AckWorkerSend::Taken
+    }
+
+    async fn record_received_ack(&self, message_id: String) {
+        self.send_to_ack_worker(AckWorkerMessage::Status(message_id, AckStatus::Received))
+            .await;
     }
 
     /// Publishes an acknowledgement to the node waiting on the message.
@@ -928,25 +956,17 @@ impl WebSocketConnRegistry {
     /// It stops being forwarded from here, and waits for that node to record
     /// how it turned out.
     async fn record_taken_on(&self, message_id: String, holding_node: Option<String>) {
-        if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
-            ack_sender
-                .send(AckWorkerMessage::TakenOn {
-                    message_id,
-                    holding_node,
-                })
-                .await
-                .expect("ack worker channel unexpectedly closed");
-        }
+        self.send_to_ack_worker(AckWorkerMessage::TakenOn {
+            message_id,
+            holding_node,
+        })
+        .await;
     }
 
     /// Notes that a node holding messages sent from here has gone.
     async fn record_holder_gone(&self, holding_node: String) {
-        if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
-            ack_sender
-                .send(AckWorkerMessage::HolderGone { holding_node })
-                .await
-                .expect("ack worker channel unexpectedly closed");
-        }
+        self.send_to_ack_worker(AckWorkerMessage::HolderGone { holding_node })
+            .await;
     }
 
     /// Notes that the node holding the connection exhausted its attempts on
@@ -955,12 +975,8 @@ impl WebSocketConnRegistry {
     /// Its own attempts on the client are spent, so there is nothing to gain by
     /// forwarding it again.
     async fn record_lost_ack(&self, message_id: String) {
-        if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
-            ack_sender
-                .send(AckWorkerMessage::Status(message_id, AckStatus::Lost))
-                .await
-                .expect("ack worker channel unexpectedly closed");
-        }
+        self.send_to_ack_worker(AckWorkerMessage::Status(message_id, AckStatus::Lost))
+            .await;
     }
 
     async fn record_pending_ack(
@@ -972,24 +988,20 @@ impl WebSocketConnRegistry {
         inform_clients: Vec<String>,
         caller: Option<String>,
     ) {
-        if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
-            ack_sender
-                .send(AckWorkerMessage::Status(
-                    message_id,
-                    AckStatus::Pending {
-                        connection_id,
-                        message,
-                        message_type,
-                        inform_clients,
-                        caller,
-                        // Sent from this node, so there is nobody else waiting
-                        // to be told how it turned out.
-                        origin: None,
-                    },
-                ))
-                .await
-                .expect("ack worker channel unexpectedly closed");
-        }
+        self.send_to_ack_worker(AckWorkerMessage::Status(
+            message_id,
+            AckStatus::Pending {
+                connection_id,
+                message,
+                message_type,
+                inform_clients,
+                caller,
+                // Sent from this node, so there is nobody else waiting
+                // to be told how it turned out.
+                origin: None,
+            },
+        ))
+        .await;
     }
 
     /// Waits for the client to acknowledge a message this node sent it.
@@ -1010,14 +1022,24 @@ impl WebSocketConnRegistry {
         };
 
         let (ack_tx, ack_rx) = tokio::sync::oneshot::channel();
-        ack_sender
+        if ack_sender
             .send(AckWorkerMessage::Wait(ack_id, ack_tx))
             .await
-            .expect("client ack worker channel unexpectedly closed");
+            .is_err()
+        {
+            // Stopped along with the registry, so no client acknowledgement
+            // will reach it now and the message cannot be reported as
+            // delivered.
+            debug!(
+                "the client acknowledgement worker has stopped, nothing is waiting for the client"
+            );
+            return Err(WebSocketConnError::MessageLost(message_id));
+        }
 
-        let ack_status = ack_rx
-            .await
-            .expect("oneshot channel waiting for client ack unexpectedly closed");
+        let Ok(ack_status) = ack_rx.await else {
+            debug!("the client acknowledgement worker has stopped before the client answered");
+            return Err(WebSocketConnError::MessageLost(message_id));
+        };
 
         if ack_status == AckStatus::Received {
             Ok(())
@@ -1034,31 +1056,27 @@ impl WebSocketConnRegistry {
     async fn wait_for_ack(&self, message_id: String) -> Result<(), WebSocketConnError> {
         let (ack_tx, ack_rx) = tokio::sync::oneshot::channel();
 
-        // Record a boolean so that the lock is released before waiting for the ack on
-        // the oneshot channel.
-        let has_ack_sender = {
-            if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
-                ack_sender
-                    .send(AckWorkerMessage::Wait(message_id.clone(), ack_tx))
-                    .await
-                    .expect("ack worker channel unexpectedly closed");
-                true
-            } else {
-                false
-            }
+        match self
+            .send_to_ack_worker(AckWorkerMessage::Wait(message_id.clone(), ack_tx))
+            .await
+        {
+            AckWorkerSend::NotTracked => return Ok(()),
+            // No outcome will arrive from another node now, so the message
+            // cannot be reported as delivered.
+            AckWorkerSend::Stopped => return Err(WebSocketConnError::MessageLost(message_id)),
+            AckWorkerSend::Taken => {}
+        }
+
+        let Ok(ack_status) = ack_rx.await else {
+            debug!("the acknowledgement worker has stopped before an outcome arrived");
+            return Err(WebSocketConnError::MessageLost(message_id));
         };
 
-        if has_ack_sender {
-            let ack_status = ack_rx
-                .await
-                .expect("oneshot channel waiting for ack unexpectedly closed");
-            if ack_status == AckStatus::Received {
-                return Ok(());
-            } else {
-                return Err(WebSocketConnError::MessageLost(message_id));
-            }
+        if ack_status == AckStatus::Received {
+            Ok(())
+        } else {
+            Err(WebSocketConnError::MessageLost(message_id))
         }
-        Ok(())
     }
 }
 
