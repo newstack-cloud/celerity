@@ -18,7 +18,8 @@ use crate::{
     errors::WebSocketConnError,
     message_helpers::{client_ack_request, create_message_lost_event, create_ws_message},
     types::{
-        AckMessage, AckWorkerConfig, Message as RegistryMessage, MessageType, WebSocketMessage,
+        AckMessage, AckStage, AckWorkerConfig, Message as RegistryMessage, MessageType,
+        WebSocketMessage,
     },
 };
 
@@ -525,6 +526,8 @@ impl WebSocketConnRegistry {
                                     .send(RegistryMessage::Ack(AckMessage {
                                         message_id: message.message_id.clone(),
                                         message_node: message.source_node.clone(),
+                                        stage: AckStage::Delivered,
+                                        holding_node: None,
                                     }))
                                     .await
                                     .is_err()
@@ -538,8 +541,28 @@ impl WebSocketConnRegistry {
                         }
                     }
                     RegistryMessage::Ack(message) => {
-                        debug!(message_id = %message.message_id, "received acknowledgement for message from other node");
-                        self.record_received_ack(message.message_id.clone()).await;
+                        debug!(
+                            message_id = %message.message_id,
+                            stage = ?message.stage,
+                            "received acknowledgement for message from other node"
+                        );
+                        match message.stage {
+                            // The message is another node's to handle now, but
+                            // it is not settled until it reports how it went.
+                            AckStage::TakenOn => {
+                                self.record_taken_on(
+                                    message.message_id.clone(),
+                                    message.holding_node.clone(),
+                                )
+                                .await;
+                            }
+                            AckStage::Delivered => {
+                                self.record_received_ack(message.message_id.clone()).await;
+                            }
+                            AckStage::Lost => {
+                                self.record_lost_ack(message.message_id.clone()).await;
+                            }
+                        }
                     }
                 }
             }
@@ -667,6 +690,36 @@ impl WebSocketConnRegistry {
         if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
             ack_sender
                 .send(AckWorkerMessage::Status(message_id, AckStatus::Received))
+                .await
+                .expect("ack worker channel unexpectedly closed");
+        }
+    }
+
+    /// Notes that the node holding the connection has the message.
+    ///
+    /// It stops being forwarded from here, and waits for that node to record
+    /// how it turned out.
+    async fn record_taken_on(&self, message_id: String, holding_node: Option<String>) {
+        if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
+            ack_sender
+                .send(AckWorkerMessage::TakenOn {
+                    message_id,
+                    holding_node,
+                })
+                .await
+                .expect("ack worker channel unexpectedly closed");
+        }
+    }
+
+    /// Notes that the node holding the connection exhausted its attempts on
+    /// the message.
+    ///
+    /// Its own attempts on the client are spent, so there is nothing to gain by
+    /// forwarding it again.
+    async fn record_lost_ack(&self, message_id: String) {
+        if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
+            ack_sender
+                .send(AckWorkerMessage::Status(message_id, AckStatus::Lost))
                 .await
                 .expect("ack worker channel unexpectedly closed");
         }
