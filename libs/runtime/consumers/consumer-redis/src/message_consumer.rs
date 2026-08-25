@@ -476,6 +476,15 @@ impl RedisMessageConsumer {
                     error!("failed to process full message batch: {partial_failures:?}");
                     partial_failures
                 }
+                // Treated as any other failure. This consumer reads by offset
+                // rather than through a consumer group, so there is nothing to
+                // return the message to, and it serves local development where
+                // a message reaching the DLQ is the visible outcome.
+                MessageHandlerError::NeverProcessed(reason) => {
+                    let reason = format!("message was never processed: {reason}");
+                    error!(reason);
+                    partial_failures_from_messages(&messages, reason, self.config.max_retries)
+                }
             },
         };
 

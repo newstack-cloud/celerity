@@ -780,13 +780,15 @@ fn map_handler_error(err: ConsumerEventHandlerError) -> MessageHandlerError {
             MessageHandlerError::HandlerFailure(Box::new(err))
         }
         ConsumerEventHandlerError::MissingHandler => MessageHandlerError::MissingHandler,
+        // The queue closes as the runtime shuts down, so the message was
+        // accepted from its source and then not looked at.
         ConsumerEventHandlerError::ChannelClosed => {
-            MessageHandlerError::HandlerFailure(Box::new(err))
+            MessageHandlerError::NeverProcessed(Box::new(err))
         }
-        // Shedding is a failure to process, so the message must not be acked.
-        // Leaving it for the source queue to redeliver is the backpressure
-        // reaching the producer.
-        ConsumerEventHandlerError::QueueFull => MessageHandlerError::HandlerFailure(Box::new(err)),
+        // Shedding is not a failure to process, it is a failure to start. The
+        // message must not be acked, and leaving it for the source to redeliver
+        // is the backpressure reaching the producer.
+        ConsumerEventHandlerError::QueueFull => MessageHandlerError::NeverProcessed(Box::new(err)),
     }
 }
 
