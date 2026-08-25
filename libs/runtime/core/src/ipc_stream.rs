@@ -34,6 +34,7 @@ use tracing::{debug, error, info, warn};
 
 use crate::{
     config::AppConfig,
+    consts::{IPC_PROTOCOL_VERSION_MAJOR, IPC_PROTOCOL_VERSION_MINOR},
     dispatcher::{DispatcherCommand, StreamFrame, StreamId, StreamRegistration},
     event_queue::InFlightTable,
     ipc_frames::{dispatch_from_event, event_result_from_frame},
@@ -208,7 +209,30 @@ pub fn runtime_config_from_app_config(
         tracing_enabled,
         metrics_enabled,
         handlers,
+        protocol_version: Some(runtime_protocol_version()),
     }
+}
+
+/// The protocol version this runtime serves.
+pub fn runtime_protocol_version() -> proto::ProtocolVersion {
+    proto::ProtocolVersion {
+        major: IPC_PROTOCOL_VERSION_MAJOR,
+        minor: IPC_PROTOCOL_VERSION_MINOR,
+    }
+}
+
+/// Whether a handler declaring this version can be served.
+///
+/// An absent version is refused rather than taken as the current one. A
+/// handler that declares none was built against something this contract cannot
+/// determine, and assuming it matches would leave the mismatch to surface as a
+/// frame the handler cannot read.
+///
+/// A higher minor of the same major is served. Minor versions are additive, so
+/// the handler may use nothing this runtime lacks, and refusing on the chance
+/// that it does would stop a deployment that works.
+fn can_serve(declared: Option<&proto::ProtocolVersion>) -> bool {
+    declared.is_some_and(|version| version.major == IPC_PROTOCOL_VERSION_MAJOR)
 }
 
 /// The handler tag for each handler name the runtime config declares.
@@ -287,6 +311,37 @@ pub async fn run_stream<I>(
         return;
     };
 
+    if !can_serve(ready.protocol_version.as_ref()) {
+        warn!(
+            stream_id,
+            declared = ?ready.protocol_version,
+            serves = %format!("{IPC_PROTOCOL_VERSION_MAJOR}.{IPC_PROTOCOL_VERSION_MINOR}"),
+            "refusing a handler built against a protocol this runtime does not serve"
+        );
+        let _ = send_frame(
+            &outbound,
+            frame_ready_ack(proto::ReadyAck {
+                accepted: false,
+                unknown_tags: vec![],
+                unhandled_tags: vec![],
+                refused_reason: proto::ready_ack::RefusedReason::ProtocolVersion as i32,
+            }),
+        )
+        .await;
+        return;
+    }
+
+    if let Some(declared) = &ready.protocol_version {
+        if declared.minor > IPC_PROTOCOL_VERSION_MINOR {
+            info!(
+                stream_id,
+                declared = declared.minor,
+                serves = IPC_PROTOCOL_VERSION_MINOR,
+                "handler was built against a later minor of this protocol, serving it anyway"
+            );
+        }
+    }
+
     let check = check_tags(&ready.handler_tags, &context.blueprint_tags);
     let accepted = check.accepted();
     if !accepted {
@@ -298,12 +353,19 @@ pub async fn run_stream<I>(
         );
     }
 
+    let refused_reason = if accepted {
+        proto::ready_ack::RefusedReason::Unspecified
+    } else {
+        proto::ready_ack::RefusedReason::TagMismatch
+    };
+
     let _ = send_frame(
         &outbound,
         frame_ready_ack(proto::ReadyAck {
             accepted,
             unknown_tags: check.unknown,
             unhandled_tags: check.unhandled,
+            refused_reason: refused_reason as i32,
         }),
     )
     .await;
@@ -837,6 +899,7 @@ mod tests {
                 tracing_enabled: false,
                 metrics_enabled: false,
                 handlers: vec![],
+                protocol_version: Some(runtime_protocol_version()),
             },
             blueprint_tags: blueprint_tags(tags),
             commands: commands_tx,
@@ -915,14 +978,131 @@ mod tests {
     }
 
     fn ready(tags: &[&str]) -> proto::HandlerMessage {
+        ready_declaring(tags, Some(runtime_protocol_version()))
+    }
+
+    fn ready_declaring(
+        tags: &[&str],
+        protocol_version: Option<proto::ProtocolVersion>,
+    ) -> proto::HandlerMessage {
         proto::HandlerMessage {
             frame: Some(proto::handler_message::Frame::Ready(proto::Ready {
+                protocol_version,
                 handler_tags: tags.iter().map(|tag| tag.to_string()).collect(),
                 initial_credit: 4,
                 sdk_version: "test/0.1".to_string(),
                 limits: vec![],
             })),
         }
+    }
+
+    async fn refusal_for(
+        tags: &[&str],
+        protocol_version: Option<proto::ProtocolVersion>,
+    ) -> proto::ReadyAck {
+        let mut harness = start(tags);
+        let _config = next_frame(&mut harness.outbound_rx).await;
+
+        harness
+            .inbound_tx
+            .send(Ok(ready_declaring(tags, protocol_version)))
+            .await
+            .unwrap();
+
+        let Some(proto::runtime_message::Frame::ReadyAck(ack)) =
+            next_frame(&mut harness.outbound_rx).await
+        else {
+            panic!("expected a ready acknowledgement");
+        };
+        ack
+    }
+
+    /// The runtime's own version reaches the handler before it is asked for
+    /// anything, so it can refuse for itself rather than waiting to be refused.
+    #[tokio::test]
+    async fn declares_the_protocol_it_serves_in_its_configuration() {
+        let mut harness = start(&["schedule::a"]);
+
+        let Some(proto::runtime_message::Frame::Config(config)) =
+            next_frame(&mut harness.outbound_rx).await
+        else {
+            panic!("expected configuration");
+        };
+        assert_eq!(config.protocol_version, Some(runtime_protocol_version()));
+    }
+
+    /// A handler that declares nothing was built against a version this
+    /// contract cannot determine, and assuming it matches would leave the
+    /// mismatch to surface as a frame the handler cannot read.
+    #[tokio::test]
+    async fn refuses_a_handler_that_declares_no_protocol_version() {
+        let ack = refusal_for(&["schedule::a"], None).await;
+
+        assert!(!ack.accepted);
+        assert_eq!(
+            ack.refused_reason,
+            proto::ready_ack::RefusedReason::ProtocolVersion as i32
+        );
+    }
+
+    #[tokio::test]
+    async fn refuses_a_handler_built_against_another_major() {
+        let ack = refusal_for(
+            &["schedule::a"],
+            Some(proto::ProtocolVersion {
+                major: IPC_PROTOCOL_VERSION_MAJOR + 1,
+                minor: 0,
+            }),
+        )
+        .await;
+
+        assert!(!ack.accepted);
+        assert_eq!(
+            ack.refused_reason,
+            proto::ready_ack::RefusedReason::ProtocolVersion as i32
+        );
+    }
+
+    /// Minor versions are additive, so a handler on a later one may use
+    /// nothing this runtime lacks, and refusing on the chance that it does
+    /// would stop a deployment that works.
+    #[tokio::test]
+    async fn serves_a_handler_built_against_a_later_minor() {
+        let ack = refusal_for(
+            &["schedule::a"],
+            Some(proto::ProtocolVersion {
+                major: IPC_PROTOCOL_VERSION_MAJOR,
+                minor: IPC_PROTOCOL_VERSION_MINOR + 1,
+            }),
+        )
+        .await;
+
+        assert!(ack.accepted);
+    }
+
+    /// A refusal says which of the two it was, since the tag lists alone
+    /// cannot tell a version refusal from an accepted handler.
+    #[tokio::test]
+    async fn names_a_tag_mismatch_as_the_reason_it_refused() {
+        let mut harness = start(&["schedule::a"]);
+        let _config = next_frame(&mut harness.outbound_rx).await;
+
+        harness
+            .inbound_tx
+            .send(Ok(ready(&["schedule::typo"])))
+            .await
+            .unwrap();
+
+        let Some(proto::runtime_message::Frame::ReadyAck(ack)) =
+            next_frame(&mut harness.outbound_rx).await
+        else {
+            panic!("expected a ready acknowledgement");
+        };
+        assert!(!ack.accepted);
+        assert_eq!(
+            ack.refused_reason,
+            proto::ready_ack::RefusedReason::TagMismatch as i32
+        );
     }
 
     #[tokio::test]
