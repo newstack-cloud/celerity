@@ -760,7 +760,7 @@ impl Application {
     async fn join_websocket_cluster(&mut self) -> Result<(), ApplicationStartError> {
         let (Some(cluster_config), Some(registry)) = (
             self.runtime_config.ws_cluster.clone(),
-            self.ws_conn_registry.take(),
+            self.ws_conn_registry.clone(),
         ) else {
             return Ok(());
         };
@@ -1468,6 +1468,15 @@ impl Application {
     }
 
     pub fn shutdown(&mut self) {
+        // Every task the registry spawned holds the registry, and the registry
+        // holds what those tasks read from, so none of them ends on their own.
+        // A host that builds and discards applications without the process ending
+        // would otherwise keep every registry it ever made, along with the
+        // timers those tasks wake on.
+        if let Some(conn_registry) = self.ws_conn_registry.take() {
+            conn_registry.shutdown();
+        }
+
         if let Some(tx) = self.server_shutdown_signal.take() {
             tx.send(())
                 .expect("failed to send shutdown signal to http server");

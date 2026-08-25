@@ -5,7 +5,7 @@ use std::{
 
 use std::sync::Arc;
 use tokio::{
-    sync::{mpsc::Receiver, oneshot::Sender, Mutex},
+    sync::{mpsc::Receiver, oneshot::Sender, watch, Mutex},
     time::Instant,
 };
 use tracing::{debug, error, info, info_span, Instrument};
@@ -229,10 +229,17 @@ impl Worker {
     /// the caller with the message ID and when the message should be considered lost, the worker
     /// will send a message to the caller with the message ID and a list of client IDs that should
     /// be informed that the message was lost.
+    /// Runs until it is told to stop.
+    ///
+    /// Told rather than left to notice, because the sender it reads from is
+    /// held by the registry, which is itself held by the task reading what this
+    /// worker produces. Neither can end while it waits for the other, so
+    /// without a word from outside both run for the life of the process.
     pub fn start(
         mut self,
         mut ack_rx: Receiver<AckWorkerMessage>,
         message_action_tx: tokio::sync::mpsc::Sender<MessageAction>,
+        mut shutdown: watch::Receiver<bool>,
     ) {
         tokio::spawn(
             async move {
@@ -248,26 +255,39 @@ impl Worker {
                 let message_timeout_ms = self.message_timeout_ms;
                 let max_attempts = self.max_attempts;
 
+                let mut periodic_shutdown = shutdown.clone();
                 tokio::spawn(async move {
                     let mut interval = tokio::time::interval(Duration::from_millis(
                         message_action_check_interval_ms,
                     ));
 
                     loop {
-                        interval.tick().await;
-                        check_for_actions_periodic(
-                            &acks,
-                            &message_action_tx_clone,
-                            message_timeout_ms,
-                            max_attempts,
-                        )
-                        .await;
+                        tokio::select! {
+                            _ = interval.tick() => {
+                                check_for_actions_periodic(
+                                    &acks,
+                                    &message_action_tx_clone,
+                                    message_timeout_ms,
+                                    max_attempts,
+                                )
+                                .await;
+                            }
+                            // Stopped as well as the loop below, since this
+                            // holds the other end of what that loop produces
+                            // and would keep it from ending.
+                            _ = periodic_shutdown.changed() => break,
+                        }
                     }
                 });
 
                 // Main loop only handles incoming messages
                 loop {
-                    match ack_rx.recv().await {
+                    let received = tokio::select! {
+                        received = ack_rx.recv() => received,
+                        _ = shutdown.changed() => break,
+                    };
+
+                    match received {
                         Some(AckWorkerMessage::Status(message_id, ack_status)) => {
                             self.record_ack(message_id, ack_status).await;
                         }

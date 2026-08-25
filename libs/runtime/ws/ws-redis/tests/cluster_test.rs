@@ -72,6 +72,9 @@ struct ClusterNode {
     /// Held for the life of the node. Dropping it would close the channel the
     /// pubsub task watches for a group change, ending that arm of its select.
     _moved: tokio::sync::mpsc::Sender<celerity_ws_redis::node_group::NodeGroup>,
+    /// Stops the server, which holds the registry as its state the way the
+    /// runtime's own server does.
+    stop_serving: Option<tokio::sync::oneshot::Sender<()>>,
 }
 
 /// Starts a node with everything a deployment wires up, in the order
@@ -160,14 +163,21 @@ async fn start_node_with_ack_timings(
         .await
         .unwrap();
     let addr = listener.local_addr().unwrap();
+    let (stop_serving, stopped) = tokio::sync::oneshot::channel();
     tokio::spawn(async move {
-        axum::serve(listener, app).await.unwrap();
+        axum::serve(listener, app)
+            .with_graceful_shutdown(async {
+                let _ = stopped.await;
+            })
+            .await
+            .unwrap();
     });
 
     ClusterNode {
         registry,
         addr,
         group_id: group.id,
+        stop_serving: Some(stop_serving),
         _moved: moved_tx,
     }
 }
@@ -928,4 +938,39 @@ async fn test_a_forward_already_delivered_is_not_taken_on_again() {
             .is_err(),
         "a message its client has already acknowledged should not be sent again"
     );
+}
+
+/// A registry that has been shut down is released, along with everything it
+/// spawned.
+///
+/// Each of those tasks holds the registry, and the registry holds the channels
+/// they read from, so none of them end on their own. A host that builds and
+/// discards applications without the process ending would otherwise keep every
+/// registry it ever made, and the timers those tasks wake on with it.
+#[test_log::test(tokio::test)]
+async fn test_a_registry_that_has_been_shut_down_is_released() {
+    let mut conn = redis_connection().await;
+    let prefix = "test-cluster-shutdown-release";
+    clear(&mut conn, prefix, &[]).await;
+
+    let node = start_node(prefix, "api-node-1", 1).await;
+    let registry = std::sync::Arc::downgrade(&node.registry);
+    assert!(registry.upgrade().is_some());
+
+    // Shutdown both as the server holds the registry as its state,
+    // so a registry that is told to stop while its server is still serving is
+    // still held by it.
+    let mut node = node;
+    node.stop_serving.take().unwrap().send(()).unwrap();
+    node.registry.shutdown();
+    drop(node);
+
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+    while registry.upgrade().is_some() {
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "the registry is still held, so something it spawned is still running"
+        );
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
 }

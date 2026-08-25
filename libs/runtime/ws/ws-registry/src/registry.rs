@@ -9,7 +9,7 @@ use axum::extract::ws::{Message, WebSocket};
 use futures::{stream::SplitSink, SinkExt};
 use tokio::sync::{
     mpsc::{Receiver, Sender},
-    Mutex,
+    watch, Mutex,
 };
 use tracing::{debug, error, info, warn};
 
@@ -163,6 +163,10 @@ pub struct WebSocketConnRegistry {
     // other's clients. Absent on a single node, which needs no such record
     // because every connection it is asked about is either its own or nowhere.
     locations: OnceLock<Arc<dyn ConnectionLocationStore>>,
+    // Tells the tasks this registry spawned to stop. They each hold a
+    // reference to it, and it holds what they read from, so none of them can
+    // notice on their own that there is nothing left to do.
+    shutdown: watch::Sender<bool>,
     // Whether a node of the cluster is still running, for settling a message
     // handed to a node that has since gone. Absent on a single node, where
     // nothing is ever handed anywhere.
@@ -196,6 +200,7 @@ impl WebSocketConnRegistry {
             locations: OnceLock::new(),
             forwarded: OnceLock::new(),
             node_liveness: OnceLock::new(),
+            shutdown: watch::channel(false).0,
             server_node_name: config.server_node_name,
         }
     }
@@ -234,6 +239,18 @@ impl WebSocketConnRegistry {
                 "the registry already has somewhere to record what it has forwarded".to_string(),
             )
         })
+    }
+
+    /// Stops the tasks this registry spawned, so that it can be dropped.
+    pub fn shutdown(&self) {
+        // Failing means every task has already stopped, which is what was
+        // wanted.
+        let _ = self.shutdown.send(true);
+    }
+
+    /// A receiver for the tasks this registry spawns.
+    fn shutdown_signal(&self) -> watch::Receiver<bool> {
+        self.shutdown.subscribe()
     }
 
     /// Sets the current node as running.
@@ -297,7 +314,11 @@ impl WebSocketConnRegistry {
     pub fn start_client_ack_worker(self: Arc<Self>) {
         let (ack_tx, ack_rx) = tokio::sync::mpsc::channel(1024);
         let (action_tx, mut action_rx) = tokio::sync::mpsc::channel(1024);
-        Worker::new(self.ack_worker_config.clone().unwrap_or_default()).start(ack_rx, action_tx);
+        Worker::new(self.ack_worker_config.clone().unwrap_or_default()).start(
+            ack_rx,
+            action_tx,
+            self.shutdown_signal(),
+        );
 
         // Published before the worker is spawned rather than from inside it, so
         // that a send arriving between this returning and the task first being
@@ -500,7 +521,7 @@ impl WebSocketConnRegistry {
             let (ack_message_action_tx, mut ack_message_action_rx) =
                 tokio::sync::mpsc::channel(1024);
             let ack_worker = Worker::new(self.ack_worker_config.clone().unwrap_or_default());
-            ack_worker.start(ack_rx, ack_message_action_tx);
+            ack_worker.start(ack_rx, ack_message_action_tx, self.shutdown_signal());
 
             tokio::spawn(async move {
                 // Set the ack sender for the registry in the spawned future
@@ -574,9 +595,20 @@ impl WebSocketConnRegistry {
     /// The caller is responsible for closing the channel on shutdown as it is expected
     /// to hold the transmit end of the channel.
     pub fn listen(self: Arc<Self>, mut listener: Receiver<RegistryMessage>) {
+        let mut shutdown = self.shutdown_signal();
         tokio::spawn(async move {
             info!("listening for messages from other nodes in the cluster");
-            while let Some(message) = listener.recv().await {
+            loop {
+                // Told to stop as well as waiting to be sent to, since this
+                // task holds the registry and the registry holds what tells it
+                // there is nothing left to process.
+                let received = tokio::select! {
+                    received = listener.recv() => received,
+                    _ = shutdown.changed() => break,
+                };
+                let Some(message) = received else {
+                    break;
+                };
                 match message {
                     RegistryMessage::WebSocket(message) => {
                         debug!(connection_id = %message.connection_id, "received message from other node");
