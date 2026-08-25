@@ -208,19 +208,22 @@ def _wait_for_valkey_cluster(deadline_seconds: int) -> None:
     They take a moment to find each other, and a test that connects before they
     have is told there is no cluster rather than being made to wait.
 
-    Read again rather than followed, so that a container which has said nothing
-    for a while and one which has stopped saying anything at all are both
-    noticed. Following the logs only wakes up when there is a line, so neither
-    would be.
+    The cluster is asked directly rather than its container's logs read for a
+    line saying it is ready. A container keeps its logs across a restart, so a
+    restart that failed would leave the line from the run before it and be taken
+    for a cluster that is there.
     """
     deadline = time.time() + deadline_seconds
     while time.time() < deadline:
-        logs = subprocess.run(
-            ['docker', 'logs', 'valkey_cluster_celerity_runtime_tests'],
+        state = subprocess.run(
+            [
+                'docker', 'exec', 'valkey_cluster_celerity_runtime_tests',
+                'valkey-cli', '-p', '7100', 'cluster', 'info',
+            ],
             capture_output=True,
             check=False,
         )
-        if b'cluster ready' in logs.stdout or b'cluster ready' in logs.stderr:
+        if b'cluster_state:ok' in state.stdout:
             print('Valkey cluster is ready, continuing ...')
             return
         time.sleep(0.2)
