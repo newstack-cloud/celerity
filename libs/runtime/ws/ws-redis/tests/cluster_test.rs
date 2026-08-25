@@ -10,7 +10,7 @@ use std::{
 
 use axum::{
     extract::{
-        ws::{WebSocket, WebSocketUpgrade},
+        ws::{Message as AxumMessage, WebSocket, WebSocketUpgrade},
         State,
     },
     response::Response,
@@ -35,7 +35,7 @@ use celerity_ws_registry::{
     },
     types::{AckWorkerConfig, MessageType},
 };
-use futures::StreamExt;
+use futures::{SinkExt, StreamExt};
 use nanoid::nanoid;
 use tokio::sync::{mpsc::channel, Mutex};
 use tokio_tungstenite::tungstenite;
@@ -77,6 +77,19 @@ struct ClusterNode {
 /// Starts a node with everything a deployment wires up, in the order
 /// `Application::run` wires it.
 async fn start_node(prefix: &str, name: &str, capacity: usize) -> ClusterNode {
+    // Short enough that a test can watch a message run out of attempts.
+    start_node_with_ack_timings(prefix, name, capacity, 100, 3).await
+}
+
+/// A node whose acknowledgement timings a test chooses, for one that has to
+/// watch a message settle rather than watch it run out of attempts.
+async fn start_node_with_ack_timings(
+    prefix: &str,
+    name: &str,
+    capacity: usize,
+    message_timeout_ms: u64,
+    max_attempts: u32,
+) -> ClusterNode {
     let mut conn = redis_connection().await;
     let group_config = NodeGroupConfig {
         server_node_name: name.to_string(),
@@ -94,11 +107,10 @@ async fn start_node(prefix: &str, name: &str, capacity: usize) -> ClusterNode {
 
     let registry = Arc::new(WebSocketConnRegistry::new(
         WebSocketConnRegistryConfig {
-            // Short enough that a test can watch a message run out of attempts.
             ack_worker_config: Some(AckWorkerConfig {
                 message_action_check_interval_ms: Some(20),
-                message_timeout_ms: Some(100),
-                max_attempts: Some(3),
+                message_timeout_ms: Some(message_timeout_ms),
+                max_attempts: Some(max_attempts),
             }),
             server_node_name: name.to_string(),
         },
@@ -132,6 +144,10 @@ async fn start_node(prefix: &str, name: &str, capacity: usize) -> ClusterNode {
         .unwrap();
     registry.set_broadcaster(broadcaster).unwrap();
     registry.clone().start_ack_worker();
+    // This is started regardless of the deployment, as `Application::run` starts it,
+    // since a node holding a connection tracks what its client has acknowledged whether
+    // or not the message came from another node.
+    registry.clone().start_client_ack_worker();
     registry.clone().listen(from_other_nodes);
 
     let app: Router = Router::new()
@@ -169,9 +185,31 @@ async fn handle_client(socket: WebSocket, registry: Arc<WebSocketConnRegistry>) 
         .register_connection(connection_id.clone(), Arc::new(Mutex::new(socket_tx)))
         .await;
 
-    while let Some(Ok(_)) = socket_rx.next().await {}
+    while let Some(Ok(message)) = socket_rx.next().await {
+        if let Some(acknowledged) = client_ack(&message) {
+            registry
+                .record_client_ack(connection_id.clone(), acknowledged)
+                .await;
+        }
+    }
 
     registry.deregister_connection(connection_id).await;
+}
+
+/// Reads a client acknowledgement out of a text message, in the shape the
+/// protocol names, which is what settles a message the holding node took on.
+fn client_ack(message: &AxumMessage) -> Option<String> {
+    let AxumMessage::Text(text) = message else {
+        return None;
+    };
+    let body: serde_json::Value = serde_json::from_str(text).ok()?;
+    if body.get("event").and_then(serde_json::Value::as_str) != Some("ack") {
+        return None;
+    }
+    body.get("data")?
+        .get("messageId")
+        .and_then(serde_json::Value::as_str)
+        .map(str::to_string)
 }
 
 async fn connect_client(
@@ -486,5 +524,121 @@ async fn test_a_message_that_could_not_be_sent_is_not_recorded_as_forwarded() {
         received,
         tungstenite::Message::Text(r#"{"event":"second-attempt"}"#.into()),
         "a message that failed to send once should still reach its client"
+    );
+}
+
+/// A message forwarded to the node holding its client is not settled by
+/// reaching the socket. That node takes it on, waits for the client, and
+/// reports the outcome back, so waiting on an acknowledgement means the client
+/// received it rather than that some other node wrote bytes.
+#[test_log::test(tokio::test)]
+async fn test_a_relayed_message_is_settled_by_its_client_not_by_the_socket() {
+    let mut conn = redis_connection().await;
+    let prefix = "test-cluster-client-acks";
+    clear(&mut conn, prefix, &["m-1"]).await;
+
+    // Long enough that the holding node is still waiting on its client while
+    // this test checks that the sender is too, rather than having spent its
+    // attempts and declared the message lost.
+    let sender = start_node_with_ack_timings(prefix, "api-node-1", 1, 5_000, 3).await;
+    let holder = start_node_with_ack_timings(prefix, "api-node-2", 1, 5_000, 3).await;
+    assert_ne!(sender.group_id, holder.group_id);
+
+    let (mut client, connection_id) = connect_client(&holder).await;
+
+    let registry = sender.registry.clone();
+    let mut waiting = tokio::spawn(async move {
+        registry
+            .send_message(
+                connection_id,
+                "m-1".to_string(),
+                MessageType::Json,
+                r#"{"messageId":"m-1","ack":true}"#.to_string(),
+                Some(SendContext {
+                    wait_for_ack: true,
+                    caller: None,
+                    inform_clients: vec![],
+                }),
+            )
+            .await
+    });
+
+    let received = tokio::time::timeout(Duration::from_secs(5), client.next())
+        .await
+        .expect("the client should have been sent the message")
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        received,
+        tungstenite::Message::Text(r#"{"messageId":"m-1","ack":true}"#.into())
+    );
+
+    // The message has reached the socket, which used to be the whole of what a
+    // sender waited for. It has to keep waiting.
+    assert!(
+        tokio::time::timeout(Duration::from_millis(400), &mut waiting)
+            .await
+            .is_err(),
+        "a sender should not be told a client received a message before it did"
+    );
+
+    client
+        .send(tungstenite::Message::Text(
+            r#"{"event":"ack","data":{"messageId":"m-1"}}"#.into(),
+        ))
+        .await
+        .unwrap();
+
+    let settled = tokio::time::timeout(Duration::from_secs(5), waiting)
+        .await
+        .expect("the acknowledgement should have settled the message")
+        .unwrap();
+    assert!(
+        settled.is_ok(),
+        "a message its client acknowledged should not be an error, got {settled:?}"
+    );
+}
+
+/// A client that never acknowledges has the message declared lost by the node
+/// holding it, and that outcome reaches the node waiting on it.
+///
+/// Only the holding node can decide this, since only it can send to that client
+/// and only it receives the acknowledgement.
+#[test_log::test(tokio::test)]
+async fn test_a_client_that_never_acknowledges_has_the_loss_reported_back() {
+    let mut conn = redis_connection().await;
+    let prefix = "test-cluster-client-ack-loss";
+    clear(&mut conn, prefix, &["m-1"]).await;
+
+    // The holding node spends its attempts quickly while the sender's own
+    // deadline is a long way off, so only a loss reported back can settle this
+    // in the time the test allows. Matching timings would let the sender's
+    // deadline settle it and prove nothing about the report.
+    let sender = start_node_with_ack_timings(prefix, "api-node-1", 1, 5_000, 3).await;
+    let holder = start_node_with_ack_timings(prefix, "api-node-2", 1, 100, 2).await;
+    assert_ne!(sender.group_id, holder.group_id);
+
+    let (_client, connection_id) = connect_client(&holder).await;
+
+    let sent = tokio::time::timeout(
+        Duration::from_secs(3),
+        sender.registry.send_message(
+            connection_id,
+            "m-1".to_string(),
+            MessageType::Json,
+            r#"{"messageId":"m-1","ack":true}"#.to_string(),
+            Some(SendContext {
+                wait_for_ack: true,
+                caller: None,
+                inform_clients: vec![],
+            }),
+        ),
+    )
+    .await
+    .expect("the loss the holding node decided should reach the sender, rather than the \n     sender waiting out its own deadline");
+
+    assert!(
+        matches!(sent, Err(WebSocketConnError::MessageLost(ref id)) if id == "m-1"),
+        "a message no client acknowledged should be reported lost, got {sent:?}"
     );
 }

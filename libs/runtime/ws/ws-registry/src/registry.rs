@@ -14,7 +14,7 @@ use tokio::sync::{
 use tracing::{debug, error, info};
 
 use crate::{
-    acks::{AckStatus, AckWorkerMessage, MessageAction, Worker},
+    acks::{AckStatus, AckWorkerMessage, MessageAction, MessageOrigin, Worker},
     errors::WebSocketConnError,
     message_helpers::{client_ack_request, create_message_lost_event, create_ws_message},
     types::{
@@ -292,6 +292,7 @@ impl WebSocketConnRegistry {
                             resend.message,
                             resend.inform_clients_on_loss,
                             resend.caller,
+                            resend.origin,
                         )
                         .await;
 
@@ -308,12 +309,30 @@ impl WebSocketConnRegistry {
                         message_id,
                         inform_clients,
                         caller,
+                        origin,
                     } => {
                         info!(
                             message_id = %message_id,
                             "a client did not acknowledge a message, treating it as lost"
                         );
+                        // Reported onward before the clients here are told, so
+                        // that the node waiting on it can tell the clients it
+                        // holds. Only the clients connected to a node can be
+                        // reached from it, so between them the two cover the
+                        // list the send named.
+                        if let Some(origin) = origin {
+                            self.publish_ack(origin.node, origin.message_id, AckStage::Lost, None)
+                                .await;
+                        }
                         self.inform_clients_of_loss(message_id, inform_clients, caller)
+                            .await;
+                    }
+                    MessageAction::Delivered { origin } => {
+                        debug!(
+                            message_id = %origin.message_id,
+                            "a client acknowledged a message forwarded here, reporting it back"
+                        );
+                        self.publish_ack(origin.node, origin.message_id, AckStage::Delivered, None)
                             .await;
                     }
                 }
@@ -322,6 +341,10 @@ impl WebSocketConnRegistry {
     }
 
     /// Notes that a message is waiting on its client to acknowledge it.
+    ///
+    /// An origin is carried for a message forwarded here by another node, which
+    /// is waiting to be told how it turned out.
+    #[allow(clippy::too_many_arguments)]
     async fn record_pending_client_ack(
         &self,
         connection_id: String,
@@ -330,6 +353,7 @@ impl WebSocketConnRegistry {
         message: String,
         inform_clients: Vec<String>,
         caller: Option<String>,
+        origin: Option<MessageOrigin>,
     ) {
         if let Some(sender) = self.client_ack_sender.get() {
             let _ = sender
@@ -341,6 +365,7 @@ impl WebSocketConnRegistry {
                         message_type,
                         inform_clients,
                         caller,
+                        origin,
                     },
                 ))
                 .await;
@@ -434,10 +459,19 @@ impl WebSocketConnRegistry {
                                 );
                             }
                         }
+                        // A message this node sent has no origin, since
+                        // nothing forwarded it here.
+                        MessageAction::Delivered { origin } => {
+                            debug!(
+                                message_id = %origin.message_id,
+                                "an outcome was raised for a message this node did not forward"
+                            );
+                        }
                         MessageAction::Lost {
                             message_id,
                             inform_clients,
                             caller,
+                            origin: _,
                         } => {
                             self.inform_clients_of_loss(message_id, inform_clients, caller)
                                 .await;
@@ -470,6 +504,14 @@ impl WebSocketConnRegistry {
                             // its first delivery as a duplicate.
                             let already_forwarded =
                                 self.already_forwarded(&message.message_id).await;
+                            // Read before the message is turned into a frame,
+                            // which consumes it, and kept so that this node can
+                            // send it to its client again if the first attempt
+                            // goes unanswered.
+                            let awaiting_client_ack =
+                                client_ack_request(&message.message_type, &message.message);
+                            let relayed_message_type = message.message_type.clone();
+                            let relayed_message = message.message.clone();
                             debug!(
                                 connection_id = %message.connection_id,
                                 "acquiring lock to send message to connection: {}",
@@ -521,23 +563,48 @@ impl WebSocketConnRegistry {
                                 continue;
                             }
 
-                            if let Some(broadcaster) = self.broadcaster.get() {
-                                if broadcaster
-                                    .send(RegistryMessage::Ack(AckMessage {
-                                        message_id: message.message_id.clone(),
-                                        message_node: message.source_node.clone(),
-                                        stage: AckStage::Delivered,
-                                        holding_node: None,
-                                    }))
-                                    .await
-                                    .is_err()
-                                {
-                                    error!(
-                                        message_id = %message.message_id,
-                                        "receiver dropped for broadcaster, failed to send acknowledgement for message",
-                                    );
-                                }
-                            }
+                            // A message that requires an acknowledgement is not
+                            // settled by reaching the socket, so this node takes
+                            // it on and reports the outcome once its client has
+                            // answered or its attempts are exhausted. Only the node
+                            // holding a connection can do either.
+                            let Some(ack_id) = awaiting_client_ack else {
+                                self.publish_ack(
+                                    message.source_node,
+                                    message.message_id,
+                                    AckStage::Delivered,
+                                    None,
+                                )
+                                .await;
+                                continue;
+                            };
+
+                            self.publish_ack(
+                                message.source_node.clone(),
+                                message.message_id.clone(),
+                                AckStage::TakenOn,
+                                Some(self.server_node_name.clone()),
+                            )
+                            .await;
+
+                            // Tracked against the id inside the message, which
+                            // is what its client acknowledges by, while the
+                            // outcome is reported against the id the node that
+                            // forwarded it is waiting on. The two don't need to be
+                            // the same.
+                            self.record_pending_client_ack(
+                                message.connection_id,
+                                ack_id,
+                                relayed_message_type,
+                                relayed_message,
+                                message.inform_clients_on_loss.unwrap_or_default(),
+                                message.caller,
+                                Some(MessageOrigin {
+                                    node: message.source_node,
+                                    message_id: message.message_id,
+                                }),
+                            )
+                            .await;
                         }
                     }
                     RegistryMessage::Ack(message) => {
@@ -695,6 +762,39 @@ impl WebSocketConnRegistry {
         }
     }
 
+    /// Publishes an acknowledgement to the node waiting on the message.
+    ///
+    /// When a broadcaster is absent, this is a single node deployment,
+    /// where nothing was forwarded and so nothing is waiting.
+    async fn publish_ack(
+        &self,
+        message_node: String,
+        message_id: String,
+        stage: AckStage,
+        holding_node: Option<String>,
+    ) {
+        let Some(broadcaster) = self.broadcaster.get() else {
+            return;
+        };
+
+        if broadcaster
+            .send(RegistryMessage::Ack(AckMessage {
+                message_node,
+                message_id: message_id.clone(),
+                stage,
+                holding_node,
+            }))
+            .await
+            .is_err()
+        {
+            error!(
+                message_id = %message_id,
+                stage = ?stage,
+                "receiver dropped for broadcaster, failed to send an acknowledgement"
+            );
+        }
+    }
+
     /// Notes that the node holding the connection has the message.
     ///
     /// It stops being forwarded from here, and waits for that node to record
@@ -744,6 +844,9 @@ impl WebSocketConnRegistry {
                         message_type,
                         inform_clients,
                         caller,
+                        // Sent from this node, so there is nobody else waiting
+                        // to be told how it turned out.
+                        origin: None,
                     },
                 ))
                 .await
@@ -825,6 +928,9 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
                     message.clone(),
                     send_ctx.inform_clients,
                     send_ctx.caller,
+                    // Held by this node, so there is nothing else waiting to be
+                    // informed how it turned out.
+                    None,
                 )
                 .await;
             }
