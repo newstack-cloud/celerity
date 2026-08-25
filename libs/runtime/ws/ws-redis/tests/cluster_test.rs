@@ -642,3 +642,163 @@ async fn test_a_client_that_never_acknowledges_has_the_loss_reported_back() {
         "a message no client acknowledged should be reported lost, got {sent:?}"
     );
 }
+
+/// A message to a client this node holds is settled by that client too, so
+/// waiting on an acknowledgement means the same thing wherever the client
+/// happens to be connected.
+#[test_log::test(tokio::test)]
+async fn test_a_message_to_a_client_held_here_is_settled_by_that_client() {
+    let mut conn = redis_connection().await;
+    let prefix = "test-cluster-local-client-acks";
+    clear(&mut conn, prefix, &["m-1"]).await;
+
+    let node = start_node_with_ack_timings(prefix, "api-node-1", 1, 5_000, 3).await;
+    let (mut client, connection_id) = connect_client(&node).await;
+
+    let registry = node.registry.clone();
+    let mut waiting = tokio::spawn(async move {
+        registry
+            .send_message(
+                connection_id,
+                "m-1".to_string(),
+                MessageType::Json,
+                r#"{"messageId":"m-1","ack":true}"#.to_string(),
+                Some(SendContext {
+                    wait_for_ack: true,
+                    caller: None,
+                    inform_clients: vec![],
+                }),
+            )
+            .await
+    });
+
+    let received = tokio::time::timeout(Duration::from_secs(5), client.next())
+        .await
+        .expect("the client should have been sent the message")
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        received,
+        tungstenite::Message::Text(r#"{"messageId":"m-1","ack":true}"#.into())
+    );
+
+    assert!(
+        tokio::time::timeout(Duration::from_millis(400), &mut waiting)
+            .await
+            .is_err(),
+        "reaching the socket is not the client having received it, here as much as \
+         on another node"
+    );
+
+    client
+        .send(tungstenite::Message::Text(
+            r#"{"event":"ack","data":{"messageId":"m-1"}}"#.into(),
+        ))
+        .await
+        .unwrap();
+
+    let settled = tokio::time::timeout(Duration::from_secs(5), waiting)
+        .await
+        .expect("the acknowledgement should have settled the message")
+        .unwrap();
+    assert!(settled.is_ok(), "got {settled:?}");
+}
+
+/// A message that requires nothing of its client is settled by the write.
+/// Waiting on an acknowledgement that was never asked for would wait indefinitely.
+#[test_log::test(tokio::test)]
+async fn test_a_message_that_requires_no_acknowledgement_is_settled_by_the_write() {
+    let mut conn = redis_connection().await;
+    let prefix = "test-cluster-local-no-ack";
+    clear(&mut conn, prefix, &["m-1"]).await;
+
+    let node = start_node_with_ack_timings(prefix, "api-node-1", 1, 5_000, 3).await;
+    let (mut client, connection_id) = connect_client(&node).await;
+
+    let sent = tokio::time::timeout(
+        Duration::from_secs(2),
+        node.registry.send_message(
+            connection_id,
+            "m-1".to_string(),
+            MessageType::Json,
+            r#"{"event":"update"}"#.to_string(),
+            Some(SendContext {
+                wait_for_ack: true,
+                caller: None,
+                inform_clients: vec![],
+            }),
+        ),
+    )
+    .await
+    .expect("a message nothing can acknowledge should not be waited on");
+
+    assert!(sent.is_ok(), "got {sent:?}");
+    assert!(
+        tokio::time::timeout(Duration::from_secs(5), client.next())
+            .await
+            .is_ok(),
+        "the message should still have reached the client"
+    );
+}
+
+/// Waiting on an acknowledgement must not hold the client's socket, or nothing
+/// else could be sent to that client until the acknowledgement arrived.
+#[test_log::test(tokio::test)]
+async fn test_waiting_on_an_acknowledgement_does_not_hold_the_clients_socket() {
+    let mut conn = redis_connection().await;
+    let prefix = "test-cluster-local-ack-lock";
+    clear(&mut conn, prefix, &["m-1", "m-2"]).await;
+
+    let node = start_node_with_ack_timings(prefix, "api-node-1", 1, 5_000, 3).await;
+    let (mut client, connection_id) = connect_client(&node).await;
+
+    let registry = node.registry.clone();
+    let waiting_id = connection_id.clone();
+    let _waiting = tokio::spawn(async move {
+        registry
+            .send_message(
+                waiting_id,
+                "m-1".to_string(),
+                MessageType::Json,
+                r#"{"messageId":"m-1","ack":true}"#.to_string(),
+                Some(SendContext {
+                    wait_for_ack: true,
+                    caller: None,
+                    inform_clients: vec![],
+                }),
+            )
+            .await
+    });
+
+    tokio::time::timeout(Duration::from_secs(5), client.next())
+        .await
+        .expect("the first message should have been sent")
+        .unwrap()
+        .unwrap();
+
+    // The first is still waiting on its client. The second has to get through
+    // regardless.
+    tokio::time::timeout(
+        Duration::from_secs(2),
+        node.registry.send_message(
+            connection_id,
+            "m-2".to_string(),
+            MessageType::Json,
+            r#"{"event":"second"}"#.to_string(),
+            None,
+        ),
+    )
+    .await
+    .expect("a second message should not queue behind an acknowledgement")
+    .unwrap();
+
+    let second = tokio::time::timeout(Duration::from_secs(5), client.next())
+        .await
+        .expect("the second message should have reached the client")
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        second,
+        tungstenite::Message::Text(r#"{"event":"second"}"#.into())
+    );
+}
