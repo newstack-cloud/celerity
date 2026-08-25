@@ -12,7 +12,7 @@ use celerity_ws_redis::{
 };
 use celerity_ws_registry::{
     registry::ConnectionLocationStore,
-    types::{AckMessage, Message, MessageType, WebSocketMessage},
+    types::{AckMessage, AckStage, Message, MessageType, WebSocketMessage},
 };
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
@@ -225,6 +225,8 @@ async fn test_messages_reach_the_group_holding_the_connection() {
         AckMessage {
             message_id: "conn-2-msg-99".to_string(),
             message_node: "api-node-1".to_string(),
+            stage: AckStage::Delivered,
+            holding_node: None,
         }
     );
     assert_eq!(
@@ -232,6 +234,8 @@ async fn test_messages_reach_the_group_holding_the_connection() {
         AckMessage {
             message_id: "conn-1-msg-99".to_string(),
             message_node: "api-node-2".to_string(),
+            stage: AckStage::Delivered,
+            holding_node: None,
         }
     );
 }
@@ -309,6 +313,8 @@ async fn test_an_acknowledgement_goes_to_the_ack_mirror_of_the_senders_group() {
         .send(Message::Ack(AckMessage {
             message_id: "m-1".to_string(),
             message_node: sender.name.clone(),
+            stage: AckStage::Delivered,
+            holding_node: None,
         }))
         .await
         .unwrap();
@@ -587,6 +593,8 @@ async fn send_messages_and_listen(
                     .send(Message::Ack(AckMessage {
                         message_id: message.message_id,
                         message_node: other_node_name.clone(),
+                        stage: AckStage::Delivered,
+                        holding_node: None,
                     }))
                     .await;
             }
