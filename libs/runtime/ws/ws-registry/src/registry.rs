@@ -11,7 +11,7 @@ use tokio::sync::{
     mpsc::{Receiver, Sender},
     Mutex,
 };
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
 
 use crate::{
     acks::{AckStatus, AckWorkerMessage, MessageAction, MessageOrigin, Worker},
@@ -419,21 +419,32 @@ impl WebSocketConnRegistry {
         caller: Option<String>,
         origin: Option<MessageOrigin>,
     ) {
-        if let Some(sender) = self.client_ack_sender.get() {
-            let _ = sender
-                .send(AckWorkerMessage::Status(
-                    message_id,
-                    AckStatus::Pending {
-                        connection_id,
-                        message,
-                        message_type,
-                        inform_clients,
-                        caller,
-                        origin,
-                    },
-                ))
-                .await;
-        }
+        let Some(sender) = self.client_ack_sender.get() else {
+            // Started whatever the deployment, so reaching this means it was
+            // missed. Saying nothing would leave the message untracked, with
+            // nothing waiting for its client, nothing sending it again and
+            // nothing ever declaring it lost.
+            warn!(
+                message_id = %message_id,
+                "nothing tracks what clients have acknowledged, so this message is not \
+                 waited on. The worker that tracks them was never started"
+            );
+            return;
+        };
+
+        let _ = sender
+            .send(AckWorkerMessage::Status(
+                message_id,
+                AckStatus::Pending {
+                    connection_id,
+                    message,
+                    message_type,
+                    inform_clients,
+                    caller,
+                    origin,
+                },
+            ))
+            .await;
     }
 
     /// Records that a client acknowledged a message, so it stops being tracked.
@@ -957,27 +968,27 @@ impl WebSocketConnRegistry {
         };
 
         let (ack_tx, ack_rx) = tokio::sync::oneshot::channel();
-        if ack_sender
+        ack_sender
             .send(AckWorkerMessage::Wait(ack_id, ack_tx))
             .await
-            .is_err()
-        {
-            error!(
-                message_id = %message_id,
-                "nothing is tracking client acknowledgements any more, so this message \
-                 cannot be waited on"
-            );
-            return Err(WebSocketConnError::MessageLost(message_id));
-        }
+            .expect("client ack worker channel unexpectedly closed");
 
-        match ack_rx.await {
-            Ok(AckStatus::Received) => Ok(()),
-            // Reported as lost rather than left to hang, for a worker that
-            // stopped before it could answer.
-            _ => Err(WebSocketConnError::MessageLost(message_id)),
+        let ack_status = ack_rx
+            .await
+            .expect("oneshot channel waiting for client ack unexpectedly closed");
+
+        if ack_status == AckStatus::Received {
+            Ok(())
+        } else {
+            Err(WebSocketConnError::MessageLost(message_id))
         }
     }
 
+    /// Waits for the node holding the connection to report how a message turned
+    /// out.
+    ///
+    /// Where nothing tracks acknowledgements between nodes this is a single
+    /// node deployment, which doesn't hand messages to other nodes, therefore has nothing to wait for.
     async fn wait_for_ack(&self, message_id: String) -> Result<(), WebSocketConnError> {
         let (ack_tx, ack_rx) = tokio::sync::oneshot::channel();
 
