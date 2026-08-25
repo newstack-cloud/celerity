@@ -10,6 +10,7 @@ use tracing::{error, instrument};
 
 use crate::{
     event_queue::{admission_wait, EventQueue, HandlerTimeouts},
+    telemetry_utils::extract_trace_context,
     types::{
         CustomInvokeEventData, EventData, EventDataPayload, EventOutcome, EventResultData,
         EventType,
@@ -234,6 +235,7 @@ pub async fn invoke_handler_ipc(
             handler_name: request.handler_name.clone(),
             input: request.payload,
         }),
+        trace_context: extract_trace_context(),
     };
 
     let deadline = tokio::time::Instant::now() + timeout;

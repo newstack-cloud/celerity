@@ -18,6 +18,8 @@ pub struct EventData {
     pub handler_tag: String,
     pub timestamp: u64,
     pub data: EventDataPayload,
+    #[serde(rename = "traceContext", skip_serializing_if = "Option::is_none")]
+    pub trace_context: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

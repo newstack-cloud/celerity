@@ -987,6 +987,7 @@ mod tests {
                 input: None,
                 vendor: json!({}),
             }),
+            trace_context: None,
         }
     }
 

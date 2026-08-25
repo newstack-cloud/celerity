@@ -910,6 +910,7 @@ mod tests {
                 input: None,
                 vendor: json!({}),
             }),
+            trace_context: None,
         }
     }
 
@@ -1026,6 +1027,7 @@ mod tests {
                 input: None,
                 vendor: json!({}),
             }),
+            trace_context: None,
         };
         harness.in_flight.insert(
             crate::event_queue::InFlightEntry { result_tx, event },

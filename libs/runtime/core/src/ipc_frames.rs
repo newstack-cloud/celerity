@@ -32,7 +32,7 @@ pub fn dispatch_from_event(event: EventData, deadline_unix_ms: i64) -> proto::Di
         handler_tag: event.handler_tag,
         timestamp_ms: event.timestamp.saturating_mul(1_000),
         deadline_unix_ms,
-        trace_context: HashMap::new(),
+        trace_context: event.trace_context.unwrap_or_default(),
         source: Some(source_from_payload(event.data)),
     }
 }
@@ -379,6 +379,7 @@ mod tests {
                 source_ip: "10.0.0.1".to_string(),
                 request_id: "request-1".to_string(),
             })),
+            trace_context: None,
         }
     }
 
@@ -400,6 +401,43 @@ mod tests {
             request.path_params.get("id").map(|v| v.values.clone()),
             Some(vec!["1".to_string()])
         );
+    }
+
+    /// A handler's spans are children of the runtime's only if the context
+    /// reaches it, and the field carrying it was previously always empty.
+    #[test]
+    fn carries_the_producer_trace_context_onto_the_wire() {
+        let mut event = http_event(b"{}");
+        event.trace_context = Some(HashMap::from([
+            (
+                "traceparent".to_string(),
+                "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01".to_string(),
+            ),
+            ("tracestate".to_string(), "vendor=value".to_string()),
+        ]));
+
+        let dispatch = dispatch_from_event(event, 42);
+
+        assert_eq!(
+            dispatch
+                .trace_context
+                .get("traceparent")
+                .map(String::as_str),
+            Some("00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01")
+        );
+        assert_eq!(
+            dispatch.trace_context.get("tracestate").map(String::as_str),
+            Some("vendor=value")
+        );
+    }
+
+    /// An event produced with tracing off carries nothing, which has to reach
+    /// the handler as an empty map rather than failing to build the frame.
+    #[test]
+    fn carries_an_empty_trace_context_for_an_event_that_has_none() {
+        let dispatch = dispatch_from_event(http_event(b"{}"), 42);
+
+        assert!(dispatch.trace_context.is_empty());
     }
 
     #[test]
@@ -473,6 +511,7 @@ mod tests {
                 message_attributes: None,
                 vendor: json!({"provider": "aws"}),
             }),
+            trace_context: None,
         };
 
         let Some(proto::dispatch::Source::Consumer(batch)) = dispatch_from_event(event, 0).source
@@ -519,6 +558,7 @@ mod tests {
                 ],
                 vendor: json!({}),
             }),
+            trace_context: None,
         };
 
         let Some(proto::dispatch::Source::Consumer(batch)) = dispatch_from_event(event, 0).source
