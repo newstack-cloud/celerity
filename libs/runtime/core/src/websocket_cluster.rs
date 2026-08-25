@@ -38,7 +38,7 @@ pub async fn join_cluster(
     use celerity_ws_redis::{
         forwarded::{ForwardedMessages, DEFAULT_FORWARDED_TTL_MS},
         locations::ConnectionLocations,
-        node_group::{join_or_create, spawn_heartbeat, NodeGroupConfig},
+        node_group::{join_or_create, spawn_heartbeat, NodeGroupConfig, NodeLiveness},
         pubsub::{connect, PubSubConnectionConfig},
     };
 
@@ -105,6 +105,14 @@ pub async fn join_cluster(
                 )
             })?;
     }
+
+    // A message handed to another node is waited on until that node reports how
+    // it turned out, and a node that has gone never will. Reading the key it
+    // refreshes while it runs settles those messages at once rather than at the
+    // deadline.
+    registry
+        .set_node_liveness(NodeLiveness::new(conn.clone(), key_prefix.clone()))
+        .map_err(|err| cluster_setup_error("could not attach the node liveness store", err))?;
 
     // Shared, because a message resent after its acknowledgement went
     // missing arrives at whichever node holds the connection now, which may

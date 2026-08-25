@@ -21,6 +21,12 @@ pub enum WebSocketConnError {
     // read or written. The message is forwarded anyway, so what is risked is a
     // client seeing it twice rather than not at all.
     ForwardedMessageError(String),
+    // Whether a node of the cluster is still running could not be read. It is
+    // taken as running, so a message held by a node that has gone waits out its
+    // deadline rather than being settled as soon as the node went. Nothing else
+    // is affected, and reading an unanswerable store as a node having gone
+    // would settle messages whose clients are still being waited for.
+    NodeLivenessError(String),
     // Something a registry is given once was given to it twice. Naming what,
     // since the second one is refused and the caller is about to act as though
     // it had been taken.
@@ -45,6 +51,9 @@ impl Display for WebSocketConnError {
             }
             WebSocketConnError::ForwardedMessageError(e) => {
                 write!(f, "ForwardedMessageError: {e}")
+            }
+            WebSocketConnError::NodeLivenessError(e) => {
+                write!(f, "NodeLivenessError: {e}")
             }
             WebSocketConnError::AlreadyAttached(e) => write!(f, "AlreadyAttached: {e}"),
         }
