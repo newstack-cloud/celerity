@@ -54,6 +54,13 @@ fn derive_message_action_check_interval_ms(message_timeout_ms: u64) -> u64 {
 /// that has not responded.
 const OUTCOME_TIMEOUT_SLACK: u32 = 1;
 
+/// How long a settled message is kept before it is swept.
+///
+/// A message is settled the moment its outcome is known, but something may
+/// still be waiting to read that outcome, and a waiter that found nothing
+/// would treat the message as lost.
+const SETTLED_GRACE_MULTIPLIER: u32 = 1;
+
 /// The default interval in milliseconds to check for the acknowledgement status of a message.
 pub const ACK_WAIT_CHECK_INTERVAL_MS: u64 = 20;
 
@@ -139,6 +146,9 @@ struct DetailedAckStatus {
     /// Set once another node has the message. It stops being forwarded and
     /// waits on that node from then on.
     taken_on: Option<TakenOn>,
+    /// When the outcome became known, which is when the entry is no longer
+    /// needed but is still available to read for a short time.
+    settled_at: Option<Instant>,
 }
 
 /// A worker that manages acknowledgements for messages sent between
@@ -266,6 +276,7 @@ impl Worker {
                 attempts: existing_ack_status.as_ref().map_or(0, |s| s.attempts) + 1,
                 last_attempt_time: Some(Instant::now()),
                 taken_on: existing_ack_status.and_then(|s| s.taken_on),
+                settled_at: None,
             }
         } else {
             DetailedAckStatus {
@@ -275,6 +286,7 @@ impl Worker {
                     .as_ref()
                     .and_then(|s| s.last_attempt_time),
                 taken_on: existing_ack_status.and_then(|s| s.taken_on),
+                settled_at: Some(Instant::now()),
             }
         };
 
@@ -344,6 +356,7 @@ impl Worker {
         }
 
         existing.status = AckStatus::Received;
+        existing.settled_at = Some(Instant::now());
     }
 }
 
@@ -410,6 +423,16 @@ async fn check_for_actions_periodic(
             }
         }
     }
+
+    // Anything settled long enough ago that nothing can still be waiting to
+    // read it. Without this the map keeps an entry for every message that was
+    // ever acknowledged, since only a message that was lost is taken away.
+    let settled_grace =
+        Duration::from_millis(message_timeout_ms * u64::from(SETTLED_GRACE_MULTIPLIER));
+    acks_guard.retain(|_, status| match status.settled_at {
+        Some(settled_at) => now.duration_since(settled_at) <= settled_grace,
+        None => true,
+    });
 
     // Release the lock before sending actions
     drop(acks_guard);
@@ -502,6 +525,7 @@ mod tests {
                 // Long enough ago that it is due to be retried.
                 last_attempt_time: Some(Instant::now() - Duration::from_secs(60)),
                 taken_on: None,
+                settled_at: None,
             },
         )])));
 
@@ -676,7 +700,123 @@ mod tests {
                 attempts: 0,
                 last_attempt_time: Some(Instant::now() - since),
                 taken_on,
+                settled_at: None,
             },
         )])))
+    }
+
+    /// Only a lost message used to be taken out of the map, so every message
+    /// that was acknowledged left an entry behind for as long as the node ran.
+    #[test_log::test(tokio::test)]
+    async fn test_a_settled_message_is_swept_once_nothing_can_be_waiting_on_it() {
+        let acks = settled_since(Duration::from_millis(500), AckStatus::Received);
+        let (action_tx, _action_rx) = tokio::sync::mpsc::channel(8);
+
+        check_for_actions_periodic(&acks, &action_tx, 100, 3).await;
+
+        assert!(
+            acks.lock().await.is_empty(),
+            "a message settled long ago should not be kept"
+        );
+    }
+
+    /// Swept too soon and a waiter finds nothing, which it can only read as the
+    /// message having been lost. So it is kept for as long as a message may go
+    /// unanswered, which is far longer than reading an outcome takes.
+    #[test_log::test(tokio::test)]
+    async fn test_a_message_just_settled_is_kept_for_whatever_is_still_reading_it() {
+        let acks = settled_since(Duration::from_millis(0), AckStatus::Received);
+        let (action_tx, _action_rx) = tokio::sync::mpsc::channel(8);
+
+        check_for_actions_periodic(&acks, &action_tx, 100, 3).await;
+
+        assert_eq!(
+            acks.lock().await.get("message-1").unwrap().status,
+            AckStatus::Received,
+            "a message only just settled should still be readable"
+        );
+    }
+
+    /// A message waiting for its client is not swept however long it waits, or
+    /// the wait would end by the entry going missing rather than by an
+    /// outcome.
+    #[test_log::test(tokio::test)]
+    async fn test_a_message_still_waiting_is_never_swept() {
+        let acks = pending_since(Duration::from_secs(60), Some(taken_on_now()));
+        let (action_tx, _action_rx) = tokio::sync::mpsc::channel(8);
+
+        check_for_actions_periodic(&acks, &action_tx, 100, 3).await;
+
+        assert!(acks.lock().await.contains_key("message-1"));
+    }
+
+    /// Declaring a message lost settles it rather than taking it away, so the
+    /// check that follows must not declare it lost all over again.
+    #[test_log::test(tokio::test)]
+    async fn test_a_message_already_declared_lost_is_not_declared_lost_again() {
+        let acks = pending_since(Duration::from_secs(60), None);
+        let (action_tx, mut action_rx) = tokio::sync::mpsc::channel(8);
+
+        check_for_actions_periodic(&acks, &action_tx, 100, 0).await;
+        assert!(matches!(
+            action_rx.try_recv(),
+            Ok(MessageAction::Lost { .. })
+        ));
+
+        check_for_actions_periodic(&acks, &action_tx, 100, 0).await;
+
+        assert!(action_rx.try_recv().is_err(), "a message is only lost once");
+    }
+
+    /// One message settled however long ago
+    /// as determined by `since`.
+    fn settled_since(
+        since: Duration,
+        status: AckStatus,
+    ) -> Arc<Mutex<HashMap<String, DetailedAckStatus>>> {
+        Arc::new(Mutex::new(HashMap::from([(
+            "message-1".to_string(),
+            DetailedAckStatus {
+                status,
+                attempts: 1,
+                last_attempt_time: Some(Instant::now() - since),
+                taken_on: None,
+                settled_at: Some(Instant::now() - since),
+            },
+        )])))
+    }
+
+    #[test_log::test(tokio::test)]
+    async fn test_settling_a_message_was_recorded_when_it_happened() {
+        let mut worker = Worker::new(AckWorkerConfig::default());
+        worker
+            .record_ack("message-1".to_string(), pending_status())
+            .await;
+        assert!(
+            worker.acks.lock().await["message-1"].settled_at.is_none(),
+            "a message still waiting has not settled"
+        );
+
+        worker
+            .record_ack("message-1".to_string(), AckStatus::Received)
+            .await;
+
+        assert!(worker.acks.lock().await["message-1"].settled_at.is_some());
+    }
+
+    #[test_log::test(tokio::test)]
+    async fn test_a_client_settling_a_message_records_when_it_happened() {
+        let mut worker = Worker::new(AckWorkerConfig::default());
+        worker
+            .record_ack("message-1".to_string(), pending_status())
+            .await;
+
+        worker
+            .record_client_ack("message-1".to_string(), "connection-1".to_string())
+            .await;
+
+        let acks = worker.acks.lock().await;
+        assert_eq!(acks["message-1"].status, AckStatus::Received);
+        assert!(acks["message-1"].settled_at.is_some());
     }
 }
