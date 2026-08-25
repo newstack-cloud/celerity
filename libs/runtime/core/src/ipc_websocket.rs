@@ -19,6 +19,7 @@ use tracing::{error, warn};
 use crate::{
     errors::WebSocketsMessageError,
     event_queue::{admission_wait, EventQueue, EventQueueError},
+    telemetry_utils::extract_trace_context,
     types::{
         EventData, EventDataPayload, EventOutcome, EventResultData, EventType, WebSocketEventData,
     },
@@ -82,6 +83,7 @@ impl IpcWebSocketHandler {
                 message,
                 is_binary,
             }),
+            trace_context: extract_trace_context(),
         };
 
         // Waiting for queue capacity spends the same budget the handler needs,

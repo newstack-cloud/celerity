@@ -128,7 +128,13 @@ pub struct Dispatch {
     /// as its own deadline; the runtime enforces it independently.
     #[prost(int64, tag = "4")]
     pub deadline_unix_ms: i64,
-    /// W3C traceparent and tracestate.
+    /// The trace context of whatever produced the event, so a handler's spans
+    /// continue the trace rather than starting one of their own. Carries the W3C
+    /// trace context keys, `traceparent` and, where an upstream sent one,
+    /// `tracestate`, alongside platform specific ids such as `xray_trace_id`.
+    ///
+    /// Empty where the runtime has no trace to propagate, which is the case when
+    /// tracing is disabled.
     #[prost(map = "string, string", tag = "5")]
     pub trace_context: ::std::collections::HashMap<
         ::prost::alloc::string::String,

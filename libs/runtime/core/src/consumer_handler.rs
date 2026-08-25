@@ -10,6 +10,7 @@ use tracing::{field, info, instrument, warn};
 
 use crate::{
     event_queue::{admission_wait, EventQueue, EventQueueError, HandlerTimeouts},
+    telemetry_utils::extract_trace_context,
     types::{
         ConsumerEventData, ConsumerMessage, EventData, EventDataPayload, EventOutcome, EventResult,
         EventType, ScheduleEventData,
@@ -601,6 +602,7 @@ impl ConsumerEventHandler for EventQueueConsumerEventHandler {
                 .unwrap_or_default()
                 .as_secs(),
             data: EventDataPayload::ConsumerMessageEventData(event_data),
+            trace_context: extract_trace_context(),
         };
         let timeout = self.timeouts.for_tag(handler_tag);
         enqueue_and_await(&self.event_queue, event, timeout).await
@@ -625,6 +627,7 @@ impl ConsumerEventHandler for EventQueueConsumerEventHandler {
                 .unwrap_or_default()
                 .as_secs(),
             data: EventDataPayload::ScheduleMessageEventData(event_data),
+            trace_context: extract_trace_context(),
         };
         let timeout = self.timeouts.for_tag(handler_tag);
         enqueue_and_await(&self.event_queue, event, timeout).await

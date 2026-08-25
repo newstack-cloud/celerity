@@ -27,6 +27,7 @@ use crate::{
     consts::MAX_HTTP_REQUEST_BODY_BYTES,
     event_queue::{admission_wait, EventQueue, EventQueueError},
     request::{RequestId, ResolvedClientIp},
+    telemetry_utils::extract_trace_context,
     types::{
         EventData, EventDataPayload, EventOutcome, EventResultData, EventType,
         HttpRequestEventData, HttpResponseData,
@@ -112,6 +113,7 @@ pub async fn handle_request(
             source_ip,
             request_id,
         })),
+        trace_context: extract_trace_context(),
     };
 
     dispatch(&route, event).await
