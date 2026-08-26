@@ -303,17 +303,38 @@ message Result {
   }
 }
 
+// Whether one message was processed.
+//
+// For a source that acknowledges, a schedule trigger among them, a failure
+// leaves the message on its source to be delivered again rather than
+// acknowledging it. So this is an answer about the message, not a report for
+// the log, and a handler that reports success for work it did not do will not
+// see that work again.
 message Ack {
   bool success = 1;
   string error_message = 2;
 }
 
+// Whether the records in a batch were processed.
+//
+// Naming a record is how a handler answers for each message separately. The
+// records named are left on their source to be delivered again and the rest are
+// acknowledged, so a handler that processed most of a batch does not have all
+// of it sent back.
+//
+// Failing with no records named answers for the whole batch, and none of it is
+// acknowledged. A non-empty list is taken as the answer even alongside success,
+// since acknowledging a record the handler named would lose it while leaving
+// one it processed only costs a redelivery.
 message BatchResult {
   bool success = 1;
   repeated RecordFailure failures = 2;
 }
 
 message RecordFailure {
+  // As it arrived on the ConsumerRecord. A name that matches no record in the
+  // batch leaves nothing behind, so a handler that rewrites or generates ids
+  // has to answer with the ones it was given.
   string message_id = 1;
   string error_message = 2;
 }
