@@ -65,7 +65,8 @@ pub struct SQSConsumerConfig {
     pub should_delete_messages: bool,
     /// Whether to delete messages if the message handler fails.
     ///
-    /// Defaults to true.
+    /// Defaults to false, so a batch the handler could not process
+    /// is left on the queue for redelivery instead of being deleted.
     pub delete_messages_on_handler_failure: Option<bool>,
     /// The attribute names to retrieve from the message.
     pub attribute_names: Option<Vec<MessageSystemAttributeName>>,
@@ -579,6 +580,10 @@ fn split_by_outcome(
         return all_or_nothing(true);
     };
 
+    if matches!(error, MessageHandlerError::NeverProcessed(_)) {
+        return all_or_nothing(false);
+    }
+
     if delete_on_handler_failure {
         return all_or_nothing(true);
     }
@@ -698,6 +703,21 @@ mod tests {
             &batch,
             &Err(MessageHandlerError::NeverProcessed(Box::new(TestError))),
             false,
+        );
+
+        assert!(settled.is_empty());
+        assert_eq!(ids(&left), vec!["a"]);
+    }
+
+    /// Asking for failures to be deleted asks about messages a handler could
+    /// not process. One nothing looked at is not among them.
+    #[test]
+    fn a_message_nothing_processed_is_kept_even_where_failures_are_deleted() {
+        let batch = handles(&["a"]);
+        let (settled, left) = split_by_outcome(
+            &batch,
+            &Err(MessageHandlerError::NeverProcessed(Box::new(TestError))),
+            true,
         );
 
         assert!(settled.is_empty());
