@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 use bytes::Bytes;
 use serde_json::Value;
-use tracing::warn;
+use tracing::{error, warn};
 
 use crate::{
     ipc_proto as proto,
@@ -202,6 +202,7 @@ pub fn event_result_from_frame(result: proto::Result, waiting_for: &EventType) -
             EventResultData::CustomInvokeResponse(custom_invoke_response(custom))
         }
         Some(proto::result::Outcome::Error(error)) => {
+            record_handler_error(&result.id, &error);
             failure_for(waiting_for, handler_error_message(&error))
         }
         None => {
@@ -292,7 +293,36 @@ fn failure_for(waiting_for: &EventType, message: String) -> EventResultData {
     }
 }
 
+/// Records what a handler reported about an unhandled error in user code.
+///
+/// The stack is recorded here and nowhere else. The message this function's
+/// caller goes on to build becomes what the source was waiting for, which for
+/// an HTTP request is the body its client receives, and a stack trace names
+/// the files, line numbers and internal frames of the process serving it.
+fn record_handler_error(event_id: &str, error: &proto::HandlerError) {
+    if error.stack.is_empty() {
+        error!(
+            event_id = %event_id,
+            error_type = %error.r#type,
+            "handler reported an unhandled error: {}",
+            error.message
+        );
+        return;
+    }
+
+    error!(
+        event_id = %event_id,
+        error_type = %error.r#type,
+        stack = %error.stack,
+        "handler reported an unhandled error: {}",
+        error.message
+    );
+}
+
 /// The message an unhandled error carries, with its type when it has one.
+///
+/// This is what the source waiting on the event is told, so it reaches whoever
+/// asked. Deliberately without the stack, see [`record_handler_error`].
 fn handler_error_message(error: &proto::HandlerError) -> String {
     if error.r#type.is_empty() {
         error.message.clone()
@@ -671,6 +701,56 @@ mod tests {
         // Fits in the narrower type but is still not a status. Left alone here
         // and caught again when the response is built.
         assert_eq!(status_code(4_464), 4_464);
+    }
+
+    /// A stack trace names the files, line numbers and internal frames of the
+    /// process serving a request, and what the caller is told reaches whoever
+    /// asked. So the stack belongs in the log and nowhere the caller can see.
+    #[test]
+    fn a_stack_trace_never_reaches_whoever_was_waiting() {
+        const STACK: &str = "at handlers/orders.ts:42:9\nat /srv/app/node_modules/inner.js:7:1";
+
+        let with_stack = |waiting_for: &EventType| {
+            event_result_from_frame(
+                proto::Result {
+                    id: "event-1".to_string(),
+                    credit_grant: 1,
+                    outcome: Some(proto::result::Outcome::Error(proto::HandlerError {
+                        message: "connection reset".to_string(),
+                        r#type: "IOError".to_string(),
+                        stack: STACK.to_string(),
+                    })),
+                },
+                waiting_for,
+            )
+            .data
+        };
+
+        for waiting_for in [
+            EventType::HttpRequest,
+            EventType::WsMessage,
+            EventType::ScheduleMessage,
+            EventType::ConsumerMessage,
+            EventType::EventMessage,
+            EventType::CustomInvoke,
+        ] {
+            let told = format!("{:?}", with_stack(&waiting_for));
+            assert!(
+                !told.contains("orders.ts"),
+                "a {waiting_for:?} caller was told the stack: {told}"
+            );
+            assert!(
+                !told.contains("node_modules"),
+                "a {waiting_for:?} caller was told the stack: {told}"
+            );
+        }
+
+        // The message itself still reaches the caller, so the assertions above
+        // are not passing on an empty answer.
+        let EventResultData::HttpResponse(http) = with_stack(&EventType::HttpRequest) else {
+            panic!("expected an HTTP response");
+        };
+        assert_eq!(http.body, &b"IOError: connection reset"[..]);
     }
 
     #[test]
