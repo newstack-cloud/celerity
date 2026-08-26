@@ -27,7 +27,7 @@ use opentelemetry::{
     trace::{SpanKind, TraceContextExt},
     KeyValue,
 };
-use std::{fmt::Debug, sync::Arc, time::Duration};
+use std::{collections::HashSet, fmt::Debug, sync::Arc, time::Duration};
 use tokio::time;
 use tokio::time::{timeout, Instant};
 use tracing::{debug, error, field, info, info_span, instrument, warn, Instrument};
@@ -187,9 +187,9 @@ impl SQSMessageConsumer {
             auth_error_timeout: config.auth_error_timeout.unwrap_or(10),
             terminate_visibility_timeout: config.terminate_visibility_timeout,
             should_delete_messages: config.should_delete_messages,
-            delete_messages_on_handler_failure: config
-                .delete_messages_on_handler_failure
-                .unwrap_or(true),
+            delete_messages_on_handler_failure: deletes_on_handler_failure(
+                config.delete_messages_on_handler_failure,
+            ),
             attribute_names: config.attribute_names,
             message_attribute_names: config.message_attribute_names,
             num_workers: config.num_workers.unwrap_or(10),
@@ -403,21 +403,9 @@ impl SQSMessageConsumer {
 
     // The error is the SDK's own, as above.
     #[allow(clippy::result_large_err)]
-    async fn delete_messages(
-        &self,
-        messages: &[MessageHandle],
-        handler_failed: bool,
-    ) -> Result<(), Error> {
+    async fn delete_messages(&self, messages: &[MessageHandle]) -> Result<(), Error> {
         if !self.config.should_delete_messages {
             debug!("skipping message deletion as should_delete_messages is set to false");
-            return Ok(());
-        }
-
-        if handler_failed && !self.config.delete_messages_on_handler_failure {
-            debug!(concat!(
-                "skipping message deletion as handler failed and ",
-                "delete_messages_on_handler_failure is set to false"
-            ));
             return Ok(());
         }
 
@@ -502,10 +490,12 @@ impl SQSMessageConsumer {
                 Err(_) => error!("the heartbeat task receiver dropped"),
             }
         }
-        let delete_result = self
-            .delete_messages(&message_handles, result.is_err())
-            .await;
-        if let Err(err) = delete_result {
+        let (settled, left) = split_by_outcome(
+            &message_handles,
+            &result,
+            self.config.delete_messages_on_handler_failure,
+        );
+        if let Err(err) = self.delete_messages(&settled).await {
             error!("failed to delete messages from queue: {}", err);
         }
 
@@ -518,9 +508,9 @@ impl SQSMessageConsumer {
                     .add(message_count, &[KeyValue::new("status", "success")]);
             }
             Err(error) => {
-                let _res = self
-                    .terminate_visibility_timeout(&message_handles, &error)
-                    .await;
+                // Only what is still on the queue, since a receipt handle for a
+                // deleted message names nothing.
+                let _res = self.terminate_visibility_timeout(&left, &error).await;
 
                 let error_type = match &error {
                     MessageHandlerError::Timeout(_) => "timeout",
@@ -557,6 +547,59 @@ impl SQSMessageConsumer {
     }
 }
 
+/// Whether a batch a handler could not process is still deleted.
+///
+/// Off unless a deployment asks for it. Deleting a message nothing could
+/// process loses it with nothing recording that it existed, which is not a
+/// default worth having for the sake of a queue that drains.
+fn deletes_on_handler_failure(configured: Option<bool>) -> bool {
+    configured.unwrap_or(false)
+}
+
+/// Splits a batch into the messages that are done with and those still to be
+/// delivered again.
+///
+/// A handler that names the records it could not process is answering for each
+/// message separately, so the rest are settled and only the named ones are
+/// left. Every other outcome answers for the batch as a whole.
+fn split_by_outcome(
+    handles: &[MessageHandle],
+    result: &Result<(), MessageHandlerError>,
+    delete_on_handler_failure: bool,
+) -> (Vec<MessageHandle>, Vec<MessageHandle>) {
+    let all_or_nothing = |settled: bool| {
+        if settled {
+            (handles.to_vec(), vec![])
+        } else {
+            (vec![], handles.to_vec())
+        }
+    };
+
+    let Err(error) = result else {
+        return all_or_nothing(true);
+    };
+
+    if delete_on_handler_failure {
+        return all_or_nothing(true);
+    }
+
+    let MessageHandlerError::PartialBatchFailure(failures) = error else {
+        return all_or_nothing(false);
+    };
+
+    let failed: HashSet<&str> = failures
+        .iter()
+        .map(|failure| failure.message_id.as_str())
+        .collect();
+
+    handles.iter().cloned().partition(|handle| {
+        !handle
+            .message_id
+            .as_deref()
+            .is_some_and(|id| failed.contains(id))
+    })
+}
+
 /// Whether a failure should bring the message back to the queue at once.
 ///
 /// A message nothing looked at is left to become visible when its own timeout
@@ -571,6 +614,7 @@ fn brings_message_back(error: &MessageHandlerError) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use celerity_helpers::consumers::PartialBatchFailureInfo;
 
     #[derive(Debug)]
     struct TestError;
@@ -582,6 +626,94 @@ mod tests {
     }
 
     impl std::error::Error for TestError {}
+
+    fn handles(ids: &[&str]) -> Vec<MessageHandle> {
+        ids.iter()
+            .map(|id| MessageHandle {
+                message_id: Some(id.to_string()),
+                receipt_handle: Some(format!("receipt-{id}")),
+            })
+            .collect()
+    }
+
+    fn ids(handles: &[MessageHandle]) -> Vec<String> {
+        handles
+            .iter()
+            .filter_map(|handle| handle.message_id.clone())
+            .collect()
+    }
+
+    fn partial_failure(ids: &[&str]) -> MessageHandlerError {
+        MessageHandlerError::PartialBatchFailure(
+            ids.iter()
+                .map(|id| PartialBatchFailureInfo::new(id.to_string(), "boom".to_string(), 0))
+                .collect(),
+        )
+    }
+
+    #[test]
+    fn a_batch_a_handler_could_not_process_is_kept_unless_asked_otherwise() {
+        assert!(!deletes_on_handler_failure(None));
+        assert!(!deletes_on_handler_failure(Some(false)));
+        assert!(deletes_on_handler_failure(Some(true)));
+    }
+
+    #[test]
+    fn a_batch_that_succeeded_is_taken_off_the_queue() {
+        let batch = handles(&["a", "b"]);
+        let (settled, left) = split_by_outcome(&batch, &Ok(()), false);
+
+        assert_eq!(ids(&settled), vec!["a", "b"]);
+        assert!(left.is_empty());
+    }
+
+    /// The point of naming a record is that the rest are done with, so a
+    /// handler that names one should not have the whole batch delivered again.
+    #[test]
+    fn only_the_records_a_handler_named_are_left_on_the_queue() {
+        let batch = handles(&["a", "b", "c"]);
+        let (settled, left) = split_by_outcome(&batch, &Err(partial_failure(&["b"])), false);
+
+        assert_eq!(ids(&settled), vec!["a", "c"]);
+        assert_eq!(ids(&left), vec!["b"]);
+    }
+
+    #[test]
+    fn a_batch_that_failed_as_a_whole_is_left_on_the_queue() {
+        let batch = handles(&["a", "b"]);
+        let (settled, left) = split_by_outcome(
+            &batch,
+            &Err(MessageHandlerError::HandlerFailure(Box::new(TestError))),
+            false,
+        );
+
+        assert!(settled.is_empty());
+        assert_eq!(ids(&left), vec!["a", "b"]);
+    }
+
+    #[test]
+    fn a_message_nothing_processed_is_left_on_the_queue() {
+        let batch = handles(&["a"]);
+        let (settled, left) = split_by_outcome(
+            &batch,
+            &Err(MessageHandlerError::NeverProcessed(Box::new(TestError))),
+            false,
+        );
+
+        assert!(settled.is_empty());
+        assert_eq!(ids(&left), vec!["a"]);
+    }
+
+    /// A deployment can still ask for the old behaviour, where nothing is left
+    /// behind whatever the handler made of it.
+    #[test]
+    fn a_deployment_can_still_ask_for_failures_to_be_deleted() {
+        let batch = handles(&["a", "b"]);
+        let (settled, left) = split_by_outcome(&batch, &Err(partial_failure(&["b"])), true);
+
+        assert_eq!(ids(&settled), vec!["a", "b"]);
+        assert!(left.is_empty());
+    }
 
     #[test]
     fn a_message_nothing_processed_waits_out_its_visibility_timeout() {
