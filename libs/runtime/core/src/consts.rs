@@ -57,6 +57,19 @@ pub const MAX_EVENT_QUEUE_ADMISSION_WAIT_SECS: u64 = 5;
 // budget for the handler that will eventually run.
 pub const EVENT_QUEUE_ADMISSION_WAIT_DIVISOR: u32 = 4;
 
+// What an HTTP client is told when the runtime could not serve its request.
+pub const UNEXPECTED_ERROR_BODY: &str = "an unexpected error occurred";
+
+// What an HTTP client is told when nothing came back for its request. True of
+// both a handler that went away and a deadline the cleanup noticed first,
+// which is as much as the runtime can tell apart at that point.
+pub const NO_RESPONSE_BODY: &str = "no response was received for the request";
+
+// What an HTTP client is told when its request ran out of time. Said plainly,
+// since a deadline passing is a defined outcome rather than a fault, and it is
+// the one failure a client can act on.
+pub const REQUEST_TIMED_OUT_BODY: &str = "the request timed out";
+
 // The version of the handler IPC protocol this runtime serves.
 //
 // Minor versions are additive, so a handler built against an earlier minor of

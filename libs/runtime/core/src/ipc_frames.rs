@@ -15,6 +15,7 @@ use serde_json::Value;
 use tracing::{error, warn};
 
 use crate::{
+    consts::UNEXPECTED_ERROR_BODY,
     ipc_proto as proto,
     types::{
         ConsumerEventData, CustomInvokeEventData, CustomInvokeResponseData, EventData,
@@ -263,7 +264,7 @@ fn failure_for(waiting_for: &EventType, message: String) -> EventResultData {
         EventType::HttpRequest => EventResultData::HttpResponse(HttpResponseData {
             status: 500,
             headers: HashMap::new(),
-            body: Bytes::from(message),
+            body: Bytes::from_static(UNEXPECTED_ERROR_BODY.as_bytes()),
         }),
         EventType::WsMessage => EventResultData::WebSocketResponse(SimpleResponseData {
             success: false,
@@ -745,12 +746,34 @@ mod tests {
             );
         }
 
-        // The message itself still reaches the caller, so the assertions above
-        // are not passing on an empty answer.
-        let EventResultData::HttpResponse(http) = with_stack(&EventType::HttpRequest) else {
+        // The message itself still reaches a caller that is not an HTTP
+        // client, so the assertions above are not passing on an empty answer.
+        let EventResultData::WebSocketResponse(ws) = with_stack(&EventType::WsMessage) else {
+            panic!("expected a WebSocket response");
+        };
+        assert_eq!(
+            ws.error_message.as_deref(),
+            Some("IOError: connection reset")
+        );
+    }
+
+    /// What went wrong inside a handler names types, libraries and internals
+    /// of a process the client only reaches across a network. The request id
+    /// on the response is what ties their report to the log that has it.
+    #[test]
+    fn a_client_is_not_told_what_went_wrong_inside_a_handler() {
+        let EventResultData::HttpResponse(http) = handler_error(&EventType::HttpRequest) else {
             panic!("expected an HTTP response");
         };
-        assert_eq!(http.body, &b"IOError: connection reset"[..]);
+
+        assert_eq!(http.status, 500);
+        let body = String::from_utf8(http.body.to_vec()).expect("the body should be text");
+        assert!(
+            !body.contains("connection reset"),
+            "told the client: {body}"
+        );
+        assert!(!body.contains("IOError"), "told the client: {body}");
+        assert_eq!(body, UNEXPECTED_ERROR_BODY);
     }
 
     #[test]
@@ -790,10 +813,11 @@ mod tests {
         };
         assert!(!batch.success);
 
+        // The HTTP client is told nothing of what went wrong, see
+        // `a_client_is_not_told_what_went_wrong_inside_a_handler`.
         let EventResultData::HttpResponse(http) = handler_error(&EventType::HttpRequest) else {
             panic!("expected an HTTP response");
         };
         assert_eq!(http.status, 500);
-        assert_eq!(http.body, &b"IOError: connection reset"[..]);
     }
 }
