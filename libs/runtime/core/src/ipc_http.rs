@@ -24,7 +24,10 @@ use http_body_util::LengthLimitError;
 use tracing::{error, warn};
 
 use crate::{
-    consts::MAX_HTTP_REQUEST_BODY_BYTES,
+    consts::{
+        MAX_HTTP_REQUEST_BODY_BYTES, NO_RESPONSE_BODY, REQUEST_TIMED_OUT_BODY,
+        UNEXPECTED_ERROR_BODY,
+    },
     event_queue::{admission_wait, EventQueue, EventQueueError},
     request::{RequestId, ResolvedClientIp},
     telemetry_utils::extract_trace_context,
@@ -178,13 +181,14 @@ async fn dispatch(route: &IpcHttpRoute, event: EventData) -> Response {
         }
         // The sender was dropped, which happens when the cleanup task removes
         // the in-flight entry after its deadline passed, or when the handlers
-        // executable went away mid-request.
+        // executable went away mid-request. Which of the two is not knowable
+        // here, so the client is told neither.
         Ok(Err(_)) => {
             warn!(
                 handler_tag = %route.handler_tag,
                 "handler did not return a result"
             );
-            (StatusCode::BAD_GATEWAY, "handler did not return a result").into_response()
+            (StatusCode::BAD_GATEWAY, NO_RESPONSE_BODY).into_response()
         }
         Err(_) => {
             warn!(
@@ -192,7 +196,7 @@ async fn dispatch(route: &IpcHttpRoute, event: EventData) -> Response {
                 ?timeout,
                 "handler did not respond within its timeout"
             );
-            (StatusCode::GATEWAY_TIMEOUT, "handler timed out").into_response()
+            (StatusCode::GATEWAY_TIMEOUT, REQUEST_TIMED_OUT_BODY).into_response()
         }
     };
 
@@ -234,11 +238,7 @@ fn render_result(route: &IpcHttpRoute, data: EventResultData) -> Response {
             handler_tag = %route.handler_tag,
             "handler returned a result that is not an HTTP response"
         );
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "handler returned an unexpected result",
-        )
-            .into_response();
+        return (StatusCode::INTERNAL_SERVER_ERROR, UNEXPECTED_ERROR_BODY).into_response();
     };
     build_response(response)
 }
