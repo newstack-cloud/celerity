@@ -2,7 +2,8 @@ use std::{fmt::Debug, marker::PhantomData, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
 use celerity_helpers::consumers::{
-    Message, MessageHandler, MessageHandlerError, RoutedMessage, RoutedMessageHandler,
+    Message, MessageHandler, MessageHandlerError, PartialBatchFailureInfo, RoutedMessage,
+    RoutedMessageHandler,
 };
 use serde_json::{json, Value};
 use std::time::Instant;
@@ -13,7 +14,7 @@ use crate::{
     telemetry_utils::extract_trace_context,
     types::{
         ConsumerEventData, ConsumerMessage, EventData, EventDataPayload, EventOutcome, EventResult,
-        EventType, ScheduleEventData,
+        EventResultData, EventType, ScheduleEventData,
     },
 };
 
@@ -304,8 +305,8 @@ where
             .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
-            .map(|_| ())
-            .map_err(map_handler_error);
+            .map_err(map_handler_error)
+            .and_then(consumer_outcome);
         let millis = start.elapsed().as_micros() as f64 / 1000.0;
         info!(handler_tag = %self.handler_tag, "consumer handler processed in {millis:.3} milliseconds");
         result
@@ -334,8 +335,8 @@ where
             .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
-            .map(|_| ())
-            .map_err(map_handler_error);
+            .map_err(map_handler_error)
+            .and_then(consumer_outcome);
         let millis = start.elapsed().as_micros() as f64 / 1000.0;
         info!(handler_tag = %self.handler_tag, "consumer batch handler processed in {millis:.3} milliseconds");
         result
@@ -407,8 +408,8 @@ where
             .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
-            .map(|_| ())
-            .map_err(map_handler_error);
+            .map_err(map_handler_error)
+            .and_then(consumer_outcome);
         let millis = start.elapsed().as_micros() as f64 / 1000.0;
         info!(handler_tag = %self.handler_tag, "consumer handler processed in {millis:.3} milliseconds");
         result
@@ -432,8 +433,8 @@ where
             .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
-            .map(|_| ())
-            .map_err(map_handler_error);
+            .map_err(map_handler_error)
+            .and_then(consumer_outcome);
         let millis = start.elapsed().as_micros() as f64 / 1000.0;
         info!(handler_tag = %self.handler_tag, "consumer handler processed in {millis:.3} milliseconds");
         result
@@ -465,8 +466,8 @@ where
             .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
-            .map(|_| ())
-            .map_err(map_handler_error);
+            .map_err(map_handler_error)
+            .and_then(consumer_outcome);
         let millis = start.elapsed().as_micros() as f64 / 1000.0;
         info!(handler_tag = %self.handler_tag, "consumer batch handler processed in {millis:.3} milliseconds");
         result
@@ -536,8 +537,8 @@ where
             .event_handler
             .handle_schedule_event(&self.handler_tag, event_data)
             .await
-            .map(|_| ())
-            .map_err(map_handler_error);
+            .map_err(map_handler_error)
+            .and_then(schedule_outcome);
         let millis = start.elapsed().as_micros() as f64 / 1000.0;
         info!(handler_tag = %self.handler_tag, schedule_id = %self.schedule_id, "schedule handler processed in {millis:.3} milliseconds");
         result
@@ -773,6 +774,76 @@ impl ManagedConsumer for ManagedSqsConsumer {
     }
 }
 
+/// What a handler reported about the messages it was given.
+///
+/// Named failures are carried through as they were reported rather than being
+/// collapsed into one failure for the whole batch, so that a consumer can
+/// acknowledge what succeeded and leave the rest.
+///
+/// A non-empty list of failures is honoured even where the handler also
+/// reported success. The two together are a fault in the handler either way,
+/// and acknowledging a message it named as failed would lose that message,
+/// while leaving one it processed only costs a redelivery.
+fn consumer_outcome(result: EventResult) -> Result<(), MessageHandlerError> {
+    let EventResultData::MessageProcessingResponse(response) = result.data else {
+        return Err(handler_failure(
+            "handler answered a consumer event in a shape that cannot answer one",
+        ));
+    };
+
+    let failures = response.failures.unwrap_or_default();
+    if !failures.is_empty() {
+        return Err(MessageHandlerError::PartialBatchFailure(
+            failures
+                .into_iter()
+                .map(|failure| {
+                    PartialBatchFailureInfo::new(
+                        failure.message_id,
+                        failure
+                            .error_message
+                            .unwrap_or_else(|| "the handler did not say why".to_string()),
+                        0,
+                    )
+                })
+                .collect(),
+        ));
+    }
+
+    if response.success {
+        Ok(())
+    } else {
+        Err(handler_failure(
+            "handler could not process the messages and named none of them",
+        ))
+    }
+}
+
+/// What a handler reported about a schedule trigger.
+///
+/// One trigger arrives as one message, so there is nothing to name and a
+/// failure covers the whole thing.
+fn schedule_outcome(result: EventResult) -> Result<(), MessageHandlerError> {
+    let EventResultData::ScheduledEventResponse(response) = result.data else {
+        return Err(handler_failure(
+            "handler answered a schedule trigger in a shape that cannot answer one",
+        ));
+    };
+
+    if response.success {
+        return Ok(());
+    }
+
+    Err(handler_failure(response.error_message.unwrap_or_else(
+        || "handler could not process the schedule trigger".to_string(),
+    )))
+}
+
+fn handler_failure(reason: impl Into<String>) -> MessageHandlerError {
+    MessageHandlerError::HandlerFailure(Box::new(ConsumerEventHandlerError::HandlerFailure(
+        reason.into(),
+    )))
+}
+
 fn map_handler_error(err: ConsumerEventHandlerError) -> MessageHandlerError {
     let span = tracing::Span::current();
     span.record("otel.status_code", "ERROR");
@@ -798,15 +869,39 @@ fn map_handler_error(err: ConsumerEventHandlerError) -> MessageHandlerError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{event_queue::EventQueueParts, types::EventResultData};
+    use crate::{
+        event_queue::EventQueueParts,
+        types::{
+            EventResultData, MessageProcessingFailure, MessageProcessingResponseData,
+            ScheduledEventResponseData,
+        },
+    };
     use std::{
         collections::HashMap,
         sync::atomic::{AtomicBool, Ordering},
     };
 
     fn success_event_result(event_id: &str) -> EventResult {
-        // EventResultData uses #[serde(untagged)], so deserialize the inner struct directly.
-        let data: EventResultData = serde_json::from_value(json!({"success": true})).unwrap();
+        result_with(
+            event_id,
+            EventResultData::MessageProcessingResponse(MessageProcessingResponseData {
+                success: true,
+                failures: None,
+            }),
+        )
+    }
+
+    fn success_schedule_result(event_id: &str) -> EventResult {
+        result_with(
+            event_id,
+            EventResultData::ScheduledEventResponse(ScheduledEventResponseData {
+                success: true,
+                error_message: None,
+            }),
+        )
+    }
+
+    fn result_with(event_id: &str, data: EventResultData) -> EventResult {
         EventResult {
             event_id: event_id.to_string(),
             data,
@@ -851,7 +946,7 @@ mod tests {
             _event_data: ScheduleEventData,
         ) -> Result<EventResult, ConsumerEventHandlerError> {
             self.schedule_called.store(true, Ordering::SeqCst);
-            Ok(success_event_result("test"))
+            Ok(success_schedule_result("test"))
         }
     }
 
@@ -906,6 +1001,125 @@ mod tests {
         let result = bridge.handle(&msg).await;
         assert!(result.is_ok());
         assert!(consumer_called.load(Ordering::SeqCst));
+    }
+
+    /// A handler answering a source that acknowledges is answering the
+    /// question of whether its message may be acknowledged, so a bridge that
+    /// discards the answer acknowledges everything.
+    struct AnsweringHandler(EventResultData);
+
+    #[async_trait]
+    impl ConsumerEventHandler for AnsweringHandler {
+        async fn handle_consumer_event(
+            &self,
+            _handler_tag: &str,
+            _event_data: ConsumerEventData,
+        ) -> Result<EventResult, ConsumerEventHandlerError> {
+            Ok(result_with("test", self.0.clone()))
+        }
+
+        async fn handle_schedule_event(
+            &self,
+            _handler_tag: &str,
+            _event_data: ScheduleEventData,
+        ) -> Result<EventResult, ConsumerEventHandlerError> {
+            Ok(result_with("test", self.0.clone()))
+        }
+    }
+
+    fn consumer_bridge(answer: EventResultData) -> ConsumerHandlerBridge<TestMetadata> {
+        ConsumerHandlerBridge::<TestMetadata>::new(
+            Arc::new(AnsweringHandler(answer)),
+            "source::queue1::handler1".to_string(),
+            "queue1".to_string(),
+            "aws".to_string(),
+        )
+    }
+
+    fn batch_answer(success: bool, failures: Option<Vec<(&str, &str)>>) -> EventResultData {
+        EventResultData::MessageProcessingResponse(MessageProcessingResponseData {
+            success,
+            failures: failures.map(|failures| {
+                failures
+                    .into_iter()
+                    .map(|(message_id, reason)| MessageProcessingFailure {
+                        message_id: message_id.to_string(),
+                        error_message: Some(reason.to_string()),
+                    })
+                    .collect()
+            }),
+        })
+    }
+
+    #[tokio::test]
+    async fn a_batch_naming_failures_reports_them_one_by_one() {
+        let bridge = consumer_bridge(batch_answer(false, Some(vec![("msg-2", "boom")])));
+
+        let Err(MessageHandlerError::PartialBatchFailure(failures)) =
+            bridge.handle_batch(&[test_message(), test_message()]).await
+        else {
+            panic!("a batch naming failures should report them for the consumer to act on");
+        };
+        assert_eq!(failures.len(), 1);
+        assert_eq!(failures[0].message_id, "msg-2");
+        assert_eq!(failures[0].error_reason, "boom");
+    }
+
+    #[tokio::test]
+    async fn a_batch_that_failed_and_named_nothing_fails_as_a_whole() {
+        let bridge = consumer_bridge(batch_answer(false, None));
+
+        assert!(matches!(
+            bridge.handle(&test_message()).await,
+            Err(MessageHandlerError::HandlerFailure(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn named_failures_are_honoured_even_alongside_success() {
+        let bridge = consumer_bridge(batch_answer(true, Some(vec![("msg-1", "boom")])));
+
+        assert!(matches!(
+            bridge.handle_batch(&[test_message()]).await,
+            Err(MessageHandlerError::PartialBatchFailure(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_batch_answered_in_a_shape_that_cannot_answer_one_fails() {
+        let bridge = consumer_bridge(EventResultData::ScheduledEventResponse(
+            ScheduledEventResponseData {
+                success: true,
+                error_message: None,
+            },
+        ));
+
+        assert!(matches!(
+            bridge.handle(&test_message()).await,
+            Err(MessageHandlerError::HandlerFailure(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_schedule_trigger_that_failed_is_not_acknowledged() {
+        let bridge = ScheduleHandlerBridge::<TestMetadata>::new(
+            Arc::new(AnsweringHandler(EventResultData::ScheduledEventResponse(
+                ScheduledEventResponseData {
+                    success: false,
+                    error_message: Some("the report did not build".to_string()),
+                },
+            ))),
+            "source::sched1::handler1".to_string(),
+            "sched1".to_string(),
+            "rate(5 minutes)".to_string(),
+            None,
+        );
+
+        let Err(MessageHandlerError::HandlerFailure(err)) = bridge.handle(&test_message()).await
+        else {
+            panic!("a schedule trigger a handler could not process should not be acknowledged");
+        };
+        assert!(err.to_string().contains("the report did not build"));
     }
 
     #[tokio::test]
@@ -1027,7 +1241,7 @@ mod tests {
         let (tx, event) = receiver.recv().await.expect("event should be in queue");
         assert_eq!(event.event_type, EventType::ScheduleMessage);
 
-        let result = success_event_result(&event.id);
+        let result = success_schedule_result(&event.id);
         tx.send(EventOutcome::Completed(Box::new(event), result))
             .unwrap();
 

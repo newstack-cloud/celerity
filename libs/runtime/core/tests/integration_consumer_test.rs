@@ -26,14 +26,25 @@ use celerity_helpers::{
 };
 use celerity_runtime_core::{
     consumer_handler::{ConsumerEventHandler, ConsumerEventHandlerError, ConsumerHandlerBridge},
-    types::{ConsumerEventData, EventResult, EventResultData, ScheduleEventData},
+    types::{
+        ConsumerEventData, EventResult, EventResultData, MessageProcessingResponseData,
+        ScheduleEventData, ScheduledEventResponseData,
+    },
 };
-use serde_json::json;
 use tokio::sync::{broadcast, mpsc, Mutex};
 
-// Helper: construct EventResultData with private fields via serde.
 fn success_result_data() -> EventResultData {
-    serde_json::from_value(json!({"success": true})).unwrap()
+    EventResultData::MessageProcessingResponse(MessageProcessingResponseData {
+        success: true,
+        failures: None,
+    })
+}
+
+fn success_schedule_result_data() -> EventResultData {
+    EventResultData::ScheduledEventResponse(ScheduledEventResponseData {
+        success: true,
+        error_message: None,
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -69,7 +80,7 @@ impl ConsumerEventHandler for MockConsumerEventHandler {
     ) -> Result<EventResult, ConsumerEventHandlerError> {
         Ok(EventResult {
             event_id: String::new(),
-            data: success_result_data(),
+            data: success_schedule_result_data(),
             context: None,
         })
     }
