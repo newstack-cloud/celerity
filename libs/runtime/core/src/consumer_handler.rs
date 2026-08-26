@@ -1,4 +1,4 @@
-use std::{fmt::Debug, marker::PhantomData, sync::Arc, time::Duration};
+use std::{collections::HashSet, fmt::Debug, marker::PhantomData, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
 use celerity_helpers::consumers::{
@@ -301,12 +301,13 @@ where
             messages,
             vendor: message.to_vendor_json(),
         };
+        let delivered = delivered_ids(&event_data);
         let result = self
             .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
             .map_err(map_handler_error)
-            .and_then(consumer_outcome);
+            .and_then(|result| consumer_outcome(&delivered, result));
         let millis = start.elapsed().as_micros() as f64 / 1000.0;
         info!(handler_tag = %self.handler_tag, "consumer handler processed in {millis:.3} milliseconds");
         result
@@ -331,12 +332,13 @@ where
             messages: all_messages,
             vendor,
         };
+        let delivered = delivered_ids(&event_data);
         let result = self
             .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
             .map_err(map_handler_error)
-            .and_then(consumer_outcome);
+            .and_then(|result| consumer_outcome(&delivered, result));
         let millis = start.elapsed().as_micros() as f64 / 1000.0;
         info!(handler_tag = %self.handler_tag, "consumer batch handler processed in {millis:.3} milliseconds");
         result
@@ -404,12 +406,13 @@ where
             messages,
             vendor: json!({}),
         };
+        let delivered = delivered_ids(&event_data);
         let result = self
             .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
             .map_err(map_handler_error)
-            .and_then(consumer_outcome);
+            .and_then(|result| consumer_outcome(&delivered, result));
         let millis = start.elapsed().as_micros() as f64 / 1000.0;
         info!(handler_tag = %self.handler_tag, "consumer handler processed in {millis:.3} milliseconds");
         result
@@ -429,12 +432,13 @@ where
             messages,
             vendor: message.to_vendor_json(),
         };
+        let delivered = delivered_ids(&event_data);
         let result = self
             .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
             .map_err(map_handler_error)
-            .and_then(consumer_outcome);
+            .and_then(|result| consumer_outcome(&delivered, result));
         let millis = start.elapsed().as_micros() as f64 / 1000.0;
         info!(handler_tag = %self.handler_tag, "consumer handler processed in {millis:.3} milliseconds");
         result
@@ -462,12 +466,13 @@ where
             messages: all_messages,
             vendor,
         };
+        let delivered = delivered_ids(&event_data);
         let result = self
             .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
             .map_err(map_handler_error)
-            .and_then(consumer_outcome);
+            .and_then(|result| consumer_outcome(&delivered, result));
         let millis = start.elapsed().as_micros() as f64 / 1000.0;
         info!(handler_tag = %self.handler_tag, "consumer batch handler processed in {millis:.3} milliseconds");
         result
@@ -774,6 +779,15 @@ impl ManagedConsumer for ManagedSqsConsumer {
     }
 }
 
+/// The records a handler was given, which is what it may name in a failure.
+fn delivered_ids(event_data: &ConsumerEventData) -> HashSet<String> {
+    event_data
+        .messages
+        .iter()
+        .map(|message| message.message_id.clone())
+        .collect()
+}
+
 /// What a handler reported about the messages it was given.
 ///
 /// Named failures are carried through as they were reported rather than being
@@ -784,7 +798,10 @@ impl ManagedConsumer for ManagedSqsConsumer {
 /// reported success. The two together are a fault in the handler either way,
 /// and acknowledging a message it named as failed would lose that message,
 /// while leaving one it processed only costs a redelivery.
-fn consumer_outcome(result: EventResult) -> Result<(), MessageHandlerError> {
+fn consumer_outcome(
+    delivered: &HashSet<String>,
+    result: EventResult,
+) -> Result<(), MessageHandlerError> {
     let EventResultData::MessageProcessingResponse(response) = result.data else {
         return Err(handler_failure(
             "handler answered a consumer event in a shape that cannot answer one",
@@ -793,6 +810,20 @@ fn consumer_outcome(result: EventResult) -> Result<(), MessageHandlerError> {
 
     let failures = response.failures.unwrap_or_default();
     if !failures.is_empty() {
+        // Message IDs that the handler named as failed but were not in the batch it was given are a fault in the handler,
+        // and we report that rather than losing those messages.
+        let unmatched = failures
+            .iter()
+            .map(|failure| failure.message_id.as_str())
+            .filter(|message_id| !delivered.contains(*message_id))
+            .collect::<Vec<_>>();
+        if !unmatched.is_empty() {
+            return Err(handler_failure(format!(
+                "handler named records that were not in the batch it was given: {}",
+                unmatched.join(", ")
+            )));
+        }
+
         return Err(MessageHandlerError::PartialBatchFailure(
             failures
                 .into_iter()
@@ -978,8 +1009,12 @@ mod tests {
     }
 
     fn test_message() -> Message<TestMetadata> {
+        test_message_with_id("msg-1")
+    }
+
+    fn test_message_with_id(message_id: &str) -> Message<TestMetadata> {
         Message {
-            message_id: "msg-1".to_string(),
+            message_id: message_id.to_string(),
             body: Some(r#"{"data":"test"}"#.to_string()),
             md5_of_body: None,
             metadata: TestMetadata { timestamp: 1000 },
@@ -1055,8 +1090,9 @@ mod tests {
     async fn a_batch_naming_failures_reports_them_one_by_one() {
         let bridge = consumer_bridge(batch_answer(false, Some(vec![("msg-2", "boom")])));
 
-        let Err(MessageHandlerError::PartialBatchFailure(failures)) =
-            bridge.handle_batch(&[test_message(), test_message()]).await
+        let Err(MessageHandlerError::PartialBatchFailure(failures)) = bridge
+            .handle_batch(&[test_message_with_id("msg-1"), test_message_with_id("msg-2")])
+            .await
         else {
             panic!("a batch naming failures should report them for the consumer to act on");
         };
@@ -1073,6 +1109,21 @@ mod tests {
             bridge.handle(&test_message()).await,
             Err(MessageHandlerError::HandlerFailure(_))
         ));
+    }
+
+    /// A name matching no record settles nothing, so a consumer would take the
+    /// whole batch off its source on a failure the handler reported.
+    #[tokio::test]
+    async fn a_batch_naming_a_record_it_was_not_given_fails_as_a_whole() {
+        let bridge = consumer_bridge(batch_answer(false, Some(vec![("msg-9", "boom")])));
+
+        let Err(MessageHandlerError::HandlerFailure(err)) = bridge
+            .handle_batch(&[test_message_with_id("msg-1"), test_message_with_id("msg-2")])
+            .await
+        else {
+            panic!("a batch naming a record nobody delivered should not settle any of it");
+        };
+        assert!(err.to_string().contains("msg-9"), "{err}");
     }
 
     #[tokio::test]
