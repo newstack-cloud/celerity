@@ -468,6 +468,13 @@ pub mod result {
         Error(super::HandlerError),
     }
 }
+/// Whether one message was processed.
+///
+/// For a source that acknowledges, a schedule trigger among them, a failure
+/// leaves the message on its source to be delivered again rather than
+/// acknowledging it. So this is an answer about the message, not a report for
+/// the log, and a handler that reports success for work it did not do will not
+/// see that work again.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct Ack {
     #[prost(bool, tag = "1")]
@@ -475,6 +482,17 @@ pub struct Ack {
     #[prost(string, tag = "2")]
     pub error_message: ::prost::alloc::string::String,
 }
+/// Whether the records in a batch were processed.
+///
+/// Naming a record is how a handler answers for each message separately. The
+/// records named are left on their source to be delivered again and the rest are
+/// acknowledged, so a handler that processed most of a batch does not have all
+/// of it sent back.
+///
+/// Failing with no records named answers for the whole batch, and none of it is
+/// acknowledged. A non-empty list is taken as the answer even alongside success,
+/// since acknowledging a record the handler named would lose it while leaving
+/// one it processed only costs a redelivery.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct BatchResult {
     #[prost(bool, tag = "1")]
@@ -484,6 +502,9 @@ pub struct BatchResult {
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct RecordFailure {
+    /// As it arrived on the ConsumerRecord. A name that matches no record in the
+    /// batch leaves nothing behind, so a handler that rewrites or generates ids
+    /// has to answer with the ones it was given.
     #[prost(string, tag = "1")]
     pub message_id: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
