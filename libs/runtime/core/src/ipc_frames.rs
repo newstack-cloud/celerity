@@ -218,7 +218,6 @@ pub fn event_result_from_frame(result: proto::Result, waiting_for: &EventType) -
     EventResult {
         event_id: result.id,
         data,
-        context: None,
     }
 }
 

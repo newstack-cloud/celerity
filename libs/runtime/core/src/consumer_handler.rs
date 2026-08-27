@@ -936,7 +936,6 @@ mod tests {
         EventResult {
             event_id: event_id.to_string(),
             data,
-            context: None,
         }
     }
 

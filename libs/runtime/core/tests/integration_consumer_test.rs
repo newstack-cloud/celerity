@@ -69,7 +69,6 @@ impl ConsumerEventHandler for MockConsumerEventHandler {
         Ok(EventResult {
             event_id: String::new(),
             data: success_result_data(),
-            context: None,
         })
     }
 
@@ -81,7 +80,6 @@ impl ConsumerEventHandler for MockConsumerEventHandler {
         Ok(EventResult {
             event_id: String::new(),
             data: success_schedule_result_data(),
-            context: None,
         })
     }
 }
