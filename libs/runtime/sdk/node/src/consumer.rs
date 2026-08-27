@@ -99,12 +99,29 @@ pub struct JsScheduleEventInput {
 }
 
 /// The result returned from a consumer or schedule event handler.
+///
+/// For a source that acknowledges, a queue, a topic or a schedule, this decides
+/// what happens to the message rather than only reporting what happened. A
+/// success acknowledges it and it is not delivered again; a failure leaves it
+/// on its source, which redelivers it according to its own rules.
 #[napi(object)]
 pub struct JsEventResult {
   /// Whether the event was processed successfully.
+  ///
+  /// Reporting success for work the handler did not do means never seeing that
+  /// work again.
   pub success: bool,
-  /// Optional list of individual message processing failures
-  /// (for partial failure reporting in consumer handlers).
+  /// The messages in a batch that could not be processed.
+  ///
+  /// Naming messages is how a handler answers for each one separately, those
+  /// named are left on the source to be delivered again and the rest are
+  /// acknowledged, so a handler that processed most of a batch does not have
+  /// all of it sent back. Failing without naming any answers for the whole
+  /// batch, and none of it is acknowledged.
+  ///
+  /// A non-empty list is taken as the answer even alongside `success: true`.
+  /// Ignored for schedule handlers, which receive one message and have nothing
+  /// to name.
   pub failures: Option<Vec<JsMessageProcessingFailure>>,
   /// Optional error message (used for schedule handler failures).
   pub error_message: Option<String>,
@@ -114,6 +131,10 @@ pub struct JsEventResult {
 #[napi(object)]
 pub struct JsMessageProcessingFailure {
   /// The ID of the message that failed to process.
+  ///
+  /// Must be the `messageId` the message arrived with. A message ID matching
+  /// nothing in the batch would leave nothing behind, so the runtime refuses
+  /// the whole answer rather than acknowledging a batch it cannot apply.
   pub message_id: String,
   /// Optional description of the error.
   pub error_message: Option<String>,

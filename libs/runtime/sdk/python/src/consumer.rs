@@ -72,6 +72,19 @@ pub struct PyScheduleEventInput {
   pub trace_context: Option<HashMap<String, String>>,
 }
 
+/// The result returned from a consumer or schedule event handler.
+///
+/// For a source that acknowledges, a queue, a topic or a schedule, this decides
+/// what happens to the message rather than only reporting what happened. A
+/// success acknowledges it and it is not delivered again; a failure leaves it
+/// on its source, which redelivers it according to its own rules. Reporting
+/// success for work the handler did not do means never seeing that work again.
+///
+/// Naming failures is how a handler answers for each message in a batch
+/// separately, those named are left on the source and the rest are
+/// acknowledged. Failing without naming any answers for the whole batch. A
+/// non-empty list is taken as the answer even alongside a success, and is
+/// ignored for schedule handlers, which receive one message.
 #[pyclass(name = "EventResult")]
 pub struct PyEventResult {
   #[pyo3(get, set)]
@@ -99,6 +112,11 @@ impl PyEventResult {
   }
 }
 
+/// One message in a batch that could not be processed.
+///
+/// The message id must be the one the message arrived with. An id matching
+/// nothing in the batch would leave nothing behind, so the runtime refuses the
+/// whole answer rather than acknowledging a batch it cannot apply.
 #[pyclass(name = "MessageProcessingFailure")]
 pub struct PyMessageProcessingFailure {
   #[pyo3(get, set)]

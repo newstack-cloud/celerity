@@ -1433,10 +1433,21 @@ class EventResult:
     """
     The result returned from a consumer or schedule event handler.
 
+    For a source that acknowledges, a queue, a topic or a schedule, this decides
+    what happens to the message rather than only reporting what happened. A
+    success acknowledges it and it is not delivered again; a failure leaves it
+    on its source, which redelivers it according to its own rules. Reporting
+    success for work the handler did not do means never seeing that work again.
+
+    Naming failures is how a handler answers for each message in a batch
+    separately, those named are left on the source and the rest are
+    acknowledged. Failing without naming any answers for the whole batch. A
+    non-empty list is taken as the answer even alongside a success, and is
+    ignored for schedule handlers, which receive one message.
+
     Attributes:
         success: Whether the event was processed successfully.
-        failures: Optional list of individual message processing failures
-                  (for partial failure reporting in consumer handlers).
+        failures: The messages in a batch that could not be processed.
         error_message: Optional error message (used for schedule handler failures).
     """
     success: bool
@@ -1462,6 +1473,10 @@ class EventResult:
 class MessageProcessingFailure:
     """
     Represents a failure to process an individual message in a consumer batch.
+
+    The message id must be the one the message arrived with. An id matching
+    nothing in the batch would leave nothing behind, so the runtime refuses the
+    whole answer rather than acknowledging a batch it cannot apply.
 
     Attributes:
         message_id: The ID of the message that failed to process.
