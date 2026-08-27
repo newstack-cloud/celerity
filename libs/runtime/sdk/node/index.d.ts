@@ -650,13 +650,34 @@ export interface JsConsumerMessage {
   vendor: any
 }
 
-/** The result returned from a consumer or schedule event handler. */
+/**
+ * The result returned from a consumer or schedule event handler.
+ *
+ * For a source that acknowledges, a queue, a topic or a schedule, this decides
+ * what happens to the message rather than only reporting what happened. A
+ * success acknowledges it and it is not delivered again; a failure leaves it
+ * on its source, which redelivers it according to its own rules.
+ */
 export interface JsEventResult {
-  /** Whether the event was processed successfully. */
+  /**
+   * Whether the event was processed successfully.
+   *
+   * Reporting success for work the handler did not do means never seeing that
+   * work again.
+   */
   success: boolean
   /**
-   * Optional list of individual message processing failures
-   * (for partial failure reporting in consumer handlers).
+   * The messages in a batch that could not be processed.
+   *
+   * Naming messages is how a handler answers for each one separately, those
+   * named are left on the source to be delivered again and the rest are
+   * acknowledged, so a handler that processed most of a batch does not have
+   * all of it sent back. Failing without naming any answers for the whole
+   * batch, and none of it is acknowledged.
+   *
+   * A non-empty list is taken as the answer even alongside `success: true`.
+   * Ignored for schedule handlers, which receive one message and have nothing
+   * to name.
    */
   failures?: Array<JsMessageProcessingFailure>
   /** Optional error message (used for schedule handler failures). */
@@ -665,7 +686,13 @@ export interface JsEventResult {
 
 /** Represents a failure to process an individual message in a consumer batch. */
 export interface JsMessageProcessingFailure {
-  /** The ID of the message that failed to process. */
+  /**
+   * The ID of the message that failed to process.
+   *
+   * Must be the `messageId` the message arrived with. A message ID matching
+   * nothing in the batch would leave nothing behind, so the runtime refuses
+   * the whole answer rather than acknowledging a batch it cannot apply.
+   */
   messageId: string
   /** Optional description of the error. */
   errorMessage?: string
