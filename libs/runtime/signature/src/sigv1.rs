@@ -32,8 +32,15 @@ pub const DEFAULT_CLOCK_SKEW: u64 = 300;
 ///
 /// ```
 /// # use bluelink_signature::sigv1::*;
+/// # use bluelink_signature::types::KeyPair;
 /// # use celerity_helpers::time::DefaultClock;
-///
+/// # use http::HeaderMap;
+/// # use std::collections::HashMap;
+/// # let key_pairs = HashMap::from([(
+/// #     "key-id".to_string(),
+/// #     KeyPair { key_id: "key-id".to_string(), secret_key: "secret-key".to_string() },
+/// # )]);
+/// # let headers = HeaderMap::new();
 /// let clock = DefaultClock::new();
 /// // Uses the default clock skew of 5 minutes.
 /// match verify_signature(&key_pairs, &headers, &clock, None) {
@@ -99,21 +106,25 @@ pub fn verify_signature(
 ///
 /// ```
 /// # use bluelink_signature::sigv1::*;
+/// # use bluelink_signature::types::KeyPair;
 /// # use celerity_helpers::time::DefaultClock;
 /// # use http::HeaderMap;
-///
 /// let key_pair = KeyPair {
-///    key_id: "key-id".to_string(),    
-///    secret_key: "secret-key".to_string()
+///     key_id: "key-id".to_string(),
+///     secret_key: "secret-key".to_string(),
 /// };
-/// let headers = HeaderMap::new();
+/// let mut headers = HeaderMap::new();
 /// headers.insert("X-Custom-Header", "custom-value".parse().unwrap());
 /// let custom_header_names = vec!["X-Custom-Header".to_string()];
 /// let clock = DefaultClock::new();
 /// let signature_header = create_signature_header(&key_pair, &mut headers, custom_header_names, &clock)
 ///     .expect("signature header to be created without any issues");
 ///
-/// assert!(signature_header.starts_with("key-id"));
+/// // keyId="key-id", headers="bluelink-date x-custom-header", signature="..."
+/// assert!(signature_header.starts_with("keyId=\"key-id\""));
+/// assert!(signature_header.contains("x-custom-header"));
+/// // A date header is added where the caller did not set one, since the
+/// // signature covers it.
 /// assert!(headers.get("Bluelink-Date").is_some());
 /// ```
 pub fn create_signature_header(

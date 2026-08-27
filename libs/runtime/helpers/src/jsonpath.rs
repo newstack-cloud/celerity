@@ -12,8 +12,10 @@ use serde_json::Value;
 ///
 /// An example of how you might use this function:
 /// ```
+/// # use celerity_helpers::jsonpath::jsonpath_inject_root;
+/// # use jsonpath_rust::JsonPath;
 /// # use serde_json::json;
-///
+/// # use std::str::FromStr;
 /// let mut json = json!({
 ///    "name": "John Doe",
 /// });
@@ -26,7 +28,8 @@ use serde_json::Value;
 ///    "planPrice": 99.99,
 /// });
 /// let result = jsonpath_inject_root(&path, &mut json, value);
-/// assert_eq!(result, false);
+/// // True, since the path names a field of the root object.
+/// assert!(result);
 /// assert_eq!(json, json!({
 ///   "name": "John Doe",
 ///   "planInfo": {

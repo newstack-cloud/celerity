@@ -18,20 +18,30 @@ pub trait WorkflowExecutionService {
     ///
     /// The following is an example of how you might call this method:
     /// ```
-    /// # use workflow::workflow_executions::{SaveWorkflowExecutionPayload, WorkflowExecutionService};
-    ///
+    /// # use celerity_runtime_workflow::workflow_executions::{
+    /// #     SaveWorkflowExecutionPayload, WorkflowExecutionService,
+    /// #     WorkflowExecutionServiceError, WorkflowExecutionState, WorkflowExecutionStatus,
+    /// # };
+    /// # use serde_json::json;
+    /// # async fn example(
+    /// #     service: &dyn WorkflowExecutionService,
+    /// #     updated_states: Vec<WorkflowExecutionState>,
+    /// # ) -> Result<(), WorkflowExecutionServiceError> {
     /// let saved_workflow_execution = service.save_workflow_execution(
-    ///    "7e4f50be-6ecf-4ab3-8974-f65964615c44".to_string(),
+    ///     "7e4f50be-6ecf-4ab3-8974-f65964615c44".to_string(),
     ///     SaveWorkflowExecutionPayload {
+    ///         input: json!({"documentId": "doc-1"}),
     ///         started: 1728232655000,
     ///         completed: Some(1728232657000),
-    ///         duration: Some(2),
-    ///         status: "completed".to_string(),
+    ///         duration: Some(2.0),
+    ///         status: WorkflowExecutionStatus::Succeeded,
     ///         status_detail: "Workflow execution completed successfully".to_string(),
-    ///         current_state: "uploadProcessedDocument".to_string(),
+    ///         current_state: Some("uploadProcessedDocument".to_string()),
     ///         states: updated_states,
     ///     },
-    /// )?;
+    /// ).await?;
+    /// # Ok(())
+    /// # }
     /// ```
     async fn save_workflow_execution(
         &self,
@@ -45,11 +55,17 @@ pub trait WorkflowExecutionService {
     ///
     /// The following is an example of how you might call this method:
     /// ```
-    /// # use workflow::workflow_executions::WorkflowExecutionService;
-    ///
+    /// # use celerity_runtime_workflow::workflow_executions::{
+    /// #     WorkflowExecutionService, WorkflowExecutionServiceError,
+    /// # };
+    /// # async fn example(
+    /// #     service: &dyn WorkflowExecutionService,
+    /// # ) -> Result<(), WorkflowExecutionServiceError> {
     /// let workflow_execution = service.get_workflow_execution(
     ///     "7e4f50be-6ecf-4ab3-8974-f65964615c44".to_string(),
-    /// )?;
+    /// ).await?;
+    /// # Ok(())
+    /// # }
     /// ```
     async fn get_workflow_execution(
         &self,
@@ -64,9 +80,15 @@ pub trait WorkflowExecutionService {
     ///
     /// The following is an example of how you might call this method:
     /// ```
-    /// # use workflow::workflow_executions::WorkflowExecutionService;
-    ///
-    /// let workflow_executions = service.get_latest_workflow_executions(10)?;
+    /// # use celerity_runtime_workflow::workflow_executions::{
+    /// #     WorkflowExecutionService, WorkflowExecutionServiceError,
+    /// # };
+    /// # async fn example(
+    /// #     service: &dyn WorkflowExecutionService,
+    /// # ) -> Result<(), WorkflowExecutionServiceError> {
+    /// let workflow_executions = service.get_latest_workflow_executions(10).await?;
+    /// # Ok(())
+    /// # }
     /// ```
     async fn get_latest_workflow_executions(
         &self,
