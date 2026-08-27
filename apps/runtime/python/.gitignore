@@ -12,3 +12,4 @@ build/
 runtime-manifest.json
 .env
 .claude/
+app
