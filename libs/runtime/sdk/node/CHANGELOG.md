@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.4.0...runtime-sdk-node/v0.4.1) (2026-08-27)
+
+
+### docs
+
+* **lib-rt-sdk-node:** note the toolchain pin for local cross builds ([9661a74](https://github.com/newstack-cloud/celerity/commit/9661a74fdc7e572f284244a14696702ebf67e18f))
+
 ## [0.4.0](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.3.5...runtime-sdk-node/v0.4.0) (2026-08-27)
 
 
