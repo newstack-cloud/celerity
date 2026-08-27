@@ -65,9 +65,13 @@ def _run_integration_tests(args: argparse.Namespace) -> None:
     env_copy = os.environ.copy()
     in_ci_env = os.environ.get('GITHUB_ACTIONS')
     test_env_file = '.env.test-ci' if in_ci_env else '.env.test'
-    selection_flags = f"--package {args.package}" if args.package else "--workspace"
     exclude_flags = "--exclude celerity-python-runtime-sdk"
     feature_flags = "--features celerity_local_consumers,celerity_runtime_core/ws_clustering"
+    # A named package narrows which tests run rather than which packages are
+    # built, so a scoped run resolves exactly the features a full one does.
+    # Selecting the package instead would take the workspace features with it,
+    # and most packages do not have them.
+    filter_flags = f"-E 'package({args.package})'" if args.package else ""
     test_env = {
         # Integration tests can't share the same env vars (.env) as the API running
         # in docker as the host endpoints for the AWS service mocks are different.
@@ -83,14 +87,14 @@ def _run_integration_tests(args: argparse.Namespace) -> None:
     # Use cargo-nextest for cleaner per-test output with a summary at the end.
     # Debug output is only shown for failing tests.
     completed_process = subprocess.run(
-        f'cargo llvm-cov --no-report nextest {selection_flags} {exclude_flags} '
-        f'{feature_flags} --no-fail-fast --color always',
+        f'cargo llvm-cov --no-report nextest --workspace {exclude_flags} '
+        f'{feature_flags} {filter_flags} --no-fail-fast --color always',
         env=test_env,
         shell=True,
         check=False
     )
 
-    cluster_process = _run_cluster_mode_tests(test_env)
+    cluster_process = _run_cluster_mode_tests(test_env, args.package)
 
     report_flags = "--lcov --output-path coverage.lcov" if in_ci_env else "--html"
     subprocess.run(f'cargo llvm-cov report {report_flags}', shell=True, check=False)
@@ -111,7 +115,10 @@ def _run_integration_tests(args: argparse.Namespace) -> None:
 CLUSTER_MODE_PACKAGES = '--package celerity_ws_redis --package celerity_runtime_core'
 
 
-def _run_cluster_mode_tests(test_env: Dict[str, str]) -> subprocess.CompletedProcess:
+def _run_cluster_mode_tests(
+    test_env: Dict[str, str],
+    package: str | None,
+) -> subprocess.CompletedProcess:
     """
     Runs the Redis-backed tests a second time against a real cluster.
 
@@ -124,6 +131,10 @@ def _run_cluster_mode_tests(test_env: Dict[str, str]) -> subprocess.CompletedPro
     first pass made, so this is a second or two rather than a pass over the
     whole workspace.
     """
+    if package is not None and package not in CLUSTER_MODE_PACKAGES:
+        print(f'{package} has no Redis-backed tests, skipping the cluster pass ...')
+        return subprocess.CompletedProcess(args=[], returncode=0)
+
     print('Running the Redis-backed tests again against a cluster ...')
     return subprocess.run(
         f'cargo llvm-cov --no-report nextest {CLUSTER_MODE_PACKAGES} '
