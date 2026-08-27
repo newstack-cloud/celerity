@@ -200,7 +200,6 @@ fn js_result_to_consumer_event_result(result: JsEventResult, event_id: &str) -> 
           .collect()
       }),
     }),
-    context: None,
   }
 }
 
@@ -211,7 +210,6 @@ fn js_result_to_schedule_event_result(result: JsEventResult, event_id: &str) -> 
       success: result.success,
       error_message: result.error_message,
     }),
-    context: None,
   }
 }
 

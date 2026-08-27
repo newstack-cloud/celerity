@@ -226,7 +226,6 @@ fn py_obj_to_consumer_event_result(py_obj: Py<PyAny>, event_id: &str) -> PyResul
         success: result.success,
         failures,
       }),
-      context: None,
     })
   })
 }
@@ -241,7 +240,6 @@ fn py_obj_to_schedule_event_result(py_obj: Py<PyAny>, event_id: &str) -> PyResul
         success: result.success,
         error_message: result.error_message.clone(),
       }),
-      context: None,
     })
   })
 }

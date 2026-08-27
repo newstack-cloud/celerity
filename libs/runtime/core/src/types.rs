@@ -229,8 +229,6 @@ pub struct EventResult {
     #[serde(rename = "eventId")]
     pub event_id: String,
     pub data: EventResultData,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub context: Option<Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
