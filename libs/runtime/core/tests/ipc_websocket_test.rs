@@ -1,3 +1,6 @@
+// The handler stream these tests drive is served on a unix socket.
+#![cfg(unix)]
+
 //! The IPC path for a WebSocket API: messages reach a handler over a real gRPC
 //! stream on a real Unix socket, acknowledgements and duplicates are dealt with
 //! on the way, and connections come and go.

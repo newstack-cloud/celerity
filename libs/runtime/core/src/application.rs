@@ -40,6 +40,7 @@ use tokio::{
     sync::{mpsc, Mutex as AsyncMutex},
     task::JoinHandle,
 };
+#[cfg(unix)]
 use tokio_stream::wrappers::UnixListenerStream;
 use tonic::transport::Server;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -691,6 +692,7 @@ impl Application {
             server_shutdown_rx.await.ok();
         };
 
+        #[cfg(unix)]
         match bind_runtime_socket(&self.runtime_config.runtime_socket).await {
             Ok(listener) => {
                 info!(
@@ -734,17 +736,23 @@ impl Application {
                      loopback tcp on {port} as configured, which lets any process that can \
                      reach loopback register as a handler and be given events"
                 );
-                let addr = SocketAddr::from((std::net::Ipv4Addr::LOCALHOST, port));
-                tokio::spawn(async move {
-                    if let Err(err) = Server::builder()
-                        .add_service(service)
-                        .serve_with_shutdown(addr, shutdown)
-                        .await
-                    {
-                        error!("handler stream server stopped: {err}");
-                    }
-                });
+                spawn_ipc_loopback_server(service, port, shutdown);
             }
+        }
+
+        // Loopback is the only transport this platform offers rather than a
+        // fall back from a stronger one, so the opt in that guards giving up a
+        // unix socket has nothing to guard and does not apply.
+        #[cfg(not(unix))]
+        {
+            let port = self.runtime_config.runtime_socket_fallback_port;
+            warn!(
+                port,
+                "this platform has no unix socket to serve the handler stream on, serving it \
+                 over loopback tcp instead, which lets any process that can reach loopback \
+                 register as a handler and be given events"
+            );
+            spawn_ipc_loopback_server(service, port, shutdown);
         }
 
         self.ipc_server_shutdown_signal = Some(server_shutdown_tx);
@@ -1907,6 +1915,26 @@ fn register_ipc_http_route(
     }
 }
 
+/// Serves the handler stream over loopback TCP.
+fn spawn_ipc_loopback_server<S>(
+    service: HandlerRuntimeServiceServer<HandlerStreamService>,
+    port: u16,
+    shutdown: S,
+) where
+    S: std::future::Future<Output = ()> + Send + 'static,
+{
+    let addr = SocketAddr::from((std::net::Ipv4Addr::LOCALHOST, port));
+    tokio::spawn(async move {
+        if let Err(err) = Server::builder()
+            .add_service(service)
+            .serve_with_shutdown(addr, shutdown)
+            .await
+        {
+            error!("handler stream server stopped: {err}");
+        }
+    });
+}
+
 /// Binds the Unix socket the handler stream is served on.
 ///
 /// The parent directory is created because the default path lives under
@@ -1917,6 +1945,7 @@ fn register_ipc_http_route(
 /// not: removing it would leave that instance running on a socket nothing can
 /// reach any more, and two runtimes silently fighting over a path is worse than
 /// refusing to start.
+#[cfg(unix)]
 async fn bind_runtime_socket(path: &str) -> std::io::Result<tokio::net::UnixListener> {
     let path = std::path::Path::new(path);
     if let Some(parent) = path.parent() {
@@ -1945,6 +1974,7 @@ async fn bind_runtime_socket(path: &str) -> std::io::Result<tokio::net::UnixList
 }
 
 /// Restricts the socket to the user the runtime runs as.
+#[cfg(unix)]
 async fn restrict_runtime_socket(path: &std::path::Path) -> std::io::Result<()> {
     use std::os::unix::fs::PermissionsExt;
 
@@ -1953,6 +1983,7 @@ async fn restrict_runtime_socket(path: &std::path::Path) -> std::io::Result<()> 
 
 /// Restricts a directory the runtime created for its socket to the user the
 /// runtime runs as.
+#[cfg(unix)]
 async fn restrict_runtime_socket_dir(path: &std::path::Path) -> std::io::Result<()> {
     use std::os::unix::fs::PermissionsExt;
 

@@ -385,12 +385,16 @@ impl RuntimeConfig {
             .expect("Invalid runtime socket fallback port, must be a whole number from 0 to 65535");
 
         // A port of zero asks the operating system for whichever one is free,
-        // which a handlers executable has no way to discover. Harmless while
-        // the fallback is off, since nothing binds it then.
+        // which a handlers executable has no way to discover. Harmless where a
+        // unix socket is available and the fallback is off, since nothing binds
+        // it then, but loopback is the only transport where there is no unix
+        // socket, so the port is always bound there.
+        let loopback_port_is_bound = cfg!(not(unix)) || runtime_socket_fallback_enabled;
         assert!(
-            !(runtime_socket_fallback_enabled && runtime_socket_fallback_port == 0),
-            "Invalid runtime socket fallback port, must be a specific port when the fallback \
-             is enabled, since a handlers executable has to know where to connect"
+            !(loopback_port_is_bound && runtime_socket_fallback_port == 0),
+            "Invalid runtime socket fallback port, must be a specific port whenever the handler \
+             stream is served over loopback, since a handlers executable has to know where to \
+             connect"
         );
 
         let runtime_socket = env
@@ -1165,7 +1169,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "must be a specific port when the fallback")]
+    #[should_panic(expected = "must be a specific port whenever the handler")]
     fn refuses_an_ephemeral_fallback_port_when_the_fallback_is_enabled() {
         RuntimeConfig::from_env(&env(&[
             ("CELERITY_RUNTIME_SOCKET_FALLBACK_ENABLED", "true"),
@@ -1173,6 +1177,9 @@ mod tests {
         ]));
     }
 
+    // Only where a unix socket is available, since loopback is bound whatever
+    // the setting says on a platform without one.
+    #[cfg(unix)]
     #[test]
     fn allows_an_ephemeral_fallback_port_while_the_fallback_is_off() {
         // Nothing binds it, so the value is never used.

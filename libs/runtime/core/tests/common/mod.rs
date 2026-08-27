@@ -1,3 +1,5 @@
+// The handler stream these helpers drive is served on a unix socket.
+#[cfg(unix)]
 pub mod ipc;
 
 use std::{collections::HashMap, env::VarError, sync::Arc};

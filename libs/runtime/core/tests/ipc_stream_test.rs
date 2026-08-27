@@ -1,3 +1,6 @@
+// The handler stream these tests drive is served on a unix socket.
+#![cfg(unix)]
+
 //! The handler stream itself rather than any application served over it: the
 //! socket the runtime listens on, who is allowed to reach it, and what happens
 //! when one is already there.
