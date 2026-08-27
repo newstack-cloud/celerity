@@ -23,9 +23,7 @@ impl Debug for dyn Clock + Send + Sync {
 /// # Examples
 ///
 /// ```
-/// # use celerity_helpers::time::DefaultClock;
-/// # use std::time::SystemTime;
-///
+/// # use celerity_helpers::time::{Clock, DefaultClock};
 /// let clock = DefaultClock::new();
 /// let now = clock.now();
 /// ```
