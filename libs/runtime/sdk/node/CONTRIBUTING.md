@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) >=22.0.0
-- [Rust](https://www.rust-lang.org/tools/install) >=1.76.0
+- [Rust](https://www.rust-lang.org/tools/install) via rustup, which resolves the channel pinned in the repository root `rust-toolchain.toml`
 - [Yarn](https://yarnpkg.com/) (will be installed via corepack)
 - [Git](https://git-scm.com/)
 
@@ -36,6 +36,18 @@ yarn build --target x86_64-apple-darwin
 yarn build --target aarch64-unknown-linux-gnu
 yarn build --target x86_64-pc-windows-msvc
 ```
+
+Building for anything other than the host needs that target's standard library
+on the pinned toolchain. Add it from inside the repository so that rustup
+resolves the `rust-toolchain.toml` override before it installs:
+
+```bash
+rustup target add aarch64-pc-windows-msvc
+```
+
+Adding a target while a different toolchain is active installs the standard
+library somewhere the build will not look, and the build then fails saying it
+cannot find the crate for `core`.
 
 ### Running Tests
 
