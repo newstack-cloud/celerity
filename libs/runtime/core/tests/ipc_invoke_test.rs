@@ -1,3 +1,6 @@
+// The handler stream these tests drive is served on a unix socket.
+#![cfg(unix)]
+
 //! The IPC path for handlers invoked by name, rather than by a request or a
 //! message arriving. Covers the invoke endpoint, what it will and will not
 //! address, and what comes back.

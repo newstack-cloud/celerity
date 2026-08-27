@@ -1,3 +1,6 @@
+// The handler stream these tests drive is served on a unix socket.
+#![cfg(unix)]
+
 //! The IPC path for an HTTP API: a request reaches a handler over a real gRPC
 //! stream on a real Unix socket and its response comes back, including what
 //! happens when the handler is slow, absent, or answering with bytes.
