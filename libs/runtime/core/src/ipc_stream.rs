@@ -679,7 +679,11 @@ async fn send_to_websockets(
                 message_id,
                 message_type,
                 message,
-                send_context(outbound.caller, outbound.inform_clients_on_loss),
+                send_context(
+                    outbound.caller,
+                    outbound.inform_clients_on_loss,
+                    outbound.wait_for_ack,
+                ),
             )
             .await
         {
@@ -722,14 +726,23 @@ fn encode_outbound(outbound: &proto::WsOutbound) -> Result<(MessageType, String)
 /// context is produced without them. Acknowledgements are not waited for, since
 /// the handler has already been told the send was accepted and holding the
 /// stream for a cluster round trip would delay every message behind it.
-fn send_context(caller: String, inform_clients: Vec<String>) -> Option<SendContext> {
-    if inform_clients.is_empty() {
+/// What the registry needs beyond the message itself, where the handler asked
+/// for anything at all.
+///
+/// Absent where it asked for neither, which is the common case and the one
+/// that settles on the write.
+fn send_context(
+    caller: String,
+    inform_clients: Vec<String>,
+    wait_for_ack: bool,
+) -> Option<SendContext> {
+    if !wait_for_ack && inform_clients.is_empty() {
         return None;
     }
     Some(SendContext {
         caller: (!caller.is_empty()).then_some(caller),
         inform_clients,
-        wait_for_ack: false,
+        wait_for_ack,
     })
 }
 
@@ -841,6 +854,9 @@ mod tests {
     #[derive(Debug, Default)]
     struct RecordingWsRegistry {
         sent: std::sync::Mutex<Vec<(String, String, MessageType, String)>>,
+        /// What each send asked for beyond the message, so a test can tell an
+        /// acknowledgement the handler requested from one it did not.
+        contexts: std::sync::Mutex<Vec<Option<SendContext>>>,
         unreachable: HashSet<String>,
     }
 
@@ -858,8 +874,9 @@ mod tests {
             message_id: String,
             message_type: MessageType,
             message: String,
-            _: Option<SendContext>,
+            ctx: Option<SendContext>,
         ) -> Result<(), celerity_ws_registry::errors::WebSocketConnError> {
+            self.contexts.lock().unwrap().push(ctx);
             if self.unreachable.contains(&connection_id) {
                 return Err(
                     celerity_ws_registry::errors::WebSocketConnError::MessageLost(message_id),
@@ -1265,6 +1282,13 @@ mod tests {
         }
     }
 
+    fn outbound_asking_for_ack(connection_id: &str, message: &[u8]) -> proto::WsOutbound {
+        proto::WsOutbound {
+            wait_for_ack: true,
+            ..outbound(connection_id, message, false)
+        }
+    }
+
     fn outbound(connection_id: &str, message: &[u8], is_binary: bool) -> proto::WsOutbound {
         proto::WsOutbound {
             connection_id: connection_id.to_string(),
@@ -1273,7 +1297,59 @@ mod tests {
             inform_clients_on_loss: vec![],
             message_id: String::new(),
             caller: String::new(),
+            wait_for_ack: false,
         }
+    }
+
+    /// The runtime waits for the client, sends the message again while attempts
+    /// remain and declares it lost when they run out, none of which happens
+    /// unless the request reaches the registry.
+    #[tokio::test]
+    async fn carries_a_requested_client_acknowledgement_to_the_registry() {
+        let mut harness = start(&["schedule::a"]);
+        let _registration = ready_stream(&mut harness).await;
+
+        harness
+            .inbound_tx
+            .send(Ok(ws_send(
+                "correlation-1",
+                vec![outbound_asking_for_ack("connection-1", b"{}")],
+            )))
+            .await
+            .unwrap();
+
+        let _ack = next_frame(&mut harness.outbound_rx).await;
+
+        let contexts = harness.ws_registry.contexts.lock().unwrap();
+        let Some(Some(ctx)) = contexts.first() else {
+            panic!("the send asked for an acknowledgement and reached the registry without one");
+        };
+        assert!(ctx.wait_for_ack);
+    }
+
+    /// Asking for neither an acknowledgement nor anyone informed is the common
+    /// case, and it settles on the write with nothing to carry.
+    #[tokio::test]
+    async fn carries_nothing_for_a_message_that_asked_for_nothing() {
+        let mut harness = start(&["schedule::a"]);
+        let _registration = ready_stream(&mut harness).await;
+
+        harness
+            .inbound_tx
+            .send(Ok(ws_send(
+                "correlation-1",
+                vec![outbound("connection-1", b"{}", false)],
+            )))
+            .await
+            .unwrap();
+
+        let _ack = next_frame(&mut harness.outbound_rx).await;
+
+        let contexts = harness.ws_registry.contexts.lock().unwrap();
+        assert!(
+            matches!(contexts.first(), Some(None)),
+            "contexts = {contexts:?}"
+        );
     }
 
     #[tokio::test]

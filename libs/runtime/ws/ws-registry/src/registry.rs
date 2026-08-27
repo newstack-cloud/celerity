@@ -86,7 +86,7 @@ pub trait NodeLivenessStore: Send + Sync + Debug {
 }
 
 // Additional context for sending messages to a connection in a WebSocket registry.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct SendContext {
     // The caller that is sending the message.
     // This is useful for providing context about the purpose or origin of the message.
