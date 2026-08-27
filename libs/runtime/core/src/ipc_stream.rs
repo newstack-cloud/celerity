@@ -640,16 +640,58 @@ async fn send_frame(
 /// exactly those. Reporting only a single outcome for the batch would leave a
 /// handler no choice but to resend all of it, delivering the successful ones
 /// twice.
+/// Delivers every message in a batch and reports what became of each.
+///
+/// Messages for one connection are sent in the order the handler listed them,
+/// and different connections do not wait on each other. That matters most for
+/// a message asking its client to acknowledge it, where sending the batch in
+/// one line would have every later message wait out the round trip of the one
+/// before, and a client that never answers hold up all of them.
 async fn send_to_websockets(
     stream_id: StreamId,
     context: &StreamContext,
     send: proto::WsSend,
 ) -> proto::WsSendAck {
     let correlation_id = send.correlation_id;
+
+    // Keyed by connection, holding the position each message had in the batch,
+    // which is what a failure names and what the handler knows it by.
+    let mut by_connection: HashMap<String, Vec<(u32, proto::WsOutbound)>> = HashMap::new();
+    for (index, outbound) in send.messages.into_iter().enumerate() {
+        by_connection
+            .entry(outbound.connection_id.clone())
+            .or_default()
+            .push((index as u32, outbound));
+    }
+
+    let mut failures = futures::future::join_all(
+        by_connection
+            .into_values()
+            .map(|messages| send_to_one_connection(stream_id, context, messages)),
+    )
+    .await
+    .concat();
+
+    // Reported in the order the handler sent them, since it has nothing else to
+    // match them against and the connections were served in no order at all.
+    failures.sort_by_key(|failure| failure.index);
+
+    proto::WsSendAck {
+        correlation_id,
+        success: failures.is_empty(),
+        failures,
+    }
+}
+
+/// Sends one connection's share of a batch, in the order it was given.
+async fn send_to_one_connection(
+    stream_id: StreamId,
+    context: &StreamContext,
+    messages: Vec<(u32, proto::WsOutbound)>,
+) -> Vec<proto::WsSendFailure> {
     let mut failures = Vec::new();
 
-    for (index, outbound) in send.messages.into_iter().enumerate() {
-        let index = index as u32;
+    for (index, outbound) in messages {
         let connection_id = outbound.connection_id.clone();
         let (message_type, message) = match encode_outbound(&outbound) {
             Ok(encoded) => encoded,
@@ -696,11 +738,7 @@ async fn send_to_websockets(
         }
     }
 
-    proto::WsSendAck {
-        correlation_id,
-        success: failures.is_empty(),
-        failures,
-    }
+    failures
 }
 
 /// Renders an outbound message the way the connection registry expects it.
@@ -858,6 +896,10 @@ mod tests {
         /// acknowledgement the handler requested from one it did not.
         contexts: std::sync::Mutex<Vec<Option<SendContext>>>,
         unreachable: HashSet<String>,
+        /// A connection whose sends wait to be released, standing in for a
+        /// client that is slow to acknowledge.
+        held: Option<String>,
+        release: Arc<tokio::sync::Notify>,
     }
 
     impl std::fmt::Display for RecordingWsRegistry {
@@ -876,6 +918,9 @@ mod tests {
             message: String,
             ctx: Option<SendContext>,
         ) -> Result<(), celerity_ws_registry::errors::WebSocketConnError> {
+            if self.held.as_deref() == Some(connection_id.as_str()) {
+                self.release.notified().await;
+            }
             self.contexts.lock().unwrap().push(ctx);
             if self.unreachable.contains(&connection_id) {
                 return Err(
@@ -1325,6 +1370,93 @@ mod tests {
             panic!("the send asked for an acknowledgement and reached the registry without one");
         };
         assert!(ctx.wait_for_ack);
+    }
+
+    /// A message asking its client to acknowledge it is not answered until that
+    /// client does, so a batch sent in one line would have every later message
+    /// wait out the round trip of the one before it.
+    #[tokio::test]
+    async fn one_connection_holding_up_a_batch_does_not_hold_up_the_others() {
+        let release = Arc::new(tokio::sync::Notify::new());
+        let mut harness = start_with_registry(
+            &["schedule::a"],
+            RecordingWsRegistry {
+                held: Some("connection-slow".to_string()),
+                release: release.clone(),
+                ..RecordingWsRegistry::default()
+            },
+        );
+        let _registration = ready_stream(&mut harness).await;
+
+        harness
+            .inbound_tx
+            .send(Ok(ws_send(
+                "correlation-1",
+                vec![
+                    outbound("connection-slow", b"{}", false),
+                    outbound("connection-fast", b"{}", false),
+                ],
+            )))
+            .await
+            .unwrap();
+
+        // The one behind it reaches its connection while the first is still
+        // waiting, which is the whole point of not sending them in sequence.
+        let sent_to_fast = tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if harness
+                    .ws_registry
+                    .sent
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .any(|(connection_id, ..)| connection_id == "connection-fast")
+                {
+                    return;
+                }
+                tokio::time::sleep(Duration::from_millis(5)).await;
+            }
+        })
+        .await;
+        assert!(
+            sent_to_fast.is_ok(),
+            "the second message waited for the first connection to answer"
+        );
+
+        release.notify_waiters();
+
+        let Some(proto::runtime_message::Frame::WsAck(ack)) =
+            next_frame(&mut harness.outbound_rx).await
+        else {
+            panic!("expected an acknowledgement for the batch");
+        };
+        assert!(ack.success, "failures = {:?}", ack.failures);
+    }
+
+    /// Two messages for one connection arrive in the order the handler listed
+    /// them, which is the one ordering a handler can reasonably expect.
+    #[tokio::test]
+    async fn messages_for_one_connection_keep_the_order_they_were_given() {
+        let mut harness = start(&["schedule::a"]);
+        let _registration = ready_stream(&mut harness).await;
+
+        harness
+            .inbound_tx
+            .send(Ok(ws_send(
+                "correlation-1",
+                vec![
+                    outbound("connection-1", b"{\"n\":1}", false),
+                    outbound("connection-1", b"{\"n\":2}", false),
+                ],
+            )))
+            .await
+            .unwrap();
+
+        let _ack = next_frame(&mut harness.outbound_rx).await;
+
+        let sent = harness.ws_registry.sent.lock().unwrap();
+        let bodies: Vec<&str> = sent.iter().map(|(_, _, _, body)| body.as_str()).collect();
+        assert_eq!(bodies, vec!["{\"n\":1}", "{\"n\":2}"]);
     }
 
     /// Asking for neither an acknowledgement nor anyone informed is the common
