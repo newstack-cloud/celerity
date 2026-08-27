@@ -577,6 +577,19 @@ pub struct WsOutbound {
     /// meaningful alongside inform_clients_on_loss.
     #[prost(string, tag = "6")]
     pub caller: ::prost::alloc::string::String,
+    /// Whether the WsSendAck for this message waits for the client to acknowledge
+    /// it, rather than reporting the write to the socket.
+    ///
+    /// The message has to ask the client for an acknowledgement in the payload it
+    /// carries, which the runtime does not compose. Setting this for one that
+    /// asks nothing leaves the send waiting for an answer that is never coming,
+    /// until the runtime declares the message lost.
+    ///
+    /// Waited for wherever the connection is, so a send means the same thing in a
+    /// single node deployment as in a cluster. Sending it again while attempts
+    /// remain, and declaring it lost when they run out, is the runtime's to do.
+    #[prost(bool, tag = "7")]
+    pub wait_for_ack: bool,
 }
 /// Reports what happened to each message in a WsSend.
 ///
