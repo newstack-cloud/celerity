@@ -93,11 +93,14 @@ pub struct SendContext {
     // If a message is considered lost, the caller will be included in the message sent
     // to the clients in the inform_clients list.
     pub caller: Option<String>,
-    // Whether to wait for an acknowledgement from the node that has the connection
-    // that the message was sent for, a WebSocketConnError::MessageLost error will be returned
-    // for the caller to handle the case where the message was lost
-    // when the wait_for_ack flag is set to true.
-    // This is only used when broadcasting messages to other nodes in a cluster.
+    // Whether to wait for the client to acknowledge the message, returning
+    // WebSocketConnError::MessageLost where it never does.
+    //
+    // Waited for wherever the connection is, on this node or another one, so a
+    // send means the same thing in a single node deployment as in a cluster.
+    //
+    // A message that does not ask its client to acknowledge is settled by
+    // the write, since nothing was asked and no answer is coming.
     pub wait_for_ack: bool,
     // The connection IDs of clients that should be informed if a message is lost
     // (an acknowledgement was not received after the maximum number of retries).
