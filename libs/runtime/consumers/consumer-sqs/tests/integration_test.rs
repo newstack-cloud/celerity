@@ -70,20 +70,33 @@ async fn test_receive_messages_and_fire_message_handler() {
 
     let mut collected_messages = Vec::<Message<SQSMessageMetadata>>::new();
 
-    let mut i = 0;
     // 200 messages in batches (20 * 10) + 100 individual messages.
-    while i < 300 {
+    const EXPECTED_MESSAGES: usize = 300;
+    // Bounded so that a queue nothing created, an endpoint nothing is listening
+    // on, or a consumer that stopped, each fail with a count rather than
+    // waiting for messages that are not coming. Generous, since the sender
+    // spaces the individual messages out and a loaded machine is not a failure.
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(60);
+
+    while collected_messages.len() < EXPECTED_MESSAGES {
         tokio::select! {
-            msg = rx.recv() => {
-                if let Some(unwrapped) = msg {
-                    collected_messages.push(unwrapped);
-                }
+            msg = rx.recv() => match msg {
+                Some(message) => collected_messages.push(message),
+                // The consumer stopped, so nothing further is coming and
+                // waiting out the deadline would only delay the report.
+                None => break,
             },
+            _ = tokio::time::sleep_until(deadline) => break,
         }
-        i += 1
     }
 
-    assert_eq!(collected_messages.len(), 300);
+    assert_eq!(
+        collected_messages.len(),
+        EXPECTED_MESSAGES,
+        "collected {} of {EXPECTED_MESSAGES} messages before the deadline, \
+         check the consumer is running and the queue it polls exists",
+        collected_messages.len(),
+    );
     for (i, message) in collected_messages.into_iter().enumerate() {
         // The first 200 messages were sent in batches,
         // the last 100 were sent individually.
