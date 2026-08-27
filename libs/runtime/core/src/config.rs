@@ -1155,7 +1155,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid runtime socket fallback port")]
+    #[should_panic(expected = "must be a whole number from 0 to 65535")]
     fn refuses_a_fallback_port_above_the_range_a_port_can_take() {
         // Held as a u16 so this cannot quietly wrap to 4464 and bind the wrong
         // port, which is what an i32 truncated at the point of use would do.
@@ -1163,13 +1163,15 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid runtime socket fallback port")]
+    #[should_panic(expected = "must be a whole number from 0 to 65535")]
     fn refuses_a_negative_fallback_port() {
         RuntimeConfig::from_env(&env(&[("CELERITY_RUNTIME_SOCKET_FALLBACK_PORT", "-1")]));
     }
 
     #[test]
-    #[should_panic(expected = "must be a specific port whenever the handler")]
+    #[should_panic(
+        expected = "must be a specific port whenever the handler stream is served over loopback"
+    )]
     fn refuses_an_ephemeral_fallback_port_when_the_fallback_is_enabled() {
         RuntimeConfig::from_env(&env(&[
             ("CELERITY_RUNTIME_SOCKET_FALLBACK_ENABLED", "true"),
