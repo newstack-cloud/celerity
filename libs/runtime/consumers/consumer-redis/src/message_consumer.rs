@@ -444,12 +444,6 @@ impl RedisMessageConsumer {
             }
         }
 
-        let update_last_message_id_result =
-            self.update_last_message_id(&last_message_id, conn).await;
-        if let Err(err) = update_last_message_id_result {
-            error!("failed to update last message ID: {err}");
-        }
-
         let failures = match result {
             Ok(_) => vec![],
             Err(error) => match error {
@@ -488,13 +482,37 @@ impl RedisMessageConsumer {
             },
         };
 
-        if !failures.is_empty() {
-            if let Err(err) = self
+        // Moved before the offset advances, since this consumer reads by offset
+        // rather than through a consumer group. Advancing first and then dying,
+        // or failing to write to the dead letter queue, would put the batch
+        // behind the offset with no record of it anywhere.
+        let recorded = if failures.is_empty() {
+            true
+        } else {
+            match self
                 .move_failed_messages_to_dlq(&failures, &messages, conn)
                 .await
             {
-                error!("failed to move failed messages to DLQ: {err}");
+                Ok(()) => true,
+                Err(err) => {
+                    error!("failed to move failed messages to DLQ: {err}");
+                    false
+                }
             }
+        };
+
+        // Left where it is otherwise, so the batch is read again rather than
+        // passed over. That redelivers what did succeed, which is the cost of
+        // one watermark for the whole batch and cheaper than losing the rest.
+        if recorded {
+            if let Err(err) = self.update_last_message_id(&last_message_id, conn).await {
+                error!("failed to update last message ID: {err}");
+            }
+        } else {
+            warn!(
+                "leaving the last message ID where it is, so the batch is read again rather \
+                 than passed over with nothing recording what became of it"
+            );
         }
     }
 
