@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.8.0...runtime-core/v0.8.1) (2026-08-27)
+
+
+### Bug Fixes
+
+* **lib-rt-core:** serve the handler stream over loopback where there is no unix socket ([b4efe7f](https://github.com/newstack-cloud/celerity/commit/b4efe7f76073153cd7bcb08b653d1b99e967bd7f))
+
 ## [0.8.0](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.7.0...runtime-core/v0.8.0) (2026-08-27)
 
 
