@@ -146,8 +146,14 @@ func ResolveRuntimeImage(runtime string, imageVersion string) (string, error) {
 //
 // Prereleases keep the full version as the release workflow deliberately publishes
 // no minor tag for one, since a prerelease is not what a range resolves to.
+//
+// Build metadata is dropped first. No published tag carries it, since the release
+// workflow only accepts a tag without it, and a "+" is not a legal character in a
+// Docker tag anyway, so leaving it on would build a reference that cannot be pulled.
 func runtimeImageTagVersion(imageVersion string) string {
-	if strings.ContainsAny(imageVersion, "-+") {
+	imageVersion, _, _ = strings.Cut(imageVersion, "+")
+
+	if strings.Contains(imageVersion, "-") {
 		return imageVersion
 	}
 
