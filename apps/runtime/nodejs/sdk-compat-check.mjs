@@ -24,7 +24,12 @@ function satisfiesRange(installed, range) {
   const instPatch = Number(instMatch[3]);
 
   if (range.startsWith("^")) {
-    // ^x.y.z: same major, installed >= base
+    // ^x.y.z: caret allows changes that do not modify the left-most non-zero
+    // component, so for 0.y.z the minor is the compatibility boundary.
+    if (baseMajor === 0) {
+      return instMajor === 0 && instMinor === baseMinor && instPatch >= basePatch;
+    }
+
     return (
       instMajor === baseMajor &&
       (instMinor > baseMinor || (instMinor === baseMinor && instPatch >= basePatch))
