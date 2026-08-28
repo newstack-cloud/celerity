@@ -47,6 +47,10 @@ jobs:
             target: s390x
           - runner: ubuntu-latest
             target: ppc64le
+            # aws-lc reads AT_HWCAP2 to detect what the processor supports,
+            # which the glibc 2.17 headers in the manylinux2014 image predate.
+            # The 2_28 image carries glibc 2.28, which declares it.
+            manylinux: '2_28'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -58,7 +62,7 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
-          manylinux: auto
+          manylinux: ${{ matrix.platform.manylinux || 'auto' }}
           working-directory: ./libs/runtime/sdk/python
       - name: Upload wheels
         uses: actions/upload-artifact@v4
