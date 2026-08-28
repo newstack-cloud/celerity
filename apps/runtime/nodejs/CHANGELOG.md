@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/newstack-cloud/celerity/compare/runtime-nodejs/v0.9.0...runtime-nodejs/v0.9.1) (2026-08-28)
+
+
+### Dependencies
+
+* **runtime-nodejs:** pin protobufjs to a release with the RCE fixed ([2892386](https://github.com/newstack-cloud/celerity/commit/289238618b42875ee22e2877ff65f002628bd022))
+
 ## [0.9.0](https://github.com/newstack-cloud/celerity/compare/runtime-nodejs/v0.8.3...runtime-nodejs/v0.9.0) (2026-08-28)
 
 
