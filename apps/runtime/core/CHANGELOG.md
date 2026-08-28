@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/newstack-cloud/celerity/compare/runtime-core-app/v0.1.0...runtime-core-app/v0.2.0) (2026-08-28)
+
+
+### Features
+
+* **runtime-core:** ship the image able to cluster ([80da97d](https://github.com/newstack-cloud/celerity/commit/80da97df173780046fc1de58ce9a155ca5021f8f))
+
+
+### Bug Fixes
+
+* resolve the advisories the runtime dependencies carry ([4a43dd0](https://github.com/newstack-cloud/celerity/commit/4a43dd037c2c96249e392c333e9b29c3e652beae))
+
 ## [0.1.0](https://github.com/newstack-cloud/celerity/compare/runtime-core-app/v0.1.0...runtime-core-app/v0.1.0) (2026-08-18)
 
 
