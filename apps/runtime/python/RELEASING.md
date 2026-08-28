@@ -12,9 +12,10 @@ runtime major.minor == SDK major.minor      patch belongs to the runtime
 
 The patch component is held out of the mapping so the runtime can ship a rebuild of its
 own, for a base image CVE or a fix in the wrapper, without waiting on an SDK release. A
-project declaring `celerity-sdk[runtime]>=0.3.0` resolves to the `dev-0.3` tag, which
-carries the newest runtime patch on that minor, so it picks the rebuild up without editing
-a pin.
+project declaring `celerity-sdk[runtime]~=0.3.0` is asking for any `0.3.x`, which is what
+the `dev-0.3` tag carries, so it picks the rebuild up without editing a pin. A bare
+`>=0.3.0` resolves to the same tag but does not hold the project to that minor, leaving the
+installed SDK free to move on to one the image does not carry.
 
 The two version numbers are no longer readable as "this image contains exactly that SDK".
 Runtime `0.3.2` may carry SDK `0.3.1`. The exact set is recorded in `runtime-manifest.json`,
