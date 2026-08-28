@@ -122,7 +122,8 @@ func DetectRuntimeFromProject(appDir string) (string, error) {
 }
 
 // ResolveRuntimeImage maps a blueprint runtime identifier to a full Docker image reference.
-// The image repo encodes the language and major version; the tag encodes the dev image version.
+// The image repo encodes the language and major version; the tag encodes the dev image
+// minor series, so a project picks up runtime patch releases without editing a pin.
 func ResolveRuntimeImage(runtime string, imageVersion string) (string, error) {
 	repo, ok := runtimeImageRepos[runtime]
 	if !ok {
@@ -135,7 +136,27 @@ func ResolveRuntimeImage(runtime string, imageVersion string) (string, error) {
 			runtime, strings.Join(supported, ", "),
 		)
 	}
-	return repo + ":dev-" + imageVersion, nil
+	return repo + ":dev-" + runtimeImageTagVersion(imageVersion), nil
+}
+
+// The runtime image tracks the SDK on major.minor and owns the patch component
+// itself, so that a rebuild for a base image fix reaches projects that declared a
+// range like ^0.9.0. Resolving to the minor series is what a range of that form
+// already means, so the patch is dropped from the tag.
+//
+// Prereleases keep the full version as the release workflow deliberately publishes
+// no minor tag for one, since a prerelease is not what a range resolves to.
+func runtimeImageTagVersion(imageVersion string) string {
+	if strings.ContainsAny(imageVersion, "-+") {
+		return imageVersion
+	}
+
+	parts := strings.Split(imageVersion, ".")
+	if len(parts) < 3 {
+		return imageVersion
+	}
+
+	return parts[0] + "." + parts[1]
 }
 
 // CollectHandlerInfo extracts handler metadata from the blueprint

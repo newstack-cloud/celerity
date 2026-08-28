@@ -148,13 +148,31 @@ resources:
 func (s *HelpersTestSuite) Test_ResolveRuntimeImage_nodejs22() {
 	image, err := ResolveRuntimeImage("nodejs24.x", "0.3.0")
 	s.Require().NoError(err)
-	s.Assert().Equal("ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-0.3.0", image)
+	s.Assert().Equal("ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-0.3", image)
 }
 
 func (s *HelpersTestSuite) Test_ResolveRuntimeImage_python313() {
 	image, err := ResolveRuntimeImage("python3.13", "0.1.0")
 	s.Require().NoError(err)
-	s.Assert().Equal("ghcr.io/newstack-cloud/celerity-runtime-python-3-13:dev-0.1.0", image)
+	s.Assert().Equal("ghcr.io/newstack-cloud/celerity-runtime-python-3-13:dev-0.1", image)
+}
+
+func (s *HelpersTestSuite) Test_ResolveRuntimeImage_drops_the_sdk_patch_component() {
+	image, err := ResolveRuntimeImage("nodejs24.x", "0.9.5")
+	s.Require().NoError(err)
+	s.Assert().Equal("ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-0.9", image)
+}
+
+func (s *HelpersTestSuite) Test_ResolveRuntimeImage_keeps_the_full_version_for_a_prerelease() {
+	image, err := ResolveRuntimeImage("nodejs24.x", "0.10.0-rc.1")
+	s.Require().NoError(err)
+	s.Assert().Equal("ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-0.10.0-rc.1", image)
+}
+
+func (s *HelpersTestSuite) Test_ResolveRuntimeImage_keeps_a_version_without_a_patch_component() {
+	image, err := ResolveRuntimeImage("nodejs24.x", "0.9")
+	s.Require().NoError(err)
+	s.Assert().Equal("ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-0.9", image)
 }
 
 func (s *HelpersTestSuite) Test_ResolveRuntimeImage_unsupported_runtime() {
