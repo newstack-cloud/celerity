@@ -175,6 +175,18 @@ func (s *HelpersTestSuite) Test_ResolveRuntimeImage_keeps_a_version_without_a_pa
 	s.Assert().Equal("ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-0.9", image)
 }
 
+func (s *HelpersTestSuite) Test_ResolveRuntimeImage_drops_build_metadata() {
+	image, err := ResolveRuntimeImage("nodejs24.x", "0.9.5+build.1")
+	s.Require().NoError(err)
+	s.Assert().Equal("ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-0.9", image)
+}
+
+func (s *HelpersTestSuite) Test_ResolveRuntimeImage_drops_build_metadata_from_a_prerelease() {
+	image, err := ResolveRuntimeImage("nodejs24.x", "0.10.0-rc.1+build.1")
+	s.Require().NoError(err)
+	s.Assert().Equal("ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-0.10.0-rc.1", image)
+}
+
 func (s *HelpersTestSuite) Test_ResolveRuntimeImage_unsupported_runtime() {
 	_, err := ResolveRuntimeImage("ruby3.3", "0.3.0")
 	s.Require().Error(err)
