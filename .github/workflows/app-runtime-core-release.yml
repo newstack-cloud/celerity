@@ -240,8 +240,12 @@ jobs:
         id: meta
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # The minor tag is what the CLI resolves a project's declared SDK
+          # range to, so a runtime-only patch reaches projects without every
+          # one of them editing a pin.
           tags: |
             type=raw,value=dev-${{ needs.prepare.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.prepare.outputs.version }},prefix=dev-
             type=raw,value=dev-latest,enable=${{ !contains(needs.prepare.outputs.version, '-') }}
 
       - name: Create the manifest list
