@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/newstack-cloud/celerity/compare/runtime-nodejs/v0.8.3...runtime-nodejs/v0.9.0) (2026-08-28)
+
+
+### Features
+
+* **runtime-nodejs:** build the local image able to cluster ([7471b77](https://github.com/newstack-cloud/celerity/commit/7471b7784f0a4d1a24fbfe402afd5256fe605219))
+
+
+### Dependencies
+
+* **runtime-nodejs:** add compat corection and update @celerity-sdk/* to 0.9.0 ([410aa9b](https://github.com/newstack-cloud/celerity/commit/410aa9b5f455c59e4f078202728199252082997b))
+
 ## [0.8.3](https://github.com/newstack-cloud/celerity/compare/runtime-nodejs/v0.8.1...runtime-nodejs/v0.8.3) (2026-06-05)
 
 
