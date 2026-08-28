@@ -4,329 +4,44 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g. runtime-python/v0.1.0)'
+        description: 'Release tag (e.g. runtime-python/v0.3.0)'
         required: true
         type: string
 
 permissions:
   contents: read
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: newstack-cloud/celerity-runtime-python-3-13
-
 jobs:
-  prepare:
-    name: Prepare Release
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-    steps:
-      - name: Extract version from tag
-        id: version
-        env:
-          TAG: ${{ inputs.tag }}
-        run: |
-          if [[ ! "$TAG" =~ ^runtime-python/v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Expected a tag of the form runtime-python/v1.2.3, got '$TAG'"
-            exit 1
-          fi
-          VERSION="${TAG##*/}"
-          VERSION="${VERSION#v}"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Extracted version: $VERSION from tag: $TAG"
-
-  build:
-    name: Build ${{ matrix.target }} on ${{ matrix.platform.arch }}
-    runs-on: ${{ matrix.platform.runner }}
-    needs: prepare
+  release:
     permissions:
       contents: read
       packages: write
       security-events: write
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [runtime, dev]
-        # Each architecture is built on a runner of its own architecture rather
-        # than one runner emulating the other, which keeps the arm64 dependency
-        # install off QEMU.
-        platform:
-          - arch: amd64
-            os: linux/amd64
-            runner: ubuntu-latest
-          - arch: arm64
-            os: linux/arm64
-            runner: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: docker/login-action@v3
-        with:
-          registry: dhi.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: docker/metadata-action@v5
-        id: meta
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          labels: |
-            org.opencontainers.image.title=Celerity Python Runtime${{ matrix.target == 'dev' && ' (Dev)' || '' }}
-            org.opencontainers.image.description=${{ matrix.target == 'dev' && 'Development runtime for Celerity Python applications (includes watchfiles auto-reload)' || 'Production runtime for Celerity Python applications' }}
-
-      # Needed for the container driver. The docker driver that a runner has by
-      # default cannot export an image by digest, which is how each
-      # architecture is pushed before there is a manifest to tag.
-      - uses: docker/setup-buildx-action@v3
-
-      # Pushed without a tag, since a tag naming two architectures can only be
-      # applied once both exist. The manifest that carries the tags is assembled
-      # from these digests once every architecture has been built.
-      - id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: apps/runtime/python
-          target: ${{ matrix.target }}
-          platforms: ${{ matrix.platform.os }}
-          labels: ${{ steps.meta.outputs.labels }}
-          # Without this buildx attaches a provenance attestation, which makes
-          # what is pushed an index holding the image and the attestation rather
-          # than the image itself. Scanning that index means resolving a
-          # platform inside it, and the manifest list assembled below is where
-          # multiple platforms belong anyway. The release still gets provenance,
-          # from the attestation step that runs against the published manifest.
-          provenance: false
-          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=runtime-python-${{ matrix.target }}-${{ matrix.platform.arch }}
-          cache-to: type=gha,mode=max,scope=runtime-python-${{ matrix.target }}-${{ matrix.platform.arch }}
-
-      # Scanned here, before the manifest that carries the tags is assembled,
-      # so an image with a critical vulnerability is never tagged. Scanning
-      # after publication would leave the tags live and only skip the signing,
-      # which is a worse outcome than a failed release.
-      - name: Scan the image
-        uses: aquasecurity/trivy-action@0.35.0
-        with:
-          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
-          format: "table"
-          severity: "CRITICAL,HIGH"
-          # Blocks on anything with a fix available, so the gate only ever
-          # asks for an upgrade that exists. Findings with no released fix are
-          # still reported below, so they are recorded rather than dismissed.
-          ignore-unfixed: true
-          # The production image has to be clean. The dev image carries a shell
-          # and the tools to debug with, and is reported on rather than blocked.
-          exit-code: ${{ matrix.target == 'runtime' && '1' || '0' }}
-
-      - name: Scan the image (SARIF)
-        if: "!cancelled() && steps.build.outputs.digest != ''"
-        uses: aquasecurity/trivy-action@0.35.0
-        with:
-          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
-          format: "sarif"
-          output: "trivy.sarif"
-          severity: "CRITICAL,HIGH"
-          exit-code: "0"
-
-      - name: Upload the scan results
-        uses: github/codeql-action/upload-sarif@v4
-        if: "!cancelled() && hashFiles('trivy.sarif') != ''"
-        with:
-          sarif_file: "trivy.sarif"
-          category: "container-python-${{ matrix.target }}-${{ matrix.platform.arch }}"
-
-      - name: Export the digest
-        env:
-          DIGEST: ${{ steps.build.outputs.digest }}
-        run: |
-          mkdir -p /tmp/digests
-          touch "/tmp/digests/${DIGEST#sha256:}"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: digests-${{ matrix.target }}-${{ matrix.platform.arch }}
-          path: /tmp/digests/*
-          if-no-files-found: error
-          retention-days: 1
-
-  merge-runtime:
-    name: Publish Production Manifest
-    runs-on: ubuntu-latest
-    needs: [prepare, build]
-    permissions:
-      contents: read
-      packages: write
-    outputs:
-      digest: ${{ steps.manifest.outputs.digest }}
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: /tmp/digests
-          pattern: digests-runtime-*
-          merge-multiple: true
-
-      - uses: docker/setup-buildx-action@v3
-
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: docker/metadata-action@v5
-        id: meta
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern={{version}},value=${{ needs.prepare.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.prepare.outputs.version }}
-            type=raw,value=latest,enable=${{ !contains(needs.prepare.outputs.version, '-') }}
-
-      - name: Create the manifest list
-        working-directory: /tmp/digests
-        run: |
-          docker buildx imagetools create \
-            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
-
-      - name: Read the manifest digest
-        id: manifest
-        env:
-          VERSION: ${{ needs.prepare.outputs.version }}
-        run: |
-          digest=$(docker buildx imagetools inspect \
-            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}" \
-            --format '{{json .Manifest}}' | jq -r .digest)
-          echo "digest=$digest" >> "$GITHUB_OUTPUT"
-
-  merge-dev:
-    name: Publish Dev Manifest
-    runs-on: ubuntu-latest
-    needs: [prepare, build]
-    permissions:
-      contents: read
-      packages: write
-    outputs:
-      digest: ${{ steps.manifest.outputs.digest }}
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: /tmp/digests
-          pattern: digests-dev-*
-          merge-multiple: true
-
-      - uses: docker/setup-buildx-action@v3
-
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: docker/metadata-action@v5
-        id: meta
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # The minor tag is what the CLI resolves a project's declared SDK
-          # range to, so a runtime-only patch reaches projects without every
-          # one of them editing a pin.
-          tags: |
-            type=raw,value=dev-${{ needs.prepare.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.prepare.outputs.version }},prefix=dev-
-            type=raw,value=dev-latest,enable=${{ !contains(needs.prepare.outputs.version, '-') }}
-
-      - name: Create the manifest list
-        working-directory: /tmp/digests
-        run: |
-          docker buildx imagetools create \
-            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
-
-      - name: Read the manifest digest
-        id: manifest
-        env:
-          VERSION: ${{ needs.prepare.outputs.version }}
-        run: |
-          digest=$(docker buildx imagetools inspect \
-            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev-${VERSION}" \
-            --format '{{json .Manifest}}' | jq -r .digest)
-          echo "digest=$digest" >> "$GITHUB_OUTPUT"
-
-  sign-and-attest:
-    name: Sign & Attest Images
-    runs-on: ubuntu-latest
-    needs: [merge-runtime, merge-dev]
-    # Nothing reaches a manifest unless its scan passed, so getting this far
-    # already means every image being signed is one that cleared the scan.
-    if: needs.merge-runtime.result == 'success' && needs.merge-dev.result == 'success'
-    permissions:
-      contents: read
-      packages: write
       id-token: write
       attestations: write
-    env:
-      # Store signatures and attestations as OCI 1.1 referrers instead of
-      # tag-based artifacts (.sig/.att/.sbom tags) that pollute the GHCR UI.
-      COSIGN_REGISTRY_REFERRERS_MODE: oci-1-1
-    steps:
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: sigstore/cosign-installer@v3
-      - uses: anchore/sbom-action/download-syft@v0
-
-      # --- Production image ---
-      - name: Sign production image (cosign keyless)
-        run: |
-          cosign sign --yes \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-runtime.outputs.digest }}
-
-      - name: Generate production SBOM
-        run: |
-          syft ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-runtime.outputs.digest }} \
-            -o spdx-json=runtime-sbom.spdx.json
-
-      - name: Attest production SBOM
-        run: |
-          cosign attest --yes --predicate runtime-sbom.spdx.json --type spdxjson \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-runtime.outputs.digest }}
-
-      - name: GitHub attestation (production)
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ needs.merge-runtime.outputs.digest }}
-          push-to-registry: true
-
-      # --- Dev image ---
-      - name: Sign dev image (cosign keyless)
-        run: |
-          cosign sign --yes \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-dev.outputs.digest }}
-
-      - name: Generate dev SBOM
-        run: |
-          syft ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-dev.outputs.digest }} \
-            -o spdx-json=dev-sbom.spdx.json
-
-      - name: Attest dev SBOM
-        run: |
-          cosign attest --yes --predicate dev-sbom.spdx.json --type spdxjson \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-dev.outputs.digest }}
-
-      - name: GitHub attestation (dev)
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ needs.merge-dev.outputs.digest }}
-          push-to-registry: true
+    uses: ./.github/workflows/container-release.yml
+    secrets: inherit
+    with:
+      tag: ${{ inputs.tag }}
+      tag-component: runtime-python
+      image-name: newstack-cloud/celerity-runtime-python-3-13
+      context: apps/runtime/python
+      cache-scope: runtime-python
+      sarif-category: container-python
+      targets: >-
+        [
+          {
+            "name": "runtime",
+            "tagPrefix": "",
+            "block": true,
+            "title": "Celerity Python Runtime",
+            "description": "Production runtime for Celerity Python applications"
+          },
+          {
+            "name": "dev",
+            "tagPrefix": "dev-",
+            "block": false,
+            "title": "Celerity Python Runtime (Dev)",
+            "description": "Development runtime for Celerity Python applications (includes watchfiles auto-reload)"
+          }
+        ]

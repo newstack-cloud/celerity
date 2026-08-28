@@ -1,0 +1,305 @@
+name: Container Release
+
+# Builds, scans, publishes, signs and attests the container images for one
+# release. Called by the per-component release workflows, which hold the
+# dispatch entry point and the values that differ between them.
+#
+# Each architecture is built and pushed by digest, scanned, and only then
+# assembled into the manifest that carries the tags, so an image that fails
+# its scan is never tagged. Signing runs off that manifest, so an image that
+# was never tagged is never signed either.
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Release tag being published (e.g. runtime-nodejs/v0.9.0)'
+        required: true
+        type: string
+      tag-component:
+        description: 'Component the release tag must name (e.g. runtime-nodejs)'
+        required: true
+        type: string
+      image-name:
+        description: 'Image repository within the registry (e.g. newstack-cloud/celerity-runtime-nodejs-24)'
+        required: true
+        type: string
+      context:
+        description: 'Build context directory'
+        required: true
+        type: string
+      dockerfile:
+        description: 'Dockerfile path. Defaults to a Dockerfile at the root of the context.'
+        required: false
+        type: string
+        default: ''
+      targets:
+        description: >-
+          JSON array of the images to publish from this context. Each entry names a
+          Dockerfile target, the prefix its tags carry, whether a scan failure blocks
+          the release, and the labels the image gets. See the callers for examples.
+        required: true
+        type: string
+      cache-scope:
+        description: 'Prefix for the build cache scope. Must be unique per image.'
+        required: true
+        type: string
+      sarif-category:
+        description: 'Prefix for the code scanning category. Must be unique per image.'
+        required: true
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      minor: ${{ steps.version.outputs.minor }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - name: Extract version from tag
+        id: version
+        env:
+          TAG: ${{ inputs.tag }}
+          COMPONENT: ${{ inputs.tag-component }}
+        run: |
+          if [[ ! "$TAG" =~ ^${COMPONENT}/v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Expected a tag of the form ${COMPONENT}/v1.2.3, got '$TAG'"
+            exit 1
+          fi
+          VERSION="${TAG##*/}"
+          VERSION="${VERSION#v}"
+
+          # The minor series is the tag the CLI resolves a project's declared SDK
+          # range to. A prerelease does not get one, since a range does not resolve
+          # to a prerelease, and it does not move latest either.
+          if [[ "$VERSION" == *-* ]]; then
+            PRERELEASE=true
+          else
+            PRERELEASE=false
+          fi
+          # Taken from the numeric core so the minor stays meaningful for a
+          # prerelease, rather than trimming at the last dot of the whole string
+          # and leaving something like 0.10.0-rc behind.
+          CORE="${VERSION%%-*}"
+          MINOR="${CORE%.*}"
+
+          {
+            echo "version=$VERSION"
+            echo "minor=$MINOR"
+            echo "prerelease=$PRERELEASE"
+          } >> "$GITHUB_OUTPUT"
+          echo "Extracted version: $VERSION (minor $MINOR, prerelease $PRERELEASE) from tag: $TAG"
+
+  build:
+    name: Build ${{ matrix.target.name }} on ${{ matrix.platform.arch }}
+    runs-on: ${{ matrix.platform.runner }}
+    needs: prepare
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(inputs.targets) }}
+        # Each architecture is built on a runner of its own architecture rather
+        # than one runner emulating the other.
+        platform:
+          - arch: amd64
+            os: linux/amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            os: linux/arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: dhi.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ inputs.image-name }}
+          labels: |
+            org.opencontainers.image.title=${{ matrix.target.title }}
+            org.opencontainers.image.description=${{ matrix.target.description }}
+
+      # Needed for the container driver. The docker driver that a runner has by
+      # default cannot export an image by digest, which is how each
+      # architecture is pushed before there is a manifest to tag.
+      - uses: docker/setup-buildx-action@v3
+
+      # Pushed without a tag, since a tag naming two architectures can only be
+      # applied once both exist. The manifest that carries the tags is assembled
+      # from these digests once every architecture has been built.
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile != '' && inputs.dockerfile || format('{0}/Dockerfile', inputs.context) }}
+          target: ${{ matrix.target.name }}
+          platforms: ${{ matrix.platform.os }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Without this buildx attaches a provenance attestation, which makes
+          # what is pushed an index holding the image and the attestation rather
+          # than the image itself. Scanning that index means resolving a
+          # platform inside it, and the manifest list assembled below is where
+          # multiple platforms belong anyway. The release still gets provenance,
+          # from the attestation step that runs against the published manifest.
+          provenance: false
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ inputs.image-name }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ inputs.cache-scope }}-${{ matrix.target.name }}-${{ matrix.platform.arch }}
+          cache-to: type=gha,mode=max,scope=${{ inputs.cache-scope }}-${{ matrix.target.name }}-${{ matrix.platform.arch }}
+
+      # Scanned here, before the manifest that carries the tags is assembled,
+      # so an image with a critical vulnerability is never tagged. Scanning
+      # after publication would leave the tags live and only skip the signing,
+      # which is a worse outcome than a failed release.
+      - name: Scan the image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: "${{ env.REGISTRY }}/${{ inputs.image-name }}@${{ steps.build.outputs.digest }}"
+          format: "table"
+          severity: "CRITICAL,HIGH"
+          # Blocks on anything with a fix available, so the gate only ever
+          # asks for an upgrade that exists. Findings with no released fix are
+          # still reported below, so they are recorded rather than dismissed.
+          ignore-unfixed: true
+          # Production images have to be clean. Images carrying a shell and the
+          # tools to debug with are reported on rather than blocked.
+          exit-code: ${{ matrix.target.block && '1' || '0' }}
+
+      - name: Scan the image (SARIF)
+        if: "!cancelled() && steps.build.outputs.digest != ''"
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: "${{ env.REGISTRY }}/${{ inputs.image-name }}@${{ steps.build.outputs.digest }}"
+          format: "sarif"
+          output: "trivy.sarif"
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"
+
+      - name: Upload the scan results
+        uses: github/codeql-action/upload-sarif@v4
+        if: "!cancelled() && hashFiles('trivy.sarif') != ''"
+        with:
+          sarif_file: "trivy.sarif"
+          category: "${{ inputs.sarif-category }}-${{ matrix.target.name }}-${{ matrix.platform.arch }}"
+
+      - name: Export the digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p /tmp/digests
+          touch "/tmp/digests/${DIGEST#sha256:}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.target.name }}-${{ matrix.platform.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # Assembling the manifest and signing it are one job because a matrix job's
+  # outputs are overwritten by whichever leg finishes last, so a separate
+  # signing job could not read a per-target digest. Keeping them together also
+  # keeps the guarantee direct, in that signing cannot run for a target whose
+  # manifest was never assembled.
+  publish:
+    name: Publish & Sign ${{ matrix.target.name }}
+    runs-on: ubuntu-latest
+    needs: [prepare, build]
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(inputs.targets) }}
+    env:
+      # Store signatures and attestations as OCI 1.1 referrers instead of
+      # tag-based artifacts (.sig/.att/.sbom tags) that pollute the GHCR UI.
+      COSIGN_REGISTRY_REFERRERS_MODE: oci-1-1
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-${{ matrix.target.name }}-*
+          merge-multiple: true
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Written out rather than derived from the semver tag type so the
+      # prerelease rule is stated once, here, instead of resting on what the
+      # metadata action does with a prerelease by default.
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ inputs.image-name }}
+          tags: |
+            type=raw,value=${{ matrix.target.tagPrefix }}${{ needs.prepare.outputs.version }}
+            type=raw,value=${{ matrix.target.tagPrefix }}${{ needs.prepare.outputs.minor }},enable=${{ needs.prepare.outputs.prerelease == 'false' }}
+            type=raw,value=${{ matrix.target.tagPrefix }}latest,enable=${{ needs.prepare.outputs.prerelease == 'false' }}
+
+      - name: Create the manifest list
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY }}/${{ inputs.image-name }}@sha256:%s ' *)
+
+      - name: Read the manifest digest
+        id: manifest
+        env:
+          REF: ${{ env.REGISTRY }}/${{ inputs.image-name }}:${{ matrix.target.tagPrefix }}${{ needs.prepare.outputs.version }}
+        run: |
+          digest=$(docker buildx imagetools inspect "$REF" --format '{{json .Manifest}}' | jq -r .digest)
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - uses: sigstore/cosign-installer@v3
+      - uses: anchore/sbom-action/download-syft@v0
+
+      - name: Sign the image (cosign keyless)
+        run: |
+          cosign sign --yes \
+            ${{ env.REGISTRY }}/${{ inputs.image-name }}@${{ steps.manifest.outputs.digest }}
+
+      - name: Generate the SBOM
+        run: |
+          syft ${{ env.REGISTRY }}/${{ inputs.image-name }}@${{ steps.manifest.outputs.digest }} \
+            -o spdx-json=${{ matrix.target.name }}-sbom.spdx.json
+
+      - name: Attest the SBOM
+        run: |
+          cosign attest --yes --predicate ${{ matrix.target.name }}-sbom.spdx.json --type spdxjson \
+            ${{ env.REGISTRY }}/${{ inputs.image-name }}@${{ steps.manifest.outputs.digest }}
+
+      - name: GitHub attestation
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ inputs.image-name }}
+          subject-digest: ${{ steps.manifest.outputs.digest }}
+          push-to-registry: true
