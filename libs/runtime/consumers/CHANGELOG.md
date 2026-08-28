@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.1](https://github.com/newstack-cloud/celerity/compare/runtime-consumers/v0.3.0...runtime-consumers/v0.3.1) (2026-08-28)
+
+
+### Bug Fixes
+
+* **lib-rt-consumer-redis:** advance the offset once the outcome is recorded ([fa1fa1b](https://github.com/newstack-cloud/celerity/commit/fa1fa1b441e74df0bf5d8c971d59386ee58d45c2))
+* **lib-rt-consumer-sqs:** keep a shed message where failures are deleted ([6e666e6](https://github.com/newstack-cloud/celerity/commit/6e666e6d97d4cbf325c01292a6ea3d84d0def0b0))
+* **lib-rt-consumer-sqs:** quieten the large error lint on the sdk's errors ([ae8ec0b](https://github.com/newstack-cloud/celerity/commit/ae8ec0bea60390182eb884447743c7aa531a47fa))
+* **lib-rt-consumer-sqs:** stop deleting messages a handler could not process ([c5232b4](https://github.com/newstack-cloud/celerity/commit/c5232b4d476760ee188bc8b774f1e96f262cf975))
+* **runtime-libs:** stop bringing a shed message straight back on sqs ([56f3df0](https://github.com/newstack-cloud/celerity/commit/56f3df074e7361466fb3debbfebddcf1286ff283))
+
 ## [0.3.0](https://github.com/newstack-cloud/celerity/compare/runtime-consumers/v0.2.1...runtime-consumers/v0.3.0) (2026-03-16)
 
 
