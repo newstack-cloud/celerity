@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>newstack-cloud/renovate-config",
+    "github>newstack-cloud/bluelink//renovate/bluelink-consumers"
+  ],
+  "includePaths": [
+    "apps/cli/**"
+  ],
+  "packageRules": [
+    {
+      "description": "Focused rollout: Renovate owns only the CLI's Go modules (the Bluelink dependency chain — libs/blueprint, blueprint-state, common, deploy-engine-client, and the sibling deploy-cli-sdk). The Rust/Node/Python runtime ecosystems stay on Dependabot for now, so `includePaths` keeps Renovate out of them. The bluelink-consumers preset supplies the cascade rule that auto-merges internal github.com/newstack-cloud/* bumps and bypasses the weekly schedule.",
+      "matchFileNames": ["apps/cli/**"],
+      "matchManagers": ["gomod"],
+      "semanticCommitScope": "cli",
+      "groupName": "cli go modules"
+    }
+  ]
+}
