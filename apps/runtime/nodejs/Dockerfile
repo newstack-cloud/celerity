@@ -13,7 +13,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Install production dependencies only
 # -----------------------------------------------------------------------------
-FROM dhi.io/node:24-debian13-dev AS deps-prod
+FROM dhi.io/node:26-debian13-dev AS deps-prod
 
 WORKDIR /opt/celerity
 
@@ -32,7 +32,7 @@ RUN corepack yarn workspaces focus --production 2>/dev/null || true
 # -----------------------------------------------------------------------------
 # Stage 2: Install all dependencies (prod + dev)
 # -----------------------------------------------------------------------------
-FROM dhi.io/node:24-debian13-dev AS deps-dev
+FROM dhi.io/node:26-debian13-dev AS deps-dev
 
 WORKDIR /opt/celerity
 
@@ -46,7 +46,7 @@ RUN corepack yarn install --immutable 2>/dev/null || corepack yarn install
 # -----------------------------------------------------------------------------
 # Stage 3: Build-time prep (needs shell for mkdir, generate-manifest, etc.)
 # -----------------------------------------------------------------------------
-FROM dhi.io/node:24-debian13-dev AS build
+FROM dhi.io/node:26-debian13-dev AS build
 
 WORKDIR /opt/celerity
 
@@ -67,7 +67,7 @@ RUN mkdir -p /opt/celerity/app
 # -----------------------------------------------------------------------------
 # Stage 4: Production runtime (distroless — no shell, no package manager)
 # -----------------------------------------------------------------------------
-FROM dhi.io/node:24-debian13 AS runtime
+FROM dhi.io/node:26-debian13 AS runtime
 
 WORKDIR /opt/celerity
 
@@ -94,7 +94,7 @@ ENTRYPOINT ["node", \
 # -----------------------------------------------------------------------------
 # Stage 5: Development image (has shell, SWC for TS decorators, pino-pretty)
 # -----------------------------------------------------------------------------
-FROM dhi.io/node:24-debian13-dev AS dev
+FROM dhi.io/node:26-debian13-dev AS dev
 
 WORKDIR /opt/celerity
 
