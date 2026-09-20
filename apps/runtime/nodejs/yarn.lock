@@ -5,19 +5,19 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@celerity-sdk/common@npm:^0.9.0":
-  version: 0.9.0
-  resolution: "@celerity-sdk/common@npm:0.9.0"
-  checksum: 10c0/773d940a8a9fd749382ee9baa49fc9e34fb716ea4a2da3db4d27ce15e6f2407333bfb59d18f5abbf7051fcd5e07750969ff8869a2a7447416eff379a141ba6ac
+"@celerity-sdk/common@npm:^0.9.2":
+  version: 0.9.2
+  resolution: "@celerity-sdk/common@npm:0.9.2"
+  checksum: 10c0/95e2af74117dbc21b02cf6c1c9facde3a0eff199fb8effcf47bebf568624880ca740bdfd62de1873cc5db37d09698e1dc16dcbc427856136eacb4cb26948662b
   languageName: node
   linkType: hard
 
-"@celerity-sdk/config@npm:^0.9.0":
-  version: 0.9.0
-  resolution: "@celerity-sdk/config@npm:0.9.0"
+"@celerity-sdk/config@npm:^0.9.2":
+  version: 0.9.2
+  resolution: "@celerity-sdk/config@npm:0.9.2"
   dependencies:
-    "@celerity-sdk/common": "npm:^0.9.0"
-    "@celerity-sdk/types": "npm:^0.9.0"
+    "@celerity-sdk/common": "npm:^0.9.2"
+    "@celerity-sdk/types": "npm:^0.9.2"
     debug: "npm:^4.4.0"
   peerDependencies:
     "@aws-sdk/client-secrets-manager": ^3.1062.0
@@ -31,17 +31,17 @@ __metadata:
       optional: true
     ioredis:
       optional: true
-  checksum: 10c0/0c5a624d83e5006f51352c0cc2047be0f471d7e5f8cbaf7b86a0353165444acf7ac85305ab3f1cf01cb7b0c06cd27bff8f2e5048a0db090f760e23a573fccaf0
+  checksum: 10c0/117bbf324e39debc268259ca99ba6327e955e850575c1bc5a6992a95d107418a67f8be3f71a20e3bac511fd19d8bfbdc081d6db38b43e38df862fe8b5db0ca69
   languageName: node
   linkType: hard
 
-"@celerity-sdk/core@npm:^0.9.0":
-  version: 0.9.0
-  resolution: "@celerity-sdk/core@npm:0.9.0"
+"@celerity-sdk/core@npm:^0.9.2":
+  version: 0.9.2
+  resolution: "@celerity-sdk/core@npm:0.9.2"
   dependencies:
-    "@celerity-sdk/common": "npm:^0.9.0"
-    "@celerity-sdk/config": "npm:^0.9.0"
-    "@celerity-sdk/types": "npm:^0.9.0"
+    "@celerity-sdk/common": "npm:^0.9.2"
+    "@celerity-sdk/config": "npm:^0.9.2"
+    "@celerity-sdk/types": "npm:^0.9.2"
     debug: "npm:^4.4.0"
     reflect-metadata: "npm:^0.2.0"
   peerDependencies:
@@ -49,7 +49,7 @@ __metadata:
   peerDependenciesMeta:
     "@celerity-sdk/runtime":
       optional: true
-  checksum: 10c0/550be7a9911141220ae68f3d1250a03f1f0af6e5f2092f40eefdb8cf7f6512571f3598afb1bf6809040caa207c0ba195084e76bc3adcb6a32ca8ddf680a2695c
+  checksum: 10c0/411caf83e42077315eb916756dd441cf2cdbd06f086dcc01ec81ca57ae3ed87ebbd97fae95e72ba9b6aa2a9ae9bba4d9150d503934c7202402d6e00373053a4b
   languageName: node
   linkType: hard
 
@@ -152,12 +152,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@celerity-sdk/telemetry@npm:^0.9.0":
-  version: 0.9.0
-  resolution: "@celerity-sdk/telemetry@npm:0.9.0"
+"@celerity-sdk/telemetry@npm:^0.9.2":
+  version: 0.9.2
+  resolution: "@celerity-sdk/telemetry@npm:0.9.2"
   dependencies:
-    "@celerity-sdk/common": "npm:^0.9.0"
-    "@celerity-sdk/types": "npm:^0.9.0"
+    "@celerity-sdk/common": "npm:^0.9.2"
+    "@celerity-sdk/types": "npm:^0.9.2"
     "@opentelemetry/api": "npm:^1.9.0"
     "@opentelemetry/api-logs": "npm:^0.221.0"
     "@opentelemetry/core": "npm:^2.0.0"
@@ -189,14 +189,14 @@ __metadata:
       optional: true
     "@opentelemetry/instrumentation-pg":
       optional: true
-  checksum: 10c0/29bfcd473c21992116df1aeabe2cc110fadcff7b62b37d065fad2ec3e08ca419d05859eed23d5e9e9a29a911e8641981237f77b1d68d1a2973624de7a3051f52
+  checksum: 10c0/c82ca14786398f38abfa1479ebc0f75b77a62c107f0f2d1883d409d689c2b0efd1f9680f7c3e92d8e6da26b78600103b0ac724e60cc93501322fdf186421ff30
   languageName: node
   linkType: hard
 
-"@celerity-sdk/types@npm:^0.9.0":
-  version: 0.9.0
-  resolution: "@celerity-sdk/types@npm:0.9.0"
-  checksum: 10c0/00096464ae55571171a24e654af616a11c00310b10d4a7186d4612b1cbdd9fd3cd9cc1a456e49df000d1c4fa1a037d6198a6f047e88eb3e7af287c70691036aa
+"@celerity-sdk/types@npm:^0.9.2":
+  version: 0.9.2
+  resolution: "@celerity-sdk/types@npm:0.9.2"
+  checksum: 10c0/3cf62c5664bc6856129318b6413c981583604a80bcdef44d0cfeec934508a1c124c9b2c07b2e0863ef308aea2b59225be738e762ea598067b62f6cca748aec85
   languageName: node
   linkType: hard
 
@@ -274,6 +274,145 @@ __metadata:
     "@emnapi/runtime": "npm:^1.7.1"
     "@tybys/wasm-util": "npm:^0.10.1"
   checksum: 10c0/04d57b67e80736e41fe44674a011878db0a8ad893f4d44abb9d3608debb7c174224cba2796ed5b0c1d367368159f3ca6be45f1c59222f70e32ddc880f803d447
+  languageName: node
+  linkType: hard
+
+"@node-rs/xxhash-android-arm-eabi@npm:1.7.8":
+  version: 1.7.8
+  resolution: "@node-rs/xxhash-android-arm-eabi@npm:1.7.8"
+  conditions: os=android & cpu=arm
+  languageName: node
+  linkType: hard
+
+"@node-rs/xxhash-android-arm64@npm:1.7.8":
+  version: 1.7.8
+  resolution: "@node-rs/xxhash-android-arm64@npm:1.7.8"
+  conditions: os=android & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@node-rs/xxhash-darwin-arm64@npm:1.7.8":
+  version: 1.7.8
+  resolution: "@node-rs/xxhash-darwin-arm64@npm:1.7.8"
+  conditions: os=darwin & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@node-rs/xxhash-darwin-x64@npm:1.7.8":
+  version: 1.7.8
+  resolution: "@node-rs/xxhash-darwin-x64@npm:1.7.8"
+  conditions: os=darwin & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@node-rs/xxhash-freebsd-x64@npm:1.7.8":
+  version: 1.7.8
+  resolution: "@node-rs/xxhash-freebsd-x64@npm:1.7.8"
+  conditions: os=freebsd & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@node-rs/xxhash-linux-arm-gnueabihf@npm:1.7.8":
+  version: 1.7.8
+  resolution: "@node-rs/xxhash-linux-arm-gnueabihf@npm:1.7.8"
+  conditions: os=linux & cpu=arm
+  languageName: node
+  linkType: hard
+
+"@node-rs/xxhash-linux-arm64-gnu@npm:1.7.8":
+  version: 1.7.8
+  resolution: "@node-rs/xxhash-linux-arm64-gnu@npm:1.7.8"
+  conditions: os=linux & cpu=arm64 & libc=glibc
+  languageName: node
+  linkType: hard
+
+"@node-rs/xxhash-linux-arm64-musl@npm:1.7.8":
+  version: 1.7.8
+  resolution: "@node-rs/xxhash-linux-arm64-musl@npm:1.7.8"
+  conditions: os=linux & cpu=arm64 & libc=musl
+  languageName: node
+  linkType: hard
+
+"@node-rs/xxhash-linux-x64-gnu@npm:1.7.8":
+  version: 1.7.8
+  resolution: "@node-rs/xxhash-linux-x64-gnu@npm:1.7.8"
+  conditions: os=linux & cpu=x64 & libc=glibc
+  languageName: node
+  linkType: hard
+
+"@node-rs/xxhash-linux-x64-musl@npm:1.7.8":
+  version: 1.7.8
+  resolution: "@node-rs/xxhash-linux-x64-musl@npm:1.7.8"
+  conditions: os=linux & cpu=x64 & libc=musl
+  languageName: node
+  linkType: hard
+
+"@node-rs/xxhash-win32-arm64-msvc@npm:1.7.8":
+  version: 1.7.8
+  resolution: "@node-rs/xxhash-win32-arm64-msvc@npm:1.7.8"
+  conditions: os=win32 & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@node-rs/xxhash-win32-ia32-msvc@npm:1.7.8":
+  version: 1.7.8
+  resolution: "@node-rs/xxhash-win32-ia32-msvc@npm:1.7.8"
+  conditions: os=win32 & cpu=ia32
+  languageName: node
+  linkType: hard
+
+"@node-rs/xxhash-win32-x64-msvc@npm:1.7.8":
+  version: 1.7.8
+  resolution: "@node-rs/xxhash-win32-x64-msvc@npm:1.7.8"
+  conditions: os=win32 & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@node-rs/xxhash@npm:^1.7.6":
+  version: 1.7.8
+  resolution: "@node-rs/xxhash@npm:1.7.8"
+  dependencies:
+    "@node-rs/xxhash-android-arm-eabi": "npm:1.7.8"
+    "@node-rs/xxhash-android-arm64": "npm:1.7.8"
+    "@node-rs/xxhash-darwin-arm64": "npm:1.7.8"
+    "@node-rs/xxhash-darwin-x64": "npm:1.7.8"
+    "@node-rs/xxhash-freebsd-x64": "npm:1.7.8"
+    "@node-rs/xxhash-linux-arm-gnueabihf": "npm:1.7.8"
+    "@node-rs/xxhash-linux-arm64-gnu": "npm:1.7.8"
+    "@node-rs/xxhash-linux-arm64-musl": "npm:1.7.8"
+    "@node-rs/xxhash-linux-x64-gnu": "npm:1.7.8"
+    "@node-rs/xxhash-linux-x64-musl": "npm:1.7.8"
+    "@node-rs/xxhash-win32-arm64-msvc": "npm:1.7.8"
+    "@node-rs/xxhash-win32-ia32-msvc": "npm:1.7.8"
+    "@node-rs/xxhash-win32-x64-msvc": "npm:1.7.8"
+  dependenciesMeta:
+    "@node-rs/xxhash-android-arm-eabi":
+      optional: true
+    "@node-rs/xxhash-android-arm64":
+      optional: true
+    "@node-rs/xxhash-darwin-arm64":
+      optional: true
+    "@node-rs/xxhash-darwin-x64":
+      optional: true
+    "@node-rs/xxhash-freebsd-x64":
+      optional: true
+    "@node-rs/xxhash-linux-arm-gnueabihf":
+      optional: true
+    "@node-rs/xxhash-linux-arm64-gnu":
+      optional: true
+    "@node-rs/xxhash-linux-arm64-musl":
+      optional: true
+    "@node-rs/xxhash-linux-x64-gnu":
+      optional: true
+    "@node-rs/xxhash-linux-x64-musl":
+      optional: true
+    "@node-rs/xxhash-win32-arm64-msvc":
+      optional: true
+    "@node-rs/xxhash-win32-ia32-msvc":
+      optional: true
+    "@node-rs/xxhash-win32-x64-msvc":
+      optional: true
+  checksum: 10c0/9db7fb9a211da8dd603a2597d103523689a6dcc751a41ad475bcd78c50e8dad4eb7aea171a841d733d6ceebcd24bfffa948453f6c8cd5fa10c64f20fbd0bb149
   languageName: node
   linkType: hard
 
@@ -1013,31 +1152,33 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@swc-node/core@npm:^1.14.1":
-  version: 1.14.1
-  resolution: "@swc-node/core@npm:1.14.1"
+"@swc-node/core@npm:1.15.0":
+  version: 1.15.0
+  resolution: "@swc-node/core@npm:1.15.0"
   peerDependencies:
     "@swc/core": ">= 1.13.3"
     "@swc/types": ">= 0.1"
-  checksum: 10c0/073a0a1d782eafcfc3d2056ad9c5232ec4a0a0a098abafa3eafdde30832eb04a2430cec943fef3bbf9754eb37b0bf6e749f9303304ac42e318936ced35f6144b
+  checksum: 10c0/093568ba30f7e0235717704833c6c64ea8f8dac7573f2e235d3a157f2039bba08e3422dc0ba1d5df45e28f36ea3fcd55a21f4fe0302d3aafcebe4e77169d7c5b
   languageName: node
   linkType: hard
 
-"@swc-node/register@npm:^1.10.0":
-  version: 1.11.1
-  resolution: "@swc-node/register@npm:1.11.1"
+"@swc-node/register@npm:^1.12.1":
+  version: 1.12.1
+  resolution: "@swc-node/register@npm:1.12.1"
   dependencies:
-    "@swc-node/core": "npm:^1.14.1"
+    "@node-rs/xxhash": "npm:^1.7.6"
+    "@swc-node/core": "npm:1.15.0"
     "@swc-node/sourcemap-support": "npm:^0.6.1"
     colorette: "npm:^2.0.20"
     debug: "npm:^4.4.1"
+    fast-json-stable-stringify: "npm:^2.1.0"
     oxc-resolver: "npm:^11.6.1"
     pirates: "npm:^4.0.7"
     tslib: "npm:^2.8.1"
   peerDependencies:
     "@swc/core": ">= 1.4.13"
-    typescript: ">= 4.3"
-  checksum: 10c0/ac4c4f7a6cbf96a83c5f1edb346d0db3290f39be4c56e9a255b1cba672303074a53cdd06956b6b9ada96c386def6f9cb59d0f274ce81fbc04f7178e2974ec7f0
+    typescript: ">= 4.3 < 7"
+  checksum: 10c0/e6ea39ba099d1616f1163f329bc2c1263141f5a6c763d4fb2bf979d84013d221cf235561c6b087278c1b19af4d438a3a27797361444eb36a0f3c688fa985896a
   languageName: node
   linkType: hard
 
@@ -1051,92 +1192,108 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@swc/core-darwin-arm64@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-darwin-arm64@npm:1.15.11"
+"@swc/core-darwin-arm64@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-darwin-arm64@npm:1.16.2"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"@swc/core-darwin-x64@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-darwin-x64@npm:1.15.11"
+"@swc/core-darwin-x64@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-darwin-x64@npm:1.16.2"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm-gnueabihf@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-arm-gnueabihf@npm:1.15.11"
+"@swc/core-linux-arm-gnueabihf@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-linux-arm-gnueabihf@npm:1.16.2"
   conditions: os=linux & cpu=arm
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm64-gnu@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-arm64-gnu@npm:1.15.11"
+"@swc/core-linux-arm64-gnu@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-linux-arm64-gnu@npm:1.16.2"
   conditions: os=linux & cpu=arm64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm64-musl@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-arm64-musl@npm:1.15.11"
+"@swc/core-linux-arm64-musl@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-linux-arm64-musl@npm:1.16.2"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
 
-"@swc/core-linux-x64-gnu@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-x64-gnu@npm:1.15.11"
+"@swc/core-linux-ppc64-gnu@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-linux-ppc64-gnu@npm:1.16.2"
+  conditions: os=linux & cpu=ppc64 & libc=glibc
+  languageName: node
+  linkType: hard
+
+"@swc/core-linux-s390x-gnu@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-linux-s390x-gnu@npm:1.16.2"
+  conditions: os=linux & cpu=s390x & libc=glibc
+  languageName: node
+  linkType: hard
+
+"@swc/core-linux-x64-gnu@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-linux-x64-gnu@npm:1.16.2"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@swc/core-linux-x64-musl@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-x64-musl@npm:1.15.11"
+"@swc/core-linux-x64-musl@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-linux-x64-musl@npm:1.16.2"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
 
-"@swc/core-win32-arm64-msvc@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-win32-arm64-msvc@npm:1.15.11"
+"@swc/core-win32-arm64-msvc@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-win32-arm64-msvc@npm:1.16.2"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
-"@swc/core-win32-ia32-msvc@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-win32-ia32-msvc@npm:1.15.11"
+"@swc/core-win32-ia32-msvc@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-win32-ia32-msvc@npm:1.16.2"
   conditions: os=win32 & cpu=ia32
   languageName: node
   linkType: hard
 
-"@swc/core-win32-x64-msvc@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-win32-x64-msvc@npm:1.15.11"
+"@swc/core-win32-x64-msvc@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-win32-x64-msvc@npm:1.16.2"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
-"@swc/core@npm:^1.11.0":
-  version: 1.15.11
-  resolution: "@swc/core@npm:1.15.11"
+"@swc/core@npm:^1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core@npm:1.16.2"
   dependencies:
-    "@swc/core-darwin-arm64": "npm:1.15.11"
-    "@swc/core-darwin-x64": "npm:1.15.11"
-    "@swc/core-linux-arm-gnueabihf": "npm:1.15.11"
-    "@swc/core-linux-arm64-gnu": "npm:1.15.11"
-    "@swc/core-linux-arm64-musl": "npm:1.15.11"
-    "@swc/core-linux-x64-gnu": "npm:1.15.11"
-    "@swc/core-linux-x64-musl": "npm:1.15.11"
-    "@swc/core-win32-arm64-msvc": "npm:1.15.11"
-    "@swc/core-win32-ia32-msvc": "npm:1.15.11"
-    "@swc/core-win32-x64-msvc": "npm:1.15.11"
+    "@swc/core-darwin-arm64": "npm:1.16.2"
+    "@swc/core-darwin-x64": "npm:1.16.2"
+    "@swc/core-linux-arm-gnueabihf": "npm:1.16.2"
+    "@swc/core-linux-arm64-gnu": "npm:1.16.2"
+    "@swc/core-linux-arm64-musl": "npm:1.16.2"
+    "@swc/core-linux-ppc64-gnu": "npm:1.16.2"
+    "@swc/core-linux-s390x-gnu": "npm:1.16.2"
+    "@swc/core-linux-x64-gnu": "npm:1.16.2"
+    "@swc/core-linux-x64-musl": "npm:1.16.2"
+    "@swc/core-win32-arm64-msvc": "npm:1.16.2"
+    "@swc/core-win32-ia32-msvc": "npm:1.16.2"
+    "@swc/core-win32-x64-msvc": "npm:1.16.2"
     "@swc/counter": "npm:^0.1.3"
-    "@swc/types": "npm:^0.1.25"
+    "@swc/types": "npm:^0.1.28"
   peerDependencies:
     "@swc/helpers": ">=0.5.17"
   dependenciesMeta:
@@ -1149,6 +1306,10 @@ __metadata:
     "@swc/core-linux-arm64-gnu":
       optional: true
     "@swc/core-linux-arm64-musl":
+      optional: true
+    "@swc/core-linux-ppc64-gnu":
+      optional: true
+    "@swc/core-linux-s390x-gnu":
       optional: true
     "@swc/core-linux-x64-gnu":
       optional: true
@@ -1163,7 +1324,7 @@ __metadata:
   peerDependenciesMeta:
     "@swc/helpers":
       optional: true
-  checksum: 10c0/84b9dbed8d4d39da9941b796f97f84a52a3ab1a5e002b0395e98d0c3368acab4dde84051eb97c47c85b67c5fc29e3e9b7a646cf238a96df93fc7c54177925c3e
+  checksum: 10c0/8019735e27852f03b0e09ae7f8c3f00e6a2e3f49b72127e09c20cffde335fe3b776afb20bfd3b3f5c540d42667f1b7467a4e10aa11c50ff59c6f86a9513544a8
   languageName: node
   linkType: hard
 
@@ -1174,12 +1335,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@swc/types@npm:^0.1.25":
-  version: 0.1.25
-  resolution: "@swc/types@npm:0.1.25"
+"@swc/types@npm:^0.1.28":
+  version: 0.1.28
+  resolution: "@swc/types@npm:0.1.28"
   dependencies:
     "@swc/counter": "npm:^0.1.3"
-  checksum: 10c0/847a5b20b131281f89d640a7ed4887fb65724807d53d334b230e84b98c21097aa10cd28a074f9ed287a6ce109e443dd4bafbe7dcfb62333d7806c4ea3e7f8aca
+  checksum: 10c0/7f2e959a7ee000ec4216acc6b7634e2d2fbe404b6ad3adf72bb91970a67359d7d429f60556342784dbe66912c7c987426683159e749332581a87e04de0524357
   languageName: node
   linkType: hard
 
@@ -1262,14 +1423,14 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "celerity-runtime-nodejs@workspace:."
   dependencies:
-    "@celerity-sdk/common": "npm:^0.9.0"
-    "@celerity-sdk/config": "npm:^0.9.0"
-    "@celerity-sdk/core": "npm:^0.9.0"
+    "@celerity-sdk/common": "npm:^0.9.2"
+    "@celerity-sdk/config": "npm:^0.9.2"
+    "@celerity-sdk/core": "npm:^0.9.2"
     "@celerity-sdk/runtime": "npm:^0.4.2"
-    "@celerity-sdk/telemetry": "npm:^0.9.0"
-    "@celerity-sdk/types": "npm:^0.9.0"
-    "@swc-node/register": "npm:^1.10.0"
-    "@swc/core": "npm:^1.11.0"
+    "@celerity-sdk/telemetry": "npm:^0.9.2"
+    "@celerity-sdk/types": "npm:^0.9.2"
+    "@swc-node/register": "npm:^1.12.1"
+    "@swc/core": "npm:^1.16.2"
     ioredis: "npm:^5.0.0"
     pino-pretty: "npm:^13.0.0"
     reflect-metadata: "npm:^0.2.2"
@@ -1385,6 +1546,13 @@ __metadata:
   version: 4.0.2
   resolution: "fast-copy@npm:4.0.2"
   checksum: 10c0/f8e51483ce1761e3ba21a07cbd2149afd99a62230aa8025acc6ce4c818000a52c94ebb80960d63953ff01677b7886841f250395e462ad9a54bef39cce1834343
+  languageName: node
+  linkType: hard
+
+"fast-json-stable-stringify@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "fast-json-stable-stringify@npm:2.1.0"
+  checksum: 10c0/7f081eb0b8a64e0057b3bb03f974b3ef00135fbf36c1c710895cd9300f13c94ba809bb3a81cf4e1b03f6e5285610a61abbd7602d0652de423144dfee5a389c9b
   languageName: node
   linkType: hard
 
