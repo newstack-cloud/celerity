@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-python/v0.3.0...runtime-sdk-python/v0.3.1) (2026-09-21)
+
+
+### Dependencies
+
+* **runtime-sdk-python:** update core dependencies ([a16ee45](https://github.com/newstack-cloud/celerity/commit/a16ee453e7b54cfba7893e6ce24dac915d3c0c75))
+
 ## [0.3.0](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-python/v0.2.2...runtime-sdk-python/v0.3.0) (2026-08-27)
 
 
