@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/newstack-cloud/celerity/compare/runtime-core-app/v0.2.0...runtime-core-app/v0.3.0) (2026-09-21)
+
+
+### Features
+
+* **runtime-core:** enable consumer features in the core lib ([85253a1](https://github.com/newstack-cloud/celerity/commit/85253a1e3e185afef82ee70b496d42839cd4b5cf))
+
+
+### Bug Fixes
+
+* **runtime-core:** regenerate the lock file for the consumer features ([4a28300](https://github.com/newstack-cloud/celerity/commit/4a2830001ef9886f7704a6f90ffbda3b2ff07ec3))
+
 ## [0.2.0](https://github.com/newstack-cloud/celerity/compare/runtime-core-app/v0.1.0...runtime-core-app/v0.2.0) (2026-09-18)
 
 
