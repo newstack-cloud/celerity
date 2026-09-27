@@ -23,7 +23,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Build the runtime binary
 # -----------------------------------------------------------------------------
-FROM dhi.io/rust:1.97 AS builder
+FROM dhi.io/rust:1.98 AS builder
 
 WORKDIR /build
 
