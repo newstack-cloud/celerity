@@ -1,4 +1,4 @@
-FROM dhi.io/golang:1.26 AS builder
+FROM dhi.io/golang:1.27 AS builder
 
 WORKDIR /app
 COPY go.mod go.sum ./
