@@ -14,7 +14,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Install production dependencies only
 # -----------------------------------------------------------------------------
-FROM dhi.io/python:3.13-debian13-dev AS deps-prod
+FROM dhi.io/python:3.14-debian13-dev AS deps-prod
 
 WORKDIR /opt/celerity
 
@@ -27,7 +27,7 @@ RUN uv sync --no-dev
 # -----------------------------------------------------------------------------
 # Stage 2: Install all dependencies (prod + dev)
 # -----------------------------------------------------------------------------
-FROM dhi.io/python:3.13-debian13-dev AS deps-dev
+FROM dhi.io/python:3.14-debian13-dev AS deps-dev
 
 WORKDIR /opt/celerity
 
@@ -40,7 +40,7 @@ RUN uv sync
 # -----------------------------------------------------------------------------
 # Stage 3: Build-time prep (generate manifest)
 # -----------------------------------------------------------------------------
-FROM dhi.io/python:3.13-debian13-dev AS build
+FROM dhi.io/python:3.14-debian13-dev AS build
 
 WORKDIR /opt/celerity
 
@@ -67,7 +67,7 @@ RUN mkdir -p /opt/celerity/app
 #   RUN . /opt/celerity/.venv/bin/activate \
 #       && pip install -r /opt/celerity/app/requirements.txt
 # -----------------------------------------------------------------------------
-FROM dhi.io/python:3.13-debian13 AS runtime
+FROM dhi.io/python:3.14-debian13 AS runtime
 
 WORKDIR /opt/celerity
 
@@ -97,7 +97,7 @@ ENTRYPOINT ["python", "main.py"]
 # a derivative Dockerfile. The shared venv already includes the runtime's
 # celerity-sdk[runtime] plus dev tools (watchfiles).
 # -----------------------------------------------------------------------------
-FROM dhi.io/python:3.13-debian13-dev AS dev
+FROM dhi.io/python:3.14-debian13-dev AS dev
 
 WORKDIR /opt/celerity
 

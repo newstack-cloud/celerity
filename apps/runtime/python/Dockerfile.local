@@ -38,7 +38,7 @@ ARG RUNTIME_SDK_IMAGE=runtime-sdk-builder
 # Stage 1: Build the Rust runtime SDK (celerity-runtime-sdk) for Linux
 # Uses --build-context runtime-sdk=path/to/libs/runtime (the Cargo workspace root)
 # -----------------------------------------------------------------------------
-FROM ghcr.io/pyo3/maturin:v1.12.6 AS runtime-sdk-builder
+FROM ghcr.io/pyo3/maturin:v1.15.0 AS runtime-sdk-builder
 
 WORKDIR /build
 
@@ -60,7 +60,7 @@ FROM ${RUNTIME_SDK_IMAGE} AS runtime-sdk-resolved
 # -----------------------------------------------------------------------------
 # Stage 3: Development image
 # -----------------------------------------------------------------------------
-FROM dhi.io/python:3.13-debian13-dev AS dev
+FROM dhi.io/python:3.14-debian13-dev AS dev
 
 WORKDIR /opt/celerity
 
