@@ -29,8 +29,8 @@ type HealthCheck struct {
 
 // ComposeConfig represents the generated Docker Compose configuration.
 type ComposeConfig struct {
-	Services            map[string]*ComposeService
-	RuntimeEnvVars      map[string]string
+	Services       map[string]*ComposeService
+	RuntimeEnvVars map[string]string
 	// HostEnvVars contains the same endpoints as RuntimeEnvVars but rewritten
 	// for host access (localhost with host-mapped ports). Use these when
 	// connecting from the host machine (seeding, test runners) rather than
@@ -42,6 +42,10 @@ type ComposeConfig struct {
 	// StubServices holds loaded stub service configs for the orchestrator
 	// to seed config values and load mountebank imposters after compose up.
 	StubServices []StubServiceInfo
+	// TracingUIURL is where a session's traces are read, and is empty when no
+	// collector was asked for. Carried rather than derived by the caller,
+	// because the host port it is on is the generator's port offset applied.
+	TracingUIURL string
 }
 
 // StubServiceInfo carries the information needed to seed config values

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// mockDockerManager is a minimal mock that returns pre-canned log data.
+// A minimal mock that returns pre-canned log data.
 type mockDockerManager struct {
 	logData string
 }
@@ -54,7 +54,8 @@ func (s *StreamerTestSuite) Test_pino_json_still_formatted() {
 }
 
 func (s *StreamerTestSuite) Test_pino_json_parsed_with_versioned_runtime() {
-	// Runtimes are stored as "nodejs24.x" — ensure pino JSON is parsed with a versioned runtime.
+	// Runtimes are stored as "nodejs24.x", so pino JSON has to be parsed for a
+	// versioned runtime too.
 	input := `{"level":30,"time":"2024-01-01T00:00:00Z","msg":"user created","handlerName":"Users","name":"request"}` + "\n"
 
 	out := s.streamWithRuntime(input, StreamOptions{}, "nodejs24.x")

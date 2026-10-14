@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/newstack-cloud/celerity/apps/cli/internal/config"
+	"github.com/newstack-cloud/deploy-cli-sdk/config"
 	"github.com/spf13/cobra"
 )
 

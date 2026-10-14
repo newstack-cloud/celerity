@@ -74,7 +74,8 @@ func (s *ParserTestSuite) Test_pino_json_not_matched_by_default_parser() {
 }
 
 func (s *ParserTestSuite) Test_pino_json_matched_by_versioned_nodejs_runtime() {
-	// Runtimes are stored as e.g. "nodejs24.x" — the parser must use prefix matching.
+	// Runtimes are stored as e.g. "nodejs24.x", so the parser must match by
+	// prefix.
 	raw := `{"level":30,"time":"2024-01-01T00:00:00Z","msg":"hello","handlerName":"Orders"}`
 	parser := NewLogParser("nodejs24.x")
 	line := parser.Parse(raw)
@@ -84,7 +85,7 @@ func (s *ParserTestSuite) Test_pino_json_matched_by_versioned_nodejs_runtime() {
 }
 
 func (s *ParserTestSuite) Test_pino_json_name_field_excluded_from_extra() {
-	// "name" is pino's logger name — should not appear as an extra field.
+	// "name" is pino's logger name, which should not appear as an extra field.
 	raw := `{"level":30,"time":"2024-01-01T00:00:00Z","msg":"guard action","name":"guard","handlerName":"Orders"}`
 	line := s.nodeParser().Parse(raw)
 	s.Equal("guard action", line.Message)

@@ -50,6 +50,18 @@ const (
 
 	mountebankImage   = "bbyars/mountebank:2.9.3"
 	mountebankAPIPort = "2525"
+
+	// Jaeger v2 is an OpenTelemetry Collector distribution, so one container
+	// both ingests OTLP and serves the UI that reads it. A separate collector
+	// in front of it would be a second image and a config file to mount for
+	// no gain in a session whose traces nothing forwards anywhere.
+	//
+	// Storage is in memory, which needs no volume and no cleanup: a session's
+	// traces describe that session, and keeping them past it would mean
+	// reading a trace of code that has since been rebuilt.
+	tracingImage    = "jaegertracing/jaeger:2.22.0"
+	tracingOTLPPort = "4317"
+	tracingUIPort   = "16686"
 )
 
 // ServiceName constants for compose services.
@@ -62,6 +74,11 @@ const (
 	ServiceNameLocalEvents = "local-events"
 	ServiceNameDevAuth     = "dev-auth"
 	ServiceNameStubs       = "stubs"
+	// ServiceNameTracing is otelcollector rather than jaeger because that is
+	// the host every Celerity SDK defaults its OTLP endpoint to, so an
+	// application reaches a session's traces whether or not the endpoint was
+	// set for it. The endpoint is set as well, since every other service's is.
+	ServiceNameTracing = "otelcollector"
 )
 
 // Runtime environment variable names set by compose services.
@@ -77,6 +94,13 @@ const (
 	EnvCacheEndpoint       = "CELERITY_LOCAL_CACHE_ENDPOINT"
 	EnvDevAuthBaseURL      = "CELERITY_DEV_AUTH_BASE_URL"
 	EnvStubsAPIURL         = "CELERITY_STUBS_API_URL"
+	// EnvTelemetryEnabled has to be true before an SDK builds an exporter at
+	// all, so that an application which traces nothing opens no connection.
+	EnvTelemetryEnabled = "CELERITY_TELEMETRY_ENABLED"
+	// EnvTraceEndpoint is the Celerity name for where to export traces.
+	// OpenTelemetry's own OTEL_EXPORTER_OTLP_ENDPOINT is read ahead of it, so
+	// a developer who sets that points their session wherever they like.
+	EnvTraceEndpoint = "CELERITY_TRACE_OTLP_COLLECTOR_ENDPOINT"
 )
 
 var defaultPostgresCreds = struct {

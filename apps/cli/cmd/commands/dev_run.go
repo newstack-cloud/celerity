@@ -6,12 +6,12 @@ import (
 	"path/filepath"
 
 	"github.com/newstack-cloud/celerity/apps/cli/internal/compose"
-	"github.com/newstack-cloud/celerity/apps/cli/internal/config"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/consts"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/devconfig"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/devrun"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/docker"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/preprocess"
+	"github.com/newstack-cloud/deploy-cli-sdk/config"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -74,6 +74,10 @@ Use --detached to run in the background.`,
 	confProvider.BindPFlag("devRunNoLocalAuth", runCmd.Flags().Lookup("no-local-auth"))
 	confProvider.BindEnvVar("devRunNoLocalAuth", "CELERITY_CLI_DEV_RUN_NO_LOCAL_AUTH")
 
+	runCmd.Flags().Bool("tracing", false, "Run a trace collector in the session and export the application's spans to it")
+	confProvider.BindPFlag("devRunTracing", runCmd.Flags().Lookup("tracing"))
+	confProvider.BindEnvVar("devRunTracing", "CELERITY_CLI_DEV_RUN_TRACING")
+
 	devCmd.AddCommand(runCmd)
 }
 
@@ -110,15 +114,20 @@ func runDevRun(ctx context.Context, confProvider *config.Provider) error {
 		return err
 	}
 
-	var extractor *preprocess.Extractor
+	var extractor devrun.Extractor
 	conv, _ := consts.ConventionsForRuntime(resolved.Runtime)
-	if conv.SupportsExtraction {
+	switch {
+	case resolved.Toolchain != nil:
+		// An OS-only runtime hosts no language, so the extractor belongs to
+		// whichever toolchain built the executable.
+		extractor = devconfig.NewToolchainExtractor(resolved)
+	case conv.SupportsExtraction:
 		extractor = preprocess.NewExtractor(preprocess.ExtractorConfig{
 			Runtime:     resolved.Runtime,
 			ModulePath:  resolved.ModulePath,
 			ProjectRoot: resolved.AppDir,
 		}, logger)
-	} else {
+	default:
 		logger.Info("handler extraction not supported, watcher will only restart on file changes",
 			zap.String("runtime", resolved.Runtime),
 		)
@@ -143,6 +152,8 @@ func runDevRun(ctx context.Context, confProvider *config.Provider) error {
 			Manifest:            resolved.Manifest,
 			ContainerCfg:        resolved.ContainerConfig,
 			ComposeCfg:          resolved.ComposeConfig,
+			Toolchain:           resolved.Toolchain,
+			HandlersExecutable:  resolved.HandlersExecutable,
 		},
 		dockerMgr,
 		composeMgr,
@@ -170,6 +181,7 @@ func resolveOptsFromFlags(confProvider *config.Provider) devconfig.ResolveOpts {
 
 	verbose, _ := confProvider.GetBool("devRunVerbose")
 	noLocalAuth, _ := confProvider.GetBool("devRunNoLocalAuth")
+	tracing, _ := confProvider.GetBool("devRunTracing")
 
 	return devconfig.ResolveOpts{
 		BlueprintFile: blueprintFile,
@@ -182,6 +194,7 @@ func resolveOptsFromFlags(confProvider *config.Provider) devconfig.ResolveOpts {
 		Mode:          "run",
 		Verbose:       verbose,
 		LocalAuth:     !noLocalAuth,
+		Tracing:       tracing,
 	}
 }
 

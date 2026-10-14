@@ -32,6 +32,7 @@ func GenerateComposeConfig(
 	appDir string,
 	portOffset int,
 	localAuth bool,
+	tracing bool,
 	logger *zap.Logger,
 ) (*ComposeConfig, error) {
 	emptyConfig := &ComposeConfig{
@@ -69,6 +70,7 @@ func GenerateComposeConfig(
 		}
 	}
 
+	addTracingServiceIfNeeded(services, runtimeEnvVars, portOffset, tracing)
 	addValkeyServiceIfNeeded(services, runtimeEnvVars, resourceTypes, portOffset)
 	addDevAuthServiceIfNeeded(services, runtimeEnvVars, bp, portOffset, localAuth)
 	stubServices, err := addStubsServiceIfNeeded(services, runtimeEnvVars, appDir, portOffset, logger)
@@ -101,7 +103,56 @@ func GenerateComposeConfig(
 		FilePath:            composeFilePath,
 		StreamEnabledTables: streamEnabledTables,
 		StubServices:        stubServices,
+		TracingUIURL:        tracingUIURL(services, portOffset),
 	}, nil
+}
+
+// addTracingServiceIfNeeded adds the collector a session's traces are read in.
+//
+// Asked for rather than inferred from the blueprint's resources, because what
+// it serves is the dispatch span every handler opens rather than any one
+// resource's calls.
+func addTracingServiceIfNeeded(
+	services map[string]*ComposeService,
+	runtimeEnvVars map[string]string,
+	portOffset int,
+	tracing bool,
+) {
+	if !tracing {
+		return
+	}
+
+	services[ServiceNameTracing] = &ComposeService{
+		Image: tracingImage,
+		Ports: []string{
+			// The UI, which is the point of running it.
+			offsetPort(tracingUIPort, portOffset) + ":" + tracingUIPort,
+			// OTLP as well, although the application container reaches it over
+			// the compose network: an integration suite runs on the host, and
+			// a handler it exercises in process exports from there.
+			offsetPort(tracingOTLPPort, portOffset) + ":" + tracingOTLPPort,
+		},
+		HealthCheck: toComposeHealth(&HealthCheck{
+			// wget rather than curl, which the image does not carry.
+			Test:        []string{"CMD", "wget", "--spider", "-q", "http://localhost:" + tracingUIPort + "/"},
+			Interval:    "5s",
+			Timeout:     "3s",
+			Retries:     5,
+			StartPeriod: "5s",
+		}),
+	}
+
+	runtimeEnvVars[EnvTelemetryEnabled] = "true"
+	runtimeEnvVars[EnvTraceEndpoint] = "http://" + ServiceNameTracing + ":" + tracingOTLPPort
+}
+
+// tracingUIURL is where the collector's UI is reachable from the host, or
+// empty where no collector was asked for.
+func tracingUIURL(services map[string]*ComposeService, portOffset int) string {
+	if _, running := services[ServiceNameTracing]; !running {
+		return ""
+	}
+	return "http://localhost:" + offsetPort(tracingUIPort, portOffset)
 }
 
 func collectResourceTypes(bp *schema.Blueprint) map[string]bool {
@@ -539,12 +590,14 @@ var serviceHostReplacements = []struct{ from, to string }{
 	{"://" + ServiceNameValkey + ":", "://localhost:"},
 	{"://" + ServiceNameDevAuth + ":", "://localhost:"},
 	{"://" + ServiceNameStubs + ":", "://localhost:"},
+	{"://" + ServiceNameTracing + ":", "://localhost:"},
 	{"@" + ServiceNameSqlDatabase + ":", "@localhost:"},
 }
 
 var knownContainerPorts = []string{
 	dynamoDBLocalPort, minioPort, minioAPIPort,
 	postgresPort, valkeyPort, devAuthPort, mountebankAPIPort,
+	tracingOTLPPort, tracingUIPort,
 }
 
 // buildHostEnvVars rewrites RuntimeEnvVars (compose service names + container ports)
@@ -793,7 +846,7 @@ func collectDatastoreBridgeConfigs(
 		return nil, nil
 	}
 
-	// Only AWS targets use DynamoDB Local — other providers are not yet supported.
+	// Only AWS targets use DynamoDB Local. Other providers are not yet supported.
 	if deployTarget != DeployTargetAWS && deployTarget != DeployTargetAWSServerless {
 		return nil, nil
 	}

@@ -81,6 +81,13 @@ func sdkParserForRuntime(runtime string) SDKLogParseFunc {
 		return parseNodeJSLog
 	case strings.HasPrefix(lower, "python"):
 		return parseStructlogJSON
+	// An OS-only runtime hosts no language, so the format belongs to whichever
+	// SDK built the handlers executable rather than to the runtime. slog is
+	// what the Go SDK writes, and it is tried rather than selected, so a record
+	// that is not one falls through to the passthrough a community SDK's output
+	// already gets.
+	case strings.HasPrefix(lower, "os-only"):
+		return parseSlogJSON
 	default:
 		return nil
 	}
@@ -99,9 +106,9 @@ func parseNodeJSLog(raw string) (LogLine, bool) {
 	return parsePinoJSON(raw)
 }
 
-// isNodeJSDebugLine reports whether raw looks like output from the Node.js
-// debug package, which prefixes every line with an ISO 8601 timestamp
-// (YYYY-MM-DDTHH:MM:SS...) followed by the debug namespace and message.
+// The Node.js debug package prefixes every line with an ISO 8601 timestamp
+// (YYYY-MM-DDTHH:MM:SS...) followed by the debug namespace and the message, so
+// the leading separators are enough to recognise one.
 func isNodeJSDebugLine(raw string) bool {
 	if len(raw) < 20 {
 		return false

@@ -35,7 +35,7 @@ version: 2025-11-02
 resources: {}
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 	s.Assert().Empty(cfg.Services)
 	s.Assert().Empty(cfg.RuntimeEnvVars)
@@ -51,7 +51,7 @@ resources:
       name: users
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	ds, ok := cfg.Services[ServiceNameDatastore]
@@ -74,7 +74,7 @@ resources:
       name: users
 `)
 	appDir := s.T().TempDir()
-	_, err := GenerateComposeConfig(bp, DeployTargetGCloud, "test-project", appDir, 0, true, s.logger)
+	_, err := GenerateComposeConfig(bp, DeployTargetGCloud, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().Error(err)
 	s.Assert().Contains(err.Error(), "not yet supported")
 }
@@ -89,7 +89,7 @@ resources:
       name: users
 `)
 	appDir := s.T().TempDir()
-	_, err := GenerateComposeConfig(bp, DeployTargetAzure, "test-project", appDir, 0, true, s.logger)
+	_, err := GenerateComposeConfig(bp, DeployTargetAzure, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().Error(err)
 	s.Assert().Contains(err.Error(), "not yet supported")
 }
@@ -104,7 +104,7 @@ resources:
       name: users
 `)
 	appDir := s.T().TempDir()
-	_, err := GenerateComposeConfig(bp, "custom-platform", "test-project", appDir, 0, true, s.logger)
+	_, err := GenerateComposeConfig(bp, "custom-platform", "test-project", appDir, 0, true, false, s.logger)
 	s.Require().Error(err)
 	s.Assert().Contains(err.Error(), "unsupported deploy target")
 }
@@ -131,7 +131,7 @@ resources:
       name: events
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	// URL-type host env vars should use localhost, not Docker service names.
@@ -154,7 +154,7 @@ resources:
       name: users
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWSServerless, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWSServerless, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	_, ok := cfg.Services[ServiceNameDatastore]
@@ -171,7 +171,7 @@ resources:
       name: my-bucket
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	storage, ok := cfg.Services[ServiceNameStorage]
@@ -197,7 +197,7 @@ resources:
       name: sessions
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	// Single Valkey service even though two resource types need it.
@@ -225,7 +225,7 @@ resources:
       authMode: password
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	pg, ok := cfg.Services[ServiceNameSqlDatabase]
@@ -285,7 +285,7 @@ resources:
       name: audit
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	// 4 services: datastore, storage, valkey (shared), sql-database.
@@ -306,7 +306,7 @@ resources:
       name: events
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	expectedPath := filepath.Join(appDir, ".celerity", "compose.generated.yaml")
@@ -330,7 +330,7 @@ resources:
       name: main-vpc
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 	s.Assert().Empty(cfg.Services)
 }
@@ -370,7 +370,7 @@ resources:
       schedule: "rate(1d)"
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	le, ok := cfg.Services[ServiceNameLocalEvents]
@@ -414,7 +414,7 @@ resources:
       sourceId: "celerity::topic::notifications"
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 	s.Assert().Contains(cfg.Services, ServiceNameLocalEvents)
 
@@ -460,7 +460,7 @@ resources:
       batchSize: 25
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	s.Assert().Contains(cfg.Services, ServiceNameLocalEvents)
@@ -513,7 +513,7 @@ resources:
       batchSize: 10
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	s.Assert().Contains(cfg.Services, ServiceNameLocalEvents)
@@ -565,7 +565,7 @@ resources:
       batchSize: 5
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 	s.Assert().Contains(cfg.Services, ServiceNameLocalEvents)
 
@@ -647,7 +647,7 @@ resources:
       batchSize: 10
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	s.Assert().Contains(cfg.Services, ServiceNameDatastore)
@@ -688,7 +688,7 @@ resources:
       name: events
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	s.Assert().NotContains(cfg.Services, ServiceNameLocalEvents)
@@ -734,7 +734,7 @@ resources:
       batchSize: 25
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	s.Assert().Len(cfg.StreamEnabledTables, 1)
@@ -770,7 +770,7 @@ resources:
       batchSize: 25
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWSServerless, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWSServerless, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	s.Assert().Contains(cfg.Services, ServiceNameLocalEvents)
@@ -808,7 +808,7 @@ resources:
       batchSize: 10
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	s.Assert().NotContains(cfg.Services, ServiceNameLocalEvents)
@@ -840,7 +840,7 @@ resources:
       batchSize: 5
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 	s.Assert().Contains(cfg.Services, ServiceNameLocalEvents)
 
@@ -883,7 +883,7 @@ resources:
       batchSize: 5
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 	s.Assert().Contains(cfg.Services, ServiceNameLocalEvents)
 
@@ -939,7 +939,7 @@ resources:
             audience: "my-app"
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	devAuth, ok := cfg.Services[ServiceNameDevAuth]
@@ -966,7 +966,7 @@ resources:
             issuer: "https://auth.example.com"
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	devAuth := cfg.Services[ServiceNameDevAuth]
@@ -984,7 +984,7 @@ resources:
         - http
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 	s.Assert().NotContains(cfg.Services, ServiceNameDevAuth)
 }
@@ -999,7 +999,7 @@ resources:
       name: users
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 100, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 100, true, false, s.logger)
 	s.Require().NoError(err)
 
 	ds := cfg.Services[ServiceNameDatastore]
@@ -1035,7 +1035,7 @@ resources:
 		0o644,
 	))
 
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 
 	stubs, ok := cfg.Services[ServiceNameStubs]
@@ -1059,7 +1059,7 @@ resources:
       name: events
 `)
 	appDir := s.T().TempDir()
-	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, s.logger)
+	cfg, err := GenerateComposeConfig(bp, DeployTargetAWS, "test-project", appDir, 0, true, false, s.logger)
 	s.Require().NoError(err)
 	s.Assert().NotContains(cfg.Services, ServiceNameStubs)
 }

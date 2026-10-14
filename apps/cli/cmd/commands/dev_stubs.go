@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/newstack-cloud/celerity/apps/cli/internal/config"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/devstubs"
+	"github.com/newstack-cloud/deploy-cli-sdk/config"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +47,7 @@ func runStubsValidate(confProvider *config.Provider) error {
 
 	stubsDir := filepath.Join(appDir, "stubs")
 	if _, err := os.Stat(stubsDir); os.IsNotExist(err) {
-		fmt.Println("No stubs/ directory found — nothing to validate.")
+		fmt.Println("No stubs/ directory found, so there is nothing to validate.")
 		return nil
 	}
 
@@ -79,7 +79,7 @@ func runStubsValidate(confProvider *config.Provider) error {
 		}
 	}
 
-	fmt.Printf("Validated %d service(s), %d endpoint(s), %d stub(s) — all OK.\n",
+	fmt.Printf("Validated %d service(s), %d endpoint(s), %d stub(s). All OK.\n",
 		len(services), totalEndpoints, totalStubs)
 	return nil
 }
