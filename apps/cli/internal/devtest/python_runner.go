@@ -37,7 +37,7 @@ func (r *PythonRunner) Run(ctx context.Context, config RunConfig) (*RunResult, e
 	}
 	if pytestBin == "" {
 		return nil, fmt.Errorf(
-			"pytest not found; install it in a virtualenv (.venv or venv) "+
+			"pytest not found; install it in a virtualenv (.venv or venv) " +
 				"or system-wide, or use --test-command",
 		)
 	}

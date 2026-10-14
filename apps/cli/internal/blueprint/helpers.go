@@ -9,6 +9,7 @@ import (
 	"github.com/newstack-cloud/bluelink/libs/blueprint/core"
 	"github.com/newstack-cloud/bluelink/libs/blueprint/schema"
 	"github.com/newstack-cloud/bluelink/libs/blueprint/substitutions"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/consts"
 )
 
 const (
@@ -17,9 +18,15 @@ const (
 )
 
 // Supported runtime-to-image-repo mappings.
+//
+// Every OS-only runtime resolves to the core runtime image. There is no image
+// per compiled language and there should not be: the image carries the
+// runtime and no handlers, and the language-specific part is linked into the
+// handlers executable that the CLI builds and the runtime starts.
 var runtimeImageRepos = map[string]string{
-	"nodejs24.x": "ghcr.io/newstack-cloud/celerity-runtime-nodejs-24",
-	"python3.13": "ghcr.io/newstack-cloud/celerity-runtime-python-3-13",
+	"nodejs24.x":                 "ghcr.io/newstack-cloud/celerity-runtime-nodejs-24",
+	"python3.13":                 "ghcr.io/newstack-cloud/celerity-runtime-python-3-13",
+	consts.RuntimeOSOnlyDebian13: "ghcr.io/newstack-cloud/celerity-runtime-core",
 }
 
 // HandlerInfo holds extracted metadata about a handler resource.
@@ -96,12 +103,17 @@ func DetectRuntime(bp *schema.Blueprint) (string, error) {
 // projectFileRuntimes maps project files to their default runtime identifiers.
 // Used as a fallback when no handler resources exist in the blueprint
 // (decorator-driven projects where handlers are extracted from source code).
+// go.mod is last. A Go Celerity application is the only one of the three whose
+// project file routinely appears alongside another: a Node or Python project
+// with a Go tool of its own in the same directory is ordinary, and matching
+// go.mod first would read it as a Go application.
 var projectFileRuntimes = []struct {
 	File    string
 	Runtime string
 }{
 	{"package.json", "nodejs24.x"},
 	{"pyproject.toml", "python3.13"},
+	{"go.mod", consts.RuntimeOSOnlyDebian13},
 }
 
 // DetectRuntimeFromProject infers the runtime from project files in appDir.

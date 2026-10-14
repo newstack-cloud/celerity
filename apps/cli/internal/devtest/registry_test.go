@@ -3,6 +3,7 @@ package devtest
 import (
 	"testing"
 
+	"github.com/newstack-cloud/celerity/apps/cli/internal/consts"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 )
@@ -22,19 +23,27 @@ func (s *RegistryTestSuite) SetupTest() {
 }
 
 func (s *RegistryTestSuite) Test_nodejs_runtime_returns_node_runner() {
-	runner, err := RunnerForRuntime("nodejs22.x", s.logger)
+	runner, err := RunnerForRuntime("nodejs22.x", nil, s.logger)
 	s.Require().NoError(err)
 	s.Assert().IsType(&NodeRunner{}, runner)
 }
 
 func (s *RegistryTestSuite) Test_python_runtime_returns_python_runner() {
-	runner, err := RunnerForRuntime("python3.12.x", s.logger)
+	runner, err := RunnerForRuntime("python3.12.x", nil, s.logger)
 	s.Require().NoError(err)
 	s.Assert().IsType(&PythonRunner{}, runner)
 }
 
 func (s *RegistryTestSuite) Test_unknown_runtime_returns_error() {
-	_, err := RunnerForRuntime("rust1.75", s.logger)
+	_, err := RunnerForRuntime("rust1.75", nil, s.logger)
 	s.Assert().Error(err)
 	s.Assert().Contains(err.Error(), "no test runner for runtime")
+}
+
+// An OS-only runtime serves several languages, so the runner defers to the
+// toolchain for the command rather than detecting one from the runtime.
+func (s *RegistryTestSuite) Test_os_only_runtime_returns_the_toolchain_runner() {
+	runner, err := RunnerForRuntime(consts.RuntimeOSOnlyDebian13, nil, s.logger)
+	s.Require().NoError(err)
+	s.Assert().IsType(&OSHandlerRunner{}, runner)
 }

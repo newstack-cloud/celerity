@@ -65,12 +65,13 @@ func Merge(
 		)
 	}
 
-	// Link extracted handlers to the API resource so the runtime
-	// can discover them via linkSelector.byLabel matching.
+	// Wire each handler into the resources it belongs to, through the labels
+	// a link selector matches on.
 	if manifest.AllHandlers() > 0 {
 		linkHandlersToApi(bp, manifest)
 		linkHandlersToConsumers(bp, manifest, logger)
 		linkHandlersToSchedules(bp, manifest, logger)
+		linkHandlersToResources(bp, manifest, logger)
 	}
 
 	return bp, nil
@@ -82,6 +83,22 @@ func WriteMerged(
 	bp *schema.Blueprint,
 	format schema.SpecFormat,
 	outputDir string,
+) (string, error) {
+	return WriteMergedWithMode(bp, format, outputDir, 0o644)
+}
+
+// WriteMergedWithMode is WriteMerged with the file permissions stated.
+//
+// A separate entry point because the two callers need different modes. A dev
+// session's merged blueprint is ordinary generated output, while a deploy's
+// carries the environment's configuration values, secrets among them, seeded
+// so a first deploy can stand its store up, and that one must not be world
+// readable.
+func WriteMergedWithMode(
+	bp *schema.Blueprint,
+	format schema.SpecFormat,
+	outputDir string,
+	mode os.FileMode,
 ) (string, error) {
 	if err := os.MkdirAll(outputDir, 0o755); err != nil {
 		return "", fmt.Errorf("creating output directory: %w", err)
@@ -109,8 +126,14 @@ func WriteMerged(
 	outPath := filepath.Join(outputDir, filename)
 	tmpPath := outPath + ".tmp"
 
-	if err := os.WriteFile(tmpPath, data, 0o644); err != nil {
+	if err := os.WriteFile(tmpPath, data, mode); err != nil {
 		return "", fmt.Errorf("writing merged blueprint: %w", err)
+	}
+
+	// Set explicitly as well as passed to WriteFile, which applies the
+	// process umask and so cannot be relied on to produce the mode asked for.
+	if err := os.Chmod(tmpPath, mode); err != nil {
+		return "", fmt.Errorf("setting merged blueprint permissions: %w", err)
 	}
 
 	if err := os.Rename(tmpPath, outPath); err != nil {
@@ -135,9 +158,8 @@ func mergeHandler(
 	bp.Resources.Values[resourceName] = buildNewResource(resourceName, annotations, spec)
 }
 
-// fillExistingResource fills in missing annotations and spec fields from extracted metadata.
-// Blueprint-defined values take precedence for infrastructure config (e.g. timeout).
-// Extracted values take precedence for routing info (annotations).
+// Blueprint-defined values take precedence for infrastructure config
+// (e.g. timeout); extracted values take precedence for routing annotations.
 func fillExistingResource(
 	resource *schema.Resource,
 	resourceName string,
@@ -236,11 +258,9 @@ func setSpecField(spec *core.MappingNode, key string, value string) {
 	}
 }
 
-// linkHandlersToApi finds the first celerity/api resource in the blueprint,
-// adds a linkSelector to it (if not already set), and labels all extracted
-// handler resources so the runtime can discover them via label matching.
+// Labels every extracted handler resource for the blueprint's celerity/api
+// resource, so the runtime resolves them by label matching.
 func linkHandlersToApi(bp *schema.Blueprint, manifest *HandlerManifest) {
-	// Find the first celerity/api resource.
 	apiName := ""
 	for name, resource := range bp.Resources.Values {
 		if resource.Type != nil && resource.Type.Value == resourceTypeApi {
@@ -275,7 +295,6 @@ func linkHandlersToApi(bp *schema.Blueprint, manifest *HandlerManifest) {
 		handlerNames[h.ResourceName] = true
 	}
 
-	// Add matching labels to extracted handler resources.
 	apiResource := bp.Resources.Values[apiName]
 	for name, resource := range bp.Resources.Values {
 		if handlerNames[name] {
@@ -284,12 +303,11 @@ func linkHandlersToApi(bp *schema.Blueprint, manifest *HandlerManifest) {
 		}
 	}
 
-	// Register custom guards (from @Guard decorators) in the API auth config.
 	mergeCustomGuards(apiResource, bp)
 }
 
-// mergeCustomGuards scans handler resources for the customGuardAnnotation
-// and adds a corresponding { type: custom } entry in the API's spec.auth.guards.
+// Each handler carrying customGuardAnnotation gets a { type: custom } entry in
+// the API's spec.auth.guards.
 func mergeCustomGuards(apiResource *schema.Resource, bp *schema.Blueprint) {
 	ensureSpec(apiResource)
 
@@ -314,7 +332,6 @@ func mergeCustomGuards(apiResource *schema.Resource, bp *schema.Blueprint) {
 	}
 }
 
-// annotationStringValue reads a string annotation from a resource's metadata.
 func annotationStringValue(resource *schema.Resource, key string) string {
 	if resource.Metadata == nil || resource.Metadata.Annotations == nil {
 		return ""
@@ -330,7 +347,7 @@ func annotationStringValue(resource *schema.Resource, key string) string {
 	return s
 }
 
-// ensureSpecPath navigates (and creates if needed) nested MappingNode fields.
+// Navigates nested MappingNode fields, creating any that are absent.
 func ensureSpecPath(spec *core.MappingNode, keys ...string) *core.MappingNode {
 	current := spec
 	for _, key := range keys {
@@ -363,24 +380,21 @@ const consumerSourceAnnotation = "celerity.handler.consumer.source"
 // on handler methods decorated with @ScheduleHandler("scheduleName").
 const scheduleSourceAnnotation = "celerity.handler.schedule.source"
 
-// linkHandlersToConsumers links consumer-type handler resources to their
-// corresponding celerity/consumer resource so the Rust runtime can discover
-// them via linkSelector.byLabel matching.
+// Links consumer-type handler resources to their celerity/consumer resource,
+// so the runtime resolves them by label matching.
 func linkHandlersToConsumers(bp *schema.Blueprint, manifest *HandlerManifest, logger *zap.Logger) {
 	linkHandlersToSourceResources(bp, manifest, resourceTypeConsumer, consumerSourceAnnotation, logger)
 }
 
-// linkHandlersToSchedules links schedule-type handler resources to their
-// corresponding celerity/schedule resource.
+// Links schedule-type handler resources to their celerity/schedule resource.
 func linkHandlersToSchedules(bp *schema.Blueprint, manifest *HandlerManifest, logger *zap.Logger) {
 	linkHandlersToSourceResources(bp, manifest, resourceTypeSchedule, scheduleSourceAnnotation, logger)
 }
 
-// linkHandlersToSourceResources is the shared implementation for linking
-// handler resources to consumer or schedule source resources.
-// It groups handlers by their source annotation value (which is the resource
-// name of the consumer/schedule), adds a linkSelector to the source resource,
-// and labels the handler resources to match.
+// Shared by consumer and schedule linking. Handlers are grouped by their
+// source annotation value, which is the resource name of the consumer or
+// schedule, and each source gets a linkSelector its handlers are labelled to
+// match.
 func linkHandlersToSourceResources(
 	bp *schema.Blueprint,
 	manifest *HandlerManifest,
@@ -388,7 +402,6 @@ func linkHandlersToSourceResources(
 	sourceAnnotationKey string,
 	logger *zap.Logger,
 ) {
-	// Build a map: source resource name → list of handler resource names.
 	sourceToHandlers := map[string][]string{}
 	for _, h := range manifest.Handlers {
 		source, ok := h.Annotations[sourceAnnotationKey]
@@ -414,7 +427,6 @@ func linkHandlersToSourceResources(
 		return
 	}
 
-	// For each source resource, add linkSelector and label matching handlers.
 	for sourceName, handlerNames := range sourceToHandlers {
 		sourceResource, exists := bp.Resources.Values[sourceName]
 		if !exists {
@@ -433,7 +445,6 @@ func linkHandlersToSourceResources(
 			labelKey = "sourceSchedule"
 		}
 
-		// Add linkSelector to the source resource if not already set.
 		if sourceResource.LinkSelector == nil {
 			sourceResource.LinkSelector = &schema.LinkSelector{
 				ByLabel: &schema.StringMap{
@@ -442,7 +453,6 @@ func linkHandlersToSourceResources(
 			}
 		}
 
-		// Label handler resources to match the source's linkSelector.
 		labelValue := sourceName
 		if sourceResource.LinkSelector.ByLabel != nil {
 			// Use existing label key/value if linkSelector was already set.
@@ -478,8 +488,7 @@ func ensureLabels(resource *schema.Resource) {
 	}
 }
 
-// formatAnnotationValue converts an annotation value to its string representation.
-// JSON arrays (from extraction CLI) are joined with commas to match the
+// JSON arrays from the extraction CLI are joined with commas to match the
 // comma-separated format the runtime expects (e.g. "admin,jwt").
 func formatAnnotationValue(value any) string {
 	switch v := value.(type) {

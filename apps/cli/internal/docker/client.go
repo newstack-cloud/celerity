@@ -205,7 +205,7 @@ func (rc *RuntimeContainer) CleanupStale(
 ) error {
 	info, err := rc.client.ContainerInspect(ctx, containerName)
 	if err != nil {
-		// Container doesn't exist — nothing to clean up.
+		// The container does not exist, so there is nothing to clean up.
 		return nil
 	}
 
@@ -250,7 +250,7 @@ func buildHostConfig(cfg *ContainerConfig) *container.HostConfig {
 	return hostCfg
 }
 
-// pullProgressEvent matches the JSON structure from Docker's image pull stream.
+// Matches the JSON structure from Docker's image pull stream.
 type pullProgressEvent struct {
 	ID             string `json:"id"`
 	Status         string `json:"status"`
