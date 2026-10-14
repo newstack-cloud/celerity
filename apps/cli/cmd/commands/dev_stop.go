@@ -4,10 +4,10 @@ import (
 	"os"
 
 	"github.com/newstack-cloud/celerity/apps/cli/internal/compose"
-	"github.com/newstack-cloud/celerity/apps/cli/internal/config"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/devrun"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/devstate"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/docker"
+	"github.com/newstack-cloud/deploy-cli-sdk/config"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )

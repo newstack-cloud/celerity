@@ -13,14 +13,15 @@ import (
 	"time"
 
 	"github.com/newstack-cloud/celerity/apps/cli/internal/compose"
-	"github.com/newstack-cloud/celerity/apps/cli/internal/config"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/consts"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/devconfig"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/devrun"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/devtest"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/docker"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/handlertoolchain"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/preprocess"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/seed"
+	"github.com/newstack-cloud/deploy-cli-sdk/config"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -108,10 +109,13 @@ After tests complete, all infrastructure is torn down unless --no-teardown is se
 	confProvider.BindPFlag("devTestNoLocalAuth", testCmd.Flags().Lookup("no-local-auth"))
 	confProvider.BindEnvVar("devTestNoLocalAuth", "CELERITY_CLI_DEV_TEST_NO_LOCAL_AUTH")
 
+	testCmd.Flags().Bool("tracing", false, "Run a trace collector in the session and export the application's spans to it")
+	confProvider.BindPFlag("devTestTracing", testCmd.Flags().Lookup("tracing"))
+	confProvider.BindEnvVar("devTestTracing", "CELERITY_CLI_DEV_TEST_TRACING")
+
 	devCmd.AddCommand(testCmd)
 }
 
-// testFlags holds parsed CLI flags for dev test.
 type testFlags struct {
 	suites                []devtest.TestSuite
 	infraLevel            devtest.InfraLevel
@@ -154,9 +158,9 @@ func parseTestFlags(confProvider *config.Provider) (*testFlags, error) {
 	}, nil
 }
 
-// setupTestInfra resolves config, starts Docker dependencies and (for API suites)
-// the app container, then waits for health. Returns nil orchestrator when no
-// infrastructure is needed (unit-only suites).
+// Resolves config, starts Docker dependencies and, for API suites, the app
+// container, then waits for health. A nil orchestrator is returned when no
+// infrastructure is needed, as for unit-only suites.
 func setupTestInfra(
 	ctx context.Context,
 	opts devconfig.ResolveOpts,
@@ -250,8 +254,8 @@ func setupTestInfra(
 	return orch, resolved, nil
 }
 
-// buildTestEnv assembles the environment variables passed to the test process,
-// including host endpoints, config store IDs, and Valkey connection overrides.
+// Assembles the environment variables passed to the test process, covering host
+// endpoints, config store IDs and Valkey connection overrides.
 func buildTestEnv(resolved *devconfig.ResolvedConfig) map[string]string {
 	testEnv := map[string]string{}
 	if resolved == nil {
@@ -306,7 +310,6 @@ func runDevTest(ctx context.Context, confProvider *config.Provider) error {
 	var orch *devrun.Orchestrator
 	var resolved *devconfig.ResolvedConfig
 
-	// Set up signal handling for teardown.
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -319,8 +322,8 @@ func runDevTest(ctx context.Context, confProvider *config.Provider) error {
 		if orch == nil || flags.noTeardown {
 			return
 		}
-		// Only dump logs when tests failed or errored — on success
-		// the logs are noise.
+		// Logs are only dumped when tests failed or errored, since on success
+		// they are noise.
 		if testsFailed && flags.infraLevel >= devtest.InfraLevelCompose {
 			if logDir := orch.DumpLogs(context.Background()); logDir != "" {
 				output.PrintStep(fmt.Sprintf("Logs saved to %s", logDir))
@@ -332,7 +335,6 @@ func runDevTest(ctx context.Context, confProvider *config.Provider) error {
 		}
 	}
 
-	// Start infrastructure if needed.
 	if flags.infraLevel > devtest.InfraLevelNone {
 		orch, resolved, err = setupTestInfra(ctx, opts, flags, output, logger)
 		if err != nil {
@@ -341,8 +343,8 @@ func runDevTest(ctx context.Context, confProvider *config.Provider) error {
 		}
 	}
 
-	// Resolve runtime for the test runner.
-	// If we didn't resolve config (unit-only), detect runtime from project files.
+	// A unit-only run resolves no config, so the runtime for the test runner
+	// comes from the project files instead.
 	runtime := ""
 	appDir := opts.AppDir
 	if appDir == "" || appDir == "." {
@@ -359,7 +361,13 @@ func runDevTest(ctx context.Context, confProvider *config.Provider) error {
 		runtime = detectedRuntime
 	}
 
-	runner, err := devtest.RunnerForRuntime(runtime, logger)
+	toolchain, err := testToolchain(resolved, runtime, appDir)
+	if err != nil {
+		teardown()
+		return err
+	}
+
+	runner, err := devtest.RunnerForRuntime(runtime, toolchain, logger)
 	if err != nil {
 		teardown()
 		return err
@@ -386,7 +394,6 @@ func runDevTest(ctx context.Context, confProvider *config.Provider) error {
 		runConfig.HostPort = resolved.Port
 	}
 
-	// Run tests, handling signals.
 	resultChan := make(chan *devtest.RunResult, 1)
 	errChan := make(chan error, 1)
 	go func() {
@@ -444,6 +451,7 @@ func testResolveOpts(confProvider *config.Provider) devconfig.ResolveOpts {
 	serviceName, _ := confProvider.GetString("devTestServiceName")
 	verbose, _ := confProvider.GetBool("devTestVerbose")
 	noLocalAuth, _ := confProvider.GetBool("devTestNoLocalAuth")
+	tracing, _ := confProvider.GetBool("devTestTracing")
 
 	return devconfig.ResolveOpts{
 		BlueprintFile: blueprintFile,
@@ -456,6 +464,7 @@ func testResolveOpts(confProvider *config.Provider) devconfig.ResolveOpts {
 		Mode:          "test",
 		Verbose:       verbose,
 		LocalAuth:     !noLocalAuth,
+		Tracing:       tracing,
 	}
 }
 
@@ -481,8 +490,7 @@ func isValidSuite(s devtest.TestSuite) bool {
 	return slices.Contains(devtest.ValidSuites, s)
 }
 
-// detectRuntimeFromProject detects the runtime from project files when no
-// blueprint resolution is performed (unit-only mode).
+// Used in unit-only mode, where no blueprint resolution is performed.
 func detectRuntimeFromProject(appDir string) (string, error) {
 	if _, err := os.Stat(appDir + "/package.json"); err == nil {
 		return "nodejs", nil
@@ -491,7 +499,43 @@ func detectRuntimeFromProject(appDir string) (string, error) {
 		return "python", nil
 	}
 	if _, err := os.Stat(appDir + "/go.mod"); err == nil {
-		return "go", nil
+		// The OS-only runtime identifier rather than "go", because a Go
+		// application runs on one and that is what the runner registry and the
+		// conventions are keyed by.
+		return consts.RuntimeOSOnlyDebian13, nil
 	}
 	return "", fmt.Errorf("no package.json, pyproject.toml, or go.mod found in %s", appDir)
+}
+
+// Finds the build tooling whose test command a run should use.
+//
+// Taken from the resolved config where there is one, so the test run uses the
+// same toolchain the application was resolved with. A unit-only run resolves no
+// config at all, so one is worked out from the project directory instead.
+func testToolchain(
+	resolved *devconfig.ResolvedConfig,
+	runtime string,
+	appDir string,
+) (handlertoolchain.Toolchain, error) {
+	if resolved != nil {
+		return resolved.Toolchain, nil
+	}
+	if !handlertoolchain.IsOSOnly(runtime) {
+		return nil, nil
+	}
+
+	var handlerBuild *handlertoolchain.Config
+	if path := devconfig.FindDeployConfig(appDir); path != "" {
+		var err error
+		handlerBuild, err = devconfig.ReadHandlerBuild(path)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return handlertoolchain.Resolve(handlertoolchain.Options{
+		Runtime: runtime,
+		AppDir:  appDir,
+		Config:  handlerBuild,
+	})
 }

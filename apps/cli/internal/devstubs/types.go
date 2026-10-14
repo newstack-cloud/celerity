@@ -3,10 +3,10 @@ package devstubs
 // ServiceConfig is the service-level configuration parsed from
 // stubs/<service>/service.yaml.
 type ServiceConfig struct {
-	Port            int               `yaml:"port"`
-	ConfigKey       string            `yaml:"configKey"`
-	ConfigNamespace string            `yaml:"configNamespace,omitempty"`
-	DefaultResponse map[string]any    `yaml:"defaultResponse,omitempty"`
+	Port            int            `yaml:"port"`
+	ConfigKey       string         `yaml:"configKey"`
+	ConfigNamespace string         `yaml:"configNamespace,omitempty"`
+	DefaultResponse map[string]any `yaml:"defaultResponse,omitempty"`
 }
 
 // EndpointStubFile is the structure of a single endpoint stub file
