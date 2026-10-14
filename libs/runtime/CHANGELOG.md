@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.8.1...runtime-core/v0.9.0) (2026-10-14)
+
+
+### Features
+
+* **lib-rt-helpers:** add base64 for the binary frame vectors ([77e85cd](https://github.com/newstack-cloud/celerity/commit/77e85cd47f99aef641166be1bb52c2d330bf5113))
+
 ## [0.8.1](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.8.0...runtime-core/v0.8.1) (2026-08-27)
 
 
