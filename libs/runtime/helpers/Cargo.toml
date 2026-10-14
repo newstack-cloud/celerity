@@ -38,3 +38,4 @@ pretty_assertions = "1.4.0"
 coverage-helper = "0.2.2"
 hyper-util = { version = "0.1.6", features = ["client", "client-legacy"] }
 http-body-util = "0.1.2"
+base64 = "0.22.1"
