@@ -80,7 +80,6 @@ func runHook(
 		return fmt.Errorf("starting hook %s: %w", scriptName, err)
 	}
 
-	// Stream both stdout and stderr concurrently.
 	done := make(chan struct{}, 2)
 	go streamLines(stdoutPipe, scriptName, false, onOutput, done)
 	go streamLines(stderrPipe, scriptName, true, onOutput, done)
@@ -133,7 +132,7 @@ func checkExecutable(path string) error {
 
 	if runtime.GOOS != "windows" && info.Mode()&0o111 == 0 {
 		return fmt.Errorf(
-			"hook script %s is not executable — run: chmod +x %s",
+			"hook script %s is not executable. Run chmod +x %s to fix it",
 			filepath.Base(path), path,
 		)
 	}

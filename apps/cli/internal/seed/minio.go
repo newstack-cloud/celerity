@@ -101,7 +101,6 @@ func (u *MinIOUploader) Upload(
 // DetectContentType determines the MIME type for an object by extension,
 // falling back to http.DetectContentType for unrecognised extensions.
 func DetectContentType(objectKey string, data []byte) string {
-	// Try extension-based detection first for common types.
 	ext := filepath.Ext(objectKey)
 	switch ext {
 	case ".json":
@@ -126,6 +125,5 @@ func DetectContentType(objectKey string, data []byte) string {
 		return "text/plain"
 	}
 
-	// Fall back to content sniffing.
 	return http.DetectContentType(data)
 }

@@ -63,7 +63,6 @@ func NewValkeyConfigSeeder(endpoint string, logger *zap.Logger) (*ValkeyConfigSe
 func (s *ValkeyConfigSeeder) SeedConfig(ctx context.Context, storeID string, values map[string]string) error {
 	merged := make(map[string]string)
 
-	// Read existing data if present.
 	existing, err := s.client.Get(ctx, storeID).Result()
 	if err == nil && existing != "" {
 		if jsonErr := json.Unmarshal([]byte(existing), &merged); jsonErr != nil {
@@ -191,11 +190,11 @@ func ConfigStoreIDEnvVars(bp *schema.Blueprint) map[string]string {
 		// Set the NAMESPACE so the SDK's config layer registers the namespace
 		// under the original camelCase name (e.g. "appConfig") rather than the
 		// lowercased env-var-derived name (e.g. "appconfig").
-		// STORE_PREFIX is intentionally not set for local dev — each config
-		// namespace has its own dedicated Valkey key so there is no shared
-		// key space requiring prefix-based filtering. STORE_PREFIX is used
-		// in deployed environments (e.g. AWS SSM Parameter Store) where keys
-		// share a path prefix.
+		// STORE_PREFIX is intentionally not set for local dev, where each
+		// config namespace has its own dedicated Valkey key and there is no
+		// shared key space to filter by prefix. It is used in deployed
+		// environments such as AWS SSM Parameter Store, where keys share a
+		// path prefix.
 		configNamespaceKey := fmt.Sprintf("CELERITY_CONFIG_%s_NAMESPACE", upper)
 		envVars[configNamespaceKey] = cfg.StoreName
 	}
@@ -238,9 +237,8 @@ func ResourceConfigValues(bp *schema.Blueprint) map[string]string {
 	return values
 }
 
-// cacheConfigValues generates credential config keys for celerity/cache resources.
-// The SDK's CacheLayer reads {configKey}_host, _port, _authMode, _tls from the
-// resources namespace.
+// The SDK's CacheLayer reads {configKey}_host, _port, _authMode and _tls from
+// the resources namespace.
 func cacheConfigValues(bp *schema.Blueprint) map[string]string {
 	values := map[string]string{}
 	for _, resource := range bp.Resources.Values {
@@ -260,9 +258,9 @@ func cacheConfigValues(bp *schema.Blueprint) map[string]string {
 	return values
 }
 
-// simpleResourceConfigValues generates config keys for resources of the given type
-// where the config key and value are both the resource's spec.name (or the resource
-// name as fallback). Used for datastore, bucket, queue, and topic resources.
+// Covers datastore, bucket, queue and topic resources, where the config key and
+// the value are both the resource's spec.name, falling back to the resource
+// name.
 func simpleResourceConfigValues(bp *schema.Blueprint, resourceType string) map[string]string {
 	values := map[string]string{}
 	for resourceName, resource := range bp.Resources.Values {
@@ -278,10 +276,7 @@ func simpleResourceConfigValues(bp *schema.Blueprint, resourceType string) map[s
 	return values
 }
 
-// sqlDatabaseConfigValues generates the credential config keys for all
-// celerity/sqlDatabase resources in the blueprint.
-//
-// For each database resource with spec.name "audit", generates:
+// A database resource with spec.name "audit" yields the keys
 //
 //	audit_host, audit_port, audit_database, audit_user,
 //	audit_password, audit_engine, audit_authMode, audit_ssl
