@@ -6,14 +6,14 @@ import (
 	"github.com/newstack-cloud/bluelink/libs/blueprint/schema"
 )
 
-// resourceLink describes a single resource in the CELERITY_RESOURCE_LINKS topology.
+// One resource in the CELERITY_RESOURCE_LINKS topology.
 type resourceLink struct {
 	Type      string `json:"type"`
 	ConfigKey string `json:"configKey"`
 }
 
-// blueprintTypeToLinkType maps blueprint resource type strings to the link type
-// names expected by the SDK's resource layers.
+// Blueprint resource types mapped onto the link type names the SDK's resource
+// layers expect.
 var blueprintTypeToLinkType = map[string]string{
 	"celerity/datastore":   "datastore",
 	"celerity/sqlDatabase": "sqlDatabase",
@@ -35,7 +35,10 @@ var blueprintTypeToLinkType = map[string]string{
 //
 // The configKey is derived from spec.name (falling back to the resource name).
 func ResourceLinksJSON(bp *schema.Blueprint) (string, error) {
-	if bp.Resources == nil {
+	// A nil blueprint is not an error. The Lambda build bundles an empty links
+	// file when it has no blueprint to derive one from, so the SDK finds the
+	// file absent of links rather than missing altogether.
+	if bp == nil || bp.Resources == nil {
 		return "", nil
 	}
 

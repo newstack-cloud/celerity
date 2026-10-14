@@ -91,7 +91,6 @@ func (s *DynamoDBSeeder) PutItem(ctx context.Context, tableName string, itemJSON
 	return nil
 }
 
-// toTableInput converts a seed.TableDefinition to a dynamoconv.TableInput.
 func toTableInput(td TableDefinition) dynamoconv.TableInput {
 	ti := dynamoconv.TableInput{
 		Name: td.Name,

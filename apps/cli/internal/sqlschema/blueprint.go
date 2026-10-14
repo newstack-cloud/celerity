@@ -24,12 +24,12 @@ func CollectDatabaseResources(bp *schema.Blueprint, projectRoot string) []Databa
 		}
 
 		dr := DatabaseResource{
-			ResourceName: name,
-			Name:         specString(resource.Spec, "name"),
-			Engine:       specString(resource.Spec, "engine"),
-			SchemaPath:   specString(resource.Spec, "schemaPath"),
+			ResourceName:   name,
+			Name:           specString(resource.Spec, "name"),
+			Engine:         specString(resource.Spec, "engine"),
+			SchemaPath:     specString(resource.Spec, "schemaPath"),
 			MigrationsPath: specString(resource.Spec, "migrationsPath"),
-			AuthMode:     specString(resource.Spec, "authMode"),
+			AuthMode:       specString(resource.Spec, "authMode"),
 		}
 
 		if dr.Name == "" {
@@ -94,8 +94,8 @@ func resolvePath(projectRoot, p string) string {
 	return abs
 }
 
-// ResourceTypeSqlDatabase is the blueprint resource type for SQL databases.
-// Exported for use by the compose generator.
+// ResourceType returns the blueprint resource type for SQL databases, for use by
+// the compose generator.
 func ResourceType() string {
 	return resourceTypeSqlDatabase
 }

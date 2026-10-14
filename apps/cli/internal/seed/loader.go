@@ -113,8 +113,8 @@ func ResolveSecretsDir(appDir string, mode string) string {
 	return filepath.Join(appDir, "secrets", "local")
 }
 
-// loadNoSQLSeed reads subdirectories of nosql/, each representing a table.
-// Each .json file in a subdirectory is a single record.
+// Each subdirectory of nosql/ is a table and each .json file within it a single
+// record.
 func loadNoSQLSeed(nosqlDir string) ([]NoSQLTableSeed, error) {
 	if _, err := os.Stat(nosqlDir); os.IsNotExist(err) {
 		return nil, nil
@@ -150,8 +150,8 @@ func loadNoSQLSeed(nosqlDir string) ([]NoSQLTableSeed, error) {
 	return tables, nil
 }
 
-// loadSQLSeed reads subdirectories of sql/, each representing a database.
-// Each .sql file in a subdirectory is a seed script executed in filename-sorted order.
+// Each subdirectory of sql/ is a database and each .sql file within it a seed
+// script, executed in filename-sorted order.
 func loadSQLSeed(sqlDir string) ([]SQLDatabaseSeed, error) {
 	if _, err := os.Stat(sqlDir); os.IsNotExist(err) {
 		return nil, nil
@@ -229,7 +229,6 @@ func loadHooks(hooksDir string) ([]string, error) {
 	return collectFiles(hooksDir, ".sh")
 }
 
-// collectFiles returns sorted absolute paths of files with the given extension.
 func collectFiles(dir string, ext string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -251,7 +250,7 @@ func collectFiles(dir string, ext string) ([]string, error) {
 	return files, nil
 }
 
-// collectAllFiles returns sorted absolute paths of all files in a directory (non-recursive).
+// Not recursive.
 func collectAllFiles(dir string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
