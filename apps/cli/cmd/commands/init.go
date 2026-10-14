@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/newstack-cloud/celerity/apps/cli/internal/config"
+	"github.com/newstack-cloud/bluelink/libs/common/core"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/consts"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/tui/initui"
-	"github.com/newstack-cloud/bluelink/libs/common/core"
+	"github.com/newstack-cloud/deploy-cli-sdk/config"
 	"github.com/spf13/cobra"
 )
 

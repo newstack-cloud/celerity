@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/newstack-cloud/celerity/apps/cli/internal/engine"
 	"github.com/newstack-cloud/bluelink/libs/deploy-engine-client/types"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/engine"
 	"go.uber.org/zap"
 )
 
@@ -33,9 +33,13 @@ func NewValidateHandler(
 
 		streamTo := make(chan types.BlueprintValidationEvent)
 		errChan := make(chan error)
+		// LastEventID is exclusive and comes from the create call, so the
+		// stream starts after whatever had already happened by then rather
+		// than replaying it.
 		err = deployEngine.StreamBlueprintValidationEvents(
 			ctx,
-			blueprintValidation.ID,
+			blueprintValidation.Data.ID,
+			blueprintValidation.LastEventID,
 			streamTo,
 			errChan,
 		)

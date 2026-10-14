@@ -81,10 +81,11 @@ func (s *ValidateHandlerTestSuite) Test_context_cancellation_returns_error() {
 		StreamBlueprintValidationEventsFn: func(
 			_ context.Context,
 			_ string,
+			_ string,
 			streamTo chan<- types.BlueprintValidationEvent,
 			_ chan<- error,
 		) error {
-			// Don't close the channel — let the context cancel
+			// The channel is left open so the context cancellation ends it.
 			return nil
 		},
 	}
@@ -105,6 +106,7 @@ func (s *ValidateHandlerTestSuite) Test_error_from_error_channel_propagates() {
 		CreateBlueprintValidationResult: &manage.BlueprintValidation{ID: "val-123"},
 		StreamBlueprintValidationEventsFn: func(
 			_ context.Context,
+			_ string,
 			_ string,
 			_ chan<- types.BlueprintValidationEvent,
 			errChan chan<- error,

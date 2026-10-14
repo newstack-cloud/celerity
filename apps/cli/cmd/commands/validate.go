@@ -7,11 +7,11 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/newstack-cloud/celerity/apps/cli/cmd/utils"
-	"github.com/newstack-cloud/celerity/apps/cli/internal/config"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/engine"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/handlers"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/tui/styles"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/tui/validateui"
+	"github.com/newstack-cloud/deploy-cli-sdk/config"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -43,12 +43,11 @@ func setupValidateCommand(rootCmd *cobra.Command, confProvider *config.Provider)
 				handler := handlers.NewValidateHandler(
 					deployEngine,
 					blueprintFile,
-					// When not in a terminal, print output
-					// that is intended primarily for a human to read
-					// should always go to stdout for the process.
+					// Outside a terminal, output intended primarily for a
+					// human to read still goes to the process stdout.
 					os.Stdout,
-					// Logger is used to for more verbose, technical output
-					// that is intended primarily for debugging.
+					// The logger takes the more verbose, technical output
+					// intended for debugging.
 					logger,
 				)
 				return handler.Handle(context.TODO())
