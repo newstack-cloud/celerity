@@ -1,0 +1,10 @@
+{
+  "deployTarget": {
+    "name": "aws",
+    "appEnv": "production",
+    "config": {
+      "aws.profile": "prod-account",
+      "aws.region": "eu-west-1"
+    }
+  }
+}

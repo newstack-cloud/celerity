@@ -1,0 +1,10 @@
+{
+  "deployTarget": {
+    "name": "aws",
+    "appEnv": "staging",
+    "config": {
+      "aws.profile": "staging-account",
+      "aws.region": "us-east-1"
+    }
+  }
+}
