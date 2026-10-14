@@ -8,6 +8,10 @@ gen-*.go
 *.so
 *.dylib
 
+# The compiled sidecar. `go build` with no -o writes it here under the module
+# basename, so it lands next to the source rather than in a build directory.
+/local-events
+
 # Test binary, built with `go test -c`
 *.test
 

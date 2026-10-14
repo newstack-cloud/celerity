@@ -16,3 +16,9 @@ node_modules
 **/.claude
 
 blueprint-ls.log
+
+# Design records, implementation plans and working notes. Kept next to the
+# project they describe but deliberately unpublished, since the documentation
+# that ships lives in the celerity docs site rather than here. One rule covers
+# every sub-project, so a new one needs no change to this file.
+**/docs/internal/
