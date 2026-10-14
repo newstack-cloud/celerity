@@ -1,14 +1,18 @@
 //! Chooses which queued event goes to which handler stream, and when.
 //!
 //! Events arrive on one bounded queue but are not dispatched from it directly.
-//! A single line shared by every handler tag is head-of-line blocking waiting
-//! to happen, an application with a one millisecond health check and a five
-//! second report endpoint puts both in the same queue, so fifty report requests
-//! at the head hold up every health check behind them. That is how a slow
-//! endpoint takes down a liveness probe.
+//! The credit window is finite, so only so many events can be in flight to a
+//! stream at once, and on a single line shared by every handler tag the order
+//! events were queued in is what decides which of them get those places. Take
+//! an application with a one millisecond health check and a five second report
+//! endpoint on that line, a health check queued behind fifty reports cannot be
+//! dispatched until enough of them have completed and returned their places, so
+//! an answer that takes a millisecond to produce is held for seconds waiting
+//! for one. That is how a slow endpoint takes down a liveness probe.
 //!
-//! Events are therefore partitioned into one queue per handler tag, and two
-//! independent limits decide what may be sent:
+//! Events are therefore partitioned into one queue per handler tag, so a tag is
+//! offered a place as soon as it can take one however deep another tag's queue
+//! is, and two independent limits decide what may be sent:
 //!
 //! - **Credit**, which a handler stream grants and the runtime consumes. It
 //!   bounds total in-flight work for that stream and is sized to the handler's
@@ -19,6 +23,12 @@
 //! Neither is sufficient alone, credit sizes the pool correctly, caps stop a
 //! single tag monopolising it. Among the tags that can be served, selection is
 //! round-robin, which is enough while scheduling policy stays runtime-side.
+//!
+//! A queue per tag is about the order events are dispatched in, not about how
+//! many run at once. A tag holds as many places in the window as its cap and
+//! the reservation for idle tags allow, so several events for the same tag are
+//! commonly in flight together. Round-robin decides which tag is offered a
+//! place next, it does not make a tag wait for its previous event to finish.
 //!
 //! Nothing here knows about specific transport. A stream is somewhere events can be sent and
 //! a source of credit, so the dispatcher can be exercised without a transport.
