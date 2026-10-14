@@ -42,13 +42,16 @@ func startValidateStreamCmd(model ValidateModel, logger *zap.Logger) tea.Cmd {
 			&types.CreateBlueprintValidationQuery{},
 		)
 		if err != nil {
-			time.Sleep(10 * time.Second)
 			return ValidateErrMsg{engine.SimplifyError(err, logger)}
 		}
 
+		// LastEventID is exclusive and comes from the create call, so the
+		// stream starts after whatever had already happened by then rather
+		// than replaying it.
 		err = model.engine.StreamBlueprintValidationEvents(
 			context.TODO(),
-			blueprintValidation.ID,
+			blueprintValidation.Data.ID,
+			blueprintValidation.LastEventID,
 			model.resultStream,
 			model.errStream,
 		)

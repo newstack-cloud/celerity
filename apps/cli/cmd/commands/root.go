@@ -6,7 +6,7 @@ import (
 	"runtime"
 
 	"github.com/newstack-cloud/celerity/apps/cli/cmd/utils"
-	"github.com/newstack-cloud/celerity/apps/cli/internal/config"
+	"github.com/newstack-cloud/deploy-cli-sdk/config"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -93,6 +93,9 @@ along with blueprints used for Infrastructure as Code.`,
 	setupInitCommand(rootCmd, confProvider)
 	setupValidateCommand(rootCmd, confProvider)
 	setupDevCommand(rootCmd, confProvider)
+	setupBuildCommand(rootCmd, confProvider)
+	setupConfigCommand(rootCmd, confProvider)
+	setupSchemaCommand(rootCmd, confProvider)
 
 	return rootCmd
 }
