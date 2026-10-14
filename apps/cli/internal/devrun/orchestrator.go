@@ -12,10 +12,13 @@ import (
 
 	"github.com/newstack-cloud/bluelink/libs/blueprint/schema"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/blueprint"
+	"runtime"
+
 	"github.com/newstack-cloud/celerity/apps/cli/internal/compose"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/devlogs"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/devstate"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/docker"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/handlertoolchain"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/preprocess"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/seed"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/sqlschema"
@@ -44,6 +47,12 @@ type OrchestratorConfig struct {
 	Manifest     *preprocess.HandlerManifest
 	ContainerCfg *docker.ContainerConfig
 	ComposeCfg   *compose.ComposeConfig
+
+	// Toolchain builds the handlers executable, and is nil for a runtime that
+	// hosts the language itself.
+	Toolchain handlertoolchain.Toolchain
+	// HandlersExecutable is where that executable is written on the host.
+	HandlersExecutable string
 }
 
 // Orchestrator manages the full dev run lifecycle.
@@ -51,7 +60,7 @@ type Orchestrator struct {
 	config    OrchestratorConfig
 	docker    docker.RuntimeContainerManager
 	compose   *compose.ComposeManager
-	extractor *preprocess.Extractor
+	extractor Extractor
 	output    *Output
 	logger    *zap.Logger
 
@@ -64,7 +73,7 @@ func NewOrchestrator(
 	config OrchestratorConfig,
 	dockerMgr docker.RuntimeContainerManager,
 	composeMgr *compose.ComposeManager,
-	extractor *preprocess.Extractor,
+	extractor Extractor,
 	output *Output,
 	logger *zap.Logger,
 ) *Orchestrator {
@@ -96,16 +105,13 @@ func (o *Orchestrator) RunForeground(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// Start file watcher in background.
 	go o.startWatcher(ctx)
 
-	// Stream logs in background.
 	logDone := make(chan error, 1)
 	go func() {
 		logDone <- o.streamLogs(ctx)
 	}()
 
-	// Wait for shutdown signal or log stream end.
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
@@ -166,12 +172,12 @@ func (o *Orchestrator) Shutdown(ctx context.Context) error {
 }
 
 // DumpLogs syncs all container logs to files in .celerity/logs/ before teardown.
-// This is called by `dev test` so logs are preserved after the environment is torn down.
-// Returns the log directory path, or empty string if no logs were written.
+// This is called by `dev test` so logs are preserved after the environment is
+// torn down. It returns the log directory path, whether or not anything was
+// written to it.
 func (o *Orchestrator) DumpLogs(ctx context.Context) string {
 	logDir := filepath.Join(celerityDir(o.config.AppDir), "logs")
 
-	// Dump compose service logs (datastore, stubs, valkey, etc.)
 	o.dumpComposeLogs(ctx, logDir)
 
 	if o.containerID == "" {
@@ -205,8 +211,6 @@ func (o *Orchestrator) DumpLogs(ctx context.Context) string {
 	return result.LogDir
 }
 
-// dumpComposeLogs writes each compose service's logs to a separate file
-// in the log directory (e.g. stubs.log, datastore.log, valkey.log).
 func (o *Orchestrator) dumpComposeLogs(ctx context.Context, logDir string) {
 	if o.compose == nil {
 		return
@@ -586,21 +590,21 @@ func (o *Orchestrator) applySqlSchemas(
 			zap.String("migrationsPath", db.MigrationsPath),
 		)
 
-		// Create the database if it doesn't exist (using admin connection).
 		if err := applier.EnsureDatabase(ctx, db.Name); err != nil {
 			return fmt.Errorf("ensuring database %s: %w", db.Name, err)
 		}
 
-		// Connect to the target database for schema + migration application.
 		dbApplier, err := applier.ForDatabase(db.Name)
 		if err != nil {
 			return fmt.Errorf("connecting to database %s: %w", db.Name, err)
 		}
-		if err := dbApplier.ApplyAll(ctx, db.SchemaPath, db.MigrationsPath, db.Engine); err != nil {
+		if err := dbApplier.Apply(ctx, db.SchemaPath, db.MigrationsPath, db.Engine); err != nil {
 			dbApplier.Close()
 			return fmt.Errorf("applying schema for database %s: %w", db.Name, err)
 		}
 		dbApplier.Close()
+
+		o.warnOnUncommittedSchemaChanges(ctx, applier, db)
 	}
 
 	o.output.PrintStep(fmt.Sprintf("SQL schemas applied (%d databases)", len(dbResources)))
@@ -703,9 +707,8 @@ func (o *Orchestrator) createSQLSeeder(
 	}, nil
 }
 
-// sqlSeederAdapter adapts sqlschema.Applier to the seed.SQLSeeder interface.
-// It uses the admin Applier to derive per-database connections on demand,
-// caching them for the lifetime of the seed run.
+// Per-database connections are derived from the admin Applier on demand and
+// cached for the lifetime of the seed run.
 type sqlSeederAdapter struct {
 	admin *sqlschema.Applier
 	conns map[string]*sqlschema.Applier
@@ -797,6 +800,19 @@ func (o *Orchestrator) printSeedSummary(result *seed.SeedResult) {
 }
 
 func (o *Orchestrator) startContainer(ctx context.Context) error {
+	// Built before the container is created rather than after. The core
+	// runtime starts the executable itself as soon as it is serving, and
+	// exits non-zero when it is not there, so a container started first would
+	// race the build and usually lose.
+	if o.config.Toolchain != nil {
+		o.output.PrintProgress("Building handlers executable...")
+		if err := o.buildHandlersExecutable(ctx); err != nil {
+			o.output.PrintError("Failed to build the handlers executable", err)
+			return err
+		}
+		o.output.PrintStep("Handlers executable built")
+	}
+
 	o.output.PrintProgress("Starting container...")
 	if err := o.docker.CleanupStale(ctx, o.config.ContainerCfg.ContainerName); err != nil {
 		o.logger.Warn("stale container cleanup failed", zap.Error(err))
@@ -810,6 +826,9 @@ func (o *Orchestrator) startContainer(ctx context.Context) error {
 
 	o.containerID = containerID
 	o.output.PrintStep(fmt.Sprintf("Container started (%s)", o.config.ContainerCfg.ContainerName))
+	if o.config.ComposeCfg != nil && o.config.ComposeCfg.TracingUIURL != "" {
+		o.output.PrintInfo(fmt.Sprintf("Traces: %s", o.config.ComposeCfg.TracingUIURL))
+	}
 	return nil
 }
 
@@ -836,6 +855,12 @@ func (o *Orchestrator) startWatcher(ctx context.Context) {
 		return
 	}
 
+	var watchPaths *handlertoolchain.WatchPaths
+	if o.config.Toolchain != nil {
+		paths := o.config.Toolchain.WatchPaths()
+		watchPaths = &paths
+	}
+
 	watcher := NewHandlerWatcher(WatcherConfig{
 		AppDir:      o.config.AppDir,
 		Runtime:     o.config.Runtime,
@@ -846,6 +871,8 @@ func (o *Orchestrator) startWatcher(ctx context.Context) {
 		ContainerID: o.containerID,
 		Output:      o.output,
 		Logger:      o.logger,
+		Rebuild:     o.rebuildHandlers(),
+		WatchPaths:  watchPaths,
 	}, o.manifest)
 
 	if err := watcher.Watch(ctx); err != nil {
@@ -926,7 +953,6 @@ func HandleStaleState(
 		)
 	}
 
-	// For detached mode, check if container is still running.
 	if state.Detached && state.ContainerID != "" {
 		running, _ := dockerMgr.IsRunning(ctx, state.ContainerID)
 		if running {
@@ -1006,7 +1032,105 @@ func LoadStateForCommand(appDir string) (*devstate.DevState, error) {
 	return state, nil
 }
 
-// celerityDir returns the .celerity directory path.
 func celerityDir(appDir string) string {
 	return filepath.Join(appDir, ".celerity")
+}
+
+// Nil where the runtime hosts the language itself and there is nothing to
+// build.
+func (o *Orchestrator) rebuildHandlers() func(context.Context) error {
+	if o.config.Toolchain == nil {
+		return nil
+	}
+	return func(ctx context.Context) error {
+		return o.buildHandlersExecutable(ctx)
+	}
+}
+
+// Compiles the application for the architecture the container runs at, which is
+// the Docker daemon's rather than this machine's for the reasons set out on
+// docker.DaemonArchitecture.
+func (o *Orchestrator) buildHandlersExecutable(ctx context.Context) error {
+	arch, err := o.containerArchitecture(ctx)
+	if err != nil {
+		return err
+	}
+
+	o.logger.Info("building the handlers executable",
+		zap.String("toolchain", o.config.Toolchain.Name()),
+		zap.String("arch", arch),
+	)
+
+	err = o.config.Toolchain.BuildBinary(ctx, handlertoolchain.BinaryParams{
+		AppDir:       o.config.AppDir,
+		OS:           "linux",
+		Arch:         arch,
+		OutputPath:   o.config.HandlersExecutable,
+		DeployTarget: o.config.DeployTarget,
+		Mode:         handlertoolchain.ModeDev,
+	})
+	if err != nil {
+		return fmt.Errorf("building the handlers executable: %w", err)
+	}
+
+	return handlertoolchain.CheckArchitecture(o.config.HandlersExecutable, arch)
+}
+
+// Falls back to this machine's architecture where the daemon does not report
+// one, which also covers a manager that does not implement the interface.
+func (o *Orchestrator) containerArchitecture(ctx context.Context) (string, error) {
+	type architectureReporter interface {
+		DaemonArchitecture(ctx context.Context) (string, error)
+	}
+
+	reporter, ok := o.docker.(architectureReporter)
+	if !ok {
+		return runtime.GOARCH, nil
+	}
+
+	arch, err := reporter.DaemonArchitecture(ctx)
+	if err != nil {
+		o.logger.Warn("could not read the Docker daemon architecture, using this machine's",
+			zap.String("arch", runtime.GOARCH),
+			zap.Error(err),
+		)
+		return runtime.GOARCH, nil
+	}
+	return arch, nil
+}
+
+// Warns when the schema YAML has moved ahead of the committed migrations. The
+// local database is built from the migration history alone, so those edits are
+// not present in it until `celerity schema diff` captures them.
+//
+// The check is advisory, so a failure to run it, for want of room for a scratch
+// database say, must not stop the dev environment coming up.
+func (o *Orchestrator) warnOnUncommittedSchemaChanges(
+	ctx context.Context,
+	applier *sqlschema.Applier,
+	db sqlschema.DatabaseResource,
+) {
+	pending, err := applier.HasUncommittedSchemaChanges(
+		ctx, db.SchemaPath, db.MigrationsPath, db.Engine, scratchDBName(db.Name),
+	)
+	if err != nil {
+		o.logger.Debug("could not check for uncommitted schema changes",
+			zap.String("database", db.Name), zap.Error(err))
+		return
+	}
+	if !pending {
+		return
+	}
+
+	o.output.PrintWarning(fmt.Sprintf(
+		"Schema YAML for %q has changes with no committed migration. The local database "+
+			"was built from the migration history, so they are not applied. "+
+			"Run `celerity schema diff` to capture them.", db.Name,
+	), nil)
+}
+
+// Names the throwaway database the uncommitted-changes check replays
+// migrations into, created and dropped within a single check.
+func scratchDBName(dbName string) string {
+	return dbName + "_celerity_dev_check"
 }

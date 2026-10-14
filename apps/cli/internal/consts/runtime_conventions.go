@@ -9,7 +9,15 @@ type RuntimeConventions struct {
 	// First match on disk wins. If none exist, the first path is used as the default.
 	DefaultModulePaths []string
 
+	// WatchRoots are the directories, relative to the application directory,
+	// that the watcher walks. Node.js and Python projects keep their handlers
+	// under src/; a Go module has them at the module root, so this is not a
+	// constant the watcher can assume.
+	WatchRoots []string
+
 	// WatchExtensions are the file extensions the watcher considers relevant.
+	// Empty for an OS-only runtime, where the extensions belong to whichever
+	// language built the handlers executable and come from the toolchain.
 	WatchExtensions []string
 
 	// WatchSkipDirs are directory names the watcher should skip.
@@ -24,34 +32,59 @@ type RuntimeConventions struct {
 var runtimeConventions = map[string]RuntimeConventions{
 	LanguageNodeJS: {
 		DefaultModulePaths: []string{"src/app-module.ts", "src/app.module.ts"},
+		WatchRoots:         []string{"src"},
 		WatchExtensions:    []string{".ts", ".js", ".mjs"},
 		WatchSkipDirs:      []string{"node_modules"},
 		SupportsExtraction: true,
 	},
 	LanguagePython: {
 		DefaultModulePaths: []string{"src/app_module.py"},
+		WatchRoots:         []string{"src"},
 		WatchExtensions:    []string{".py"},
 		WatchSkipDirs:      []string{"__pycache__", ".venv", "venv", ".mypy_cache"},
 		SupportsExtraction: true,
 	},
-	LanguageGo: {
-		DefaultModulePaths: []string{"main.go"},
-		WatchExtensions:    []string{".go"},
-		WatchSkipDirs:      []string{"vendor"},
-		SupportsExtraction: false,
+	// Keyed by the OS-only prefix rather than by a language, because Go
+	// handlers declare os-only.debian13 and no runtime identifier starts with
+	// "go".
+	//
+	// WatchExtensions is empty and DefaultModulePaths unset because both are
+	// properties of the language that built the handlers executable, which the
+	// runtime identifier does not name. The resolved toolchain supplies them.
+	RuntimeOSOnly: {
+		WatchRoots:         []string{"."},
+		WatchSkipDirs:      []string{".celerity", "vendor", "target", "node_modules"},
+		SupportsExtraction: true,
 	},
 }
 
 // ConventionsForRuntime returns the RuntimeConventions for the given runtime string.
-// The runtime string (e.g. "nodejs24.x", "python3.13") is matched by prefix
-// against known language keys.
+// The runtime string (e.g. "nodejs24.x", "python3.13", "os-only.debian13") is
+// matched by prefix against the known runtime keys.
 func ConventionsForRuntime(runtime string) (RuntimeConventions, bool) {
-	for prefix, conv := range runtimeConventions {
-		if strings.HasPrefix(runtime, prefix) {
-			return conv, true
+	return longestPrefixMatch(runtimeConventions, runtime)
+}
+
+// The longest prefix wins rather than the first match, because Go map
+// iteration is unordered and a first-match loop over two keys that both prefix
+// a runtime identifier picks a different one from run to run. Nothing
+// registered today overlaps, which is exactly why the bug would be found long
+// after the key that introduced it was added.
+func longestPrefixMatch[T any](m map[string]T, runtime string) (T, bool) {
+	var (
+		best    T
+		found   bool
+		longest int
+	)
+	for prefix, value := range m {
+		if !strings.HasPrefix(runtime, prefix) {
+			continue
+		}
+		if !found || len(prefix) > longest {
+			best, found, longest = value, true, len(prefix)
 		}
 	}
-	return RuntimeConventions{}, false
+	return best, found
 }
 
 // TestConventions defines language-specific defaults for test execution.
@@ -85,12 +118,11 @@ var testConventions = map[string]TestConventions{
 }
 
 // TestConventionsForRuntime returns the TestConventions for the given runtime string.
-// Matching works the same as ConventionsForRuntime — by prefix.
+// Matching works by longest prefix, the same as ConventionsForRuntime.
+//
+// There is deliberately no OS-only entry, because one OS-only runtime serves
+// Go, Rust, Zig and C++, whose test layouts have nothing in common. The
+// directories belong to the resolved toolchain rather than to the runtime.
 func TestConventionsForRuntime(runtime string) (TestConventions, bool) {
-	for prefix, conv := range testConventions {
-		if strings.HasPrefix(runtime, prefix) {
-			return conv, true
-		}
-	}
-	return TestConventions{}, false
+	return longestPrefixMatch(testConventions, runtime)
 }

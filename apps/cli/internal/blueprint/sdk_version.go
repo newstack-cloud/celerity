@@ -15,6 +15,17 @@ import (
 const nodeSDKPackage = "@celerity-sdk/core"
 const pythonSDKPackage = "celerity-sdk"
 
+// CoreRuntimeImageVersion is the core runtime image version an OS-only
+// runtime resolves to.
+//
+// Pinned in the CLI rather than detected from the project, because there is
+// nothing in the project to detect. The core runtime carries no language SDK
+// and versions independently of every SDK: the contract it has to stay
+// compatible with is the IPC protocol, which is versioned in the proto
+// package path. The SDK the handlers executable was built against travels
+// inside the executable.
+const CoreRuntimeImageVersion = "0.3.0"
+
 // DetectSDKVersion reads the project's dependency file and returns the
 // Celerity SDK version declared for the given runtime.
 // The returned version is stripped of range prefixes (^, ~, >=, etc.)
@@ -31,6 +42,17 @@ func DetectSDKVersion(appDir string, runtime string) (string, error) {
 var sdkDetectors = map[string]func(string) (string, error){
 	consts.LanguageNodeJS: detectNodeSDKVersion,
 	consts.LanguagePython: detectPythonSDKVersion,
+	consts.RuntimeOSOnly:  detectCoreRuntimeVersion,
+}
+
+// detectCoreRuntimeVersion answers with the pinned core runtime version.
+//
+// Registered as a detector rather than special-cased by the caller so that an
+// OS-only runtime does not fall through to the "no SDK version detection"
+// error and silently take the default image version, which tracks the
+// language SDKs and would be the wrong number.
+func detectCoreRuntimeVersion(string) (string, error) {
+	return CoreRuntimeImageVersion, nil
 }
 
 // nodePackageJSON is the minimal structure needed to extract dependency versions.

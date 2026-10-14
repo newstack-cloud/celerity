@@ -12,6 +12,7 @@ import (
 	"github.com/newstack-cloud/celerity/apps/cli/internal/consts"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/devconfig/resolve"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/docker"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/handlertoolchain"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/preprocess"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/seed"
 	"go.uber.org/zap"
@@ -33,6 +34,10 @@ type ResolveOpts struct {
 	Mode          string // "run" or "test"
 	Verbose       bool
 	LocalAuth     bool // true (default) = patch issuer to dev auth sidecar; false = --no-local-auth
+	// Tracing runs a collector in the session and exports the application's
+	// spans to it, so a dispatch can be read as a timeline rather than
+	// reconstructed from log lines.
+	Tracing bool
 }
 
 // ResolvedConfig is the fully resolved configuration for a dev run.
@@ -55,6 +60,14 @@ type ResolvedConfig struct {
 	ModulePath          string
 	Port                string
 	ServiceName         string
+	// Toolchain builds the handlers executable, and is nil for a runtime that
+	// hosts the language itself.
+	Toolchain handlertoolchain.Toolchain
+	// HandlersExecutable is where the built executable must be written on the
+	// host for the container to find it. Empty when there is no Toolchain.
+	HandlersExecutable string
+	// Telemetry names what traces are exported with, or is empty for none.
+	Telemetry string
 }
 
 // Resolve assembles the complete configuration by loading the blueprint,
@@ -73,6 +86,11 @@ func Resolve(ctx context.Context, opts ResolveOpts, logger *zap.Logger) (*Resolv
 	bp, specFormat, err := blueprint.LoadForDev(bpPath)
 	if err != nil {
 		return nil, err
+	}
+
+	deployConfigPath := opts.DeployConfig
+	if deployConfigPath == "" {
+		deployConfigPath = FindDeployConfig(appDir)
 	}
 
 	deployTarget, err := resolveDeployTarget(appDir, opts.DeployConfig)
@@ -95,9 +113,25 @@ func Resolve(ctx context.Context, opts ResolveOpts, logger *zap.Logger) (*Resolv
 
 	modulePath := resolveModulePath(appDir, opts.ModulePath, runtime)
 
+	toolchain, err := resolveToolchain(runtime, appDir, deployConfigPath)
+	if err != nil {
+		return nil, err
+	}
+
 	conv, _ := consts.ConventionsForRuntime(runtime)
 	var manifest *preprocess.HandlerManifest
-	if conv.SupportsExtraction {
+	switch {
+	case toolchain != nil:
+		manifest, err = extractViaToolchain(ctx, toolchain, extractRequest{
+			AppDir:       appDir,
+			Blueprint:    bp,
+			DeployTarget: deployTarget,
+			Telemetry:    telemetryFor(opts),
+		}, logger)
+		if err != nil {
+			return nil, err
+		}
+	case conv.SupportsExtraction:
 		extractor := preprocess.NewExtractor(preprocess.ExtractorConfig{
 			Runtime:     runtime,
 			ModulePath:  modulePath,
@@ -107,7 +141,7 @@ func Resolve(ctx context.Context, opts ResolveOpts, logger *zap.Logger) (*Resolv
 		if err != nil {
 			return nil, fmt.Errorf("handler extraction: %w", err)
 		}
-	} else {
+	default:
 		logger.Info("handler extraction not available for runtime, using raw blueprint",
 			zap.String("runtime", runtime),
 		)
@@ -178,7 +212,8 @@ func Resolve(ctx context.Context, opts ResolveOpts, logger *zap.Logger) (*Resolv
 	}
 
 	composeCfg, err := compose.GenerateComposeConfig(
-		merged, deployTarget, composeProjectPrefix+serviceName, appDir, portOffset, opts.LocalAuth, logger,
+		merged, deployTarget, composeProjectPrefix+serviceName, appDir, portOffset,
+		opts.LocalAuth, opts.Tracing, logger,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("generating compose config: %w", err)
@@ -187,7 +222,13 @@ func Resolve(ctx context.Context, opts ResolveOpts, logger *zap.Logger) (*Resolv
 	containerCfg := buildContainerConfig(
 		runtimeImage, serviceName, port, appDir, mergedPath,
 		modulePath, composeCfg, merged, deployTarget, opts.Verbose,
+		toolchain != nil,
 	)
+
+	handlersExecutable := ""
+	if toolchain != nil {
+		handlersExecutable = filepath.Join(appDir, DevHandlersPath)
+	}
 
 	return &ResolvedConfig{
 		Blueprint:           merged,
@@ -208,6 +249,9 @@ func Resolve(ctx context.Context, opts ResolveOpts, logger *zap.Logger) (*Resolv
 		ModulePath:          modulePath,
 		Port:                port,
 		ServiceName:         serviceName,
+		Toolchain:           toolchain,
+		Telemetry:           telemetryFor(opts),
+		HandlersExecutable:  handlersExecutable,
 	}, nil
 }
 
@@ -257,6 +301,17 @@ func resolveSecretsDir(appDir string, mode string) string {
 	return resolve.DirWithTestFallback(appDir, "secrets", mode)
 }
 
+// telemetryFor reports what the session exports traces with.
+//
+// Only OpenTelemetry, because that is what every Celerity SDK implements and
+// what the collector in the session speaks.
+func telemetryFor(opts ResolveOpts) string {
+	if !opts.Tracing {
+		return ""
+	}
+	return handlertoolchain.TelemetryOTel
+}
+
 func deployTargetToProvider(deployTarget string) string {
 	return resolve.DeployTargetToProvider(deployTarget)
 }
@@ -272,6 +327,7 @@ func buildContainerConfig(
 	bp *schema.Blueprint,
 	deployTarget string,
 	verbose bool,
+	osOnly bool,
 ) *docker.ContainerConfig {
 	envVars := map[string]string{
 		"CELERITY_BLUEPRINT":          "/opt/celerity/merged.blueprint.yaml",
@@ -283,6 +339,10 @@ func buildContainerConfig(
 		"CELERITY_RUNTIME":            "true",
 		"CELERITY_LOG_FORMAT":         "json",
 		"CELERITY_CONFIG_VALKEY_HOST": "valkey",
+		// Set whether or not traces are exported. An SDK reads it only once
+		// exporting is enabled, which keeps the one gate in the compose
+		// generator beside the collector it needs.
+		"OTEL_SERVICE_NAME": serviceName,
 	}
 
 	if verbose {
@@ -310,6 +370,17 @@ func buildContainerConfig(
 		envVars["CELERITY_RESOURCE_LINKS"] = linksJSON
 	}
 
+	if osOnly {
+		// The core runtime hosts no language: it starts a pre-compiled
+		// handlers executable and streams events to it, so it has to be told
+		// where that executable is. The image defaults to
+		// /opt/celerity/app/handlers, which is where a derivative image puts
+		// one; a dev session builds its own under .celerity instead.
+		envVars["CELERITY_HANDLERS_EXECUTABLE"] = ContainerHandlersExecutable()
+		// Meaningless without a module to load. The executable is the module.
+		delete(envVars, "CELERITY_MODULE_PATH")
+	}
+
 	binds := []string{
 		appDir + ":/opt/celerity/app",
 		mergedBlueprintPath + ":/opt/celerity/merged.blueprint.yaml:ro",
@@ -323,7 +394,7 @@ func buildContainerConfig(
 	return &docker.ContainerConfig{
 		Image:         image,
 		ContainerName: "celerity-dev-" + serviceName,
-		Cmd:           []string{"dev"},
+		Cmd:           containerCmd(osOnly),
 		HostPort:      port,
 		ContainerPort: "8080",
 		AppDir:        appDir,
@@ -331,4 +402,18 @@ func buildContainerConfig(
 		Binds:         binds,
 		NetworkName:   networkName,
 	}
+}
+
+// containerCmd is the argument list the runtime image is started with.
+//
+// The language runtime images have an entrypoint script that takes "dev" and
+// installs the application's dependencies before handing over. The core
+// runtime has no script and reads no arguments at all, so "dev" there is an
+// argument nothing consumes, which is a trap for whoever gives it meaning
+// later.
+func containerCmd(osOnly bool) []string {
+	if osOnly {
+		return nil
+	}
+	return []string{"dev"}
 }

@@ -77,6 +77,19 @@ func (e *Extractor) buildArgs() ([]string, error) {
 	}
 }
 
+// The module loader extraction runs the application under. It has to be an SWC
+// one, because esbuild (which tsx uses) does not implement
+// emitDecoratorMetadata, and without design:paramtypes a handler that injects a
+// service by type alone contributes no edge to the injection graph. Extraction
+// then succeeds with that handler reported as reaching nothing, so its resource
+// links are lost and the deployed handler fails on its first real event for
+// want of a permission.
+const nodeLoader = "@swc-node/register/esm-register"
+
+// The directory the loader is installed at, which is how its presence is
+// checked.
+var nodeLoaderPackage = filepath.Join("node_modules", "@swc-node", "register")
+
 func (e *Extractor) buildNodeArgs() ([]string, error) {
 	extractBin := filepath.Join(e.config.ProjectRoot, "node_modules", ".bin", "celerity-extract")
 	if _, err := os.Stat(extractBin); err != nil {
@@ -86,9 +99,19 @@ func (e *Extractor) buildNodeArgs() ([]string, error) {
 		)
 	}
 
+	loaderDir := filepath.Join(e.config.ProjectRoot, nodeLoaderPackage)
+	if _, err := os.Stat(loaderDir); err != nil {
+		return nil, fmt.Errorf(
+			"handler extraction needs @swc-node/register, which is not installed at %s.\n"+
+				"It is what emits the decorator metadata a handler's resource links are read "+
+				"from; without it they are silently lost",
+			loaderDir,
+		)
+	}
+
 	return []string{
 		"node",
-		"--import", "tsx",
+		"--import", nodeLoader,
 		extractBin,
 		"--module", e.config.ModulePath,
 		"--project-root", e.config.ProjectRoot,

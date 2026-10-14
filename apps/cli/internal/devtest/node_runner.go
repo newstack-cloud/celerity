@@ -38,7 +38,7 @@ func (r *NodeRunner) Run(ctx context.Context, config RunConfig) (*RunResult, err
 
 	if len(commands) == 0 {
 		return nil, fmt.Errorf(
-			"no test scripts found in package.json and no test framework detected; "+
+			"no test scripts found in package.json and no test framework detected; " +
 				"add a \"test\" script to package.json or use --test-command",
 		)
 	}

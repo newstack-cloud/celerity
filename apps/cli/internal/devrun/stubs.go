@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/newstack-cloud/celerity/apps/cli/internal/compose"
@@ -12,15 +13,18 @@ import (
 	"go.uber.org/zap"
 )
 
-// loadStubs loads mountebank imposters and seeds stub service URLs into
-// the config namespace. This runs after startDependencies (mountebank is
-// healthy) and before seedData.
+// Runs after startDependencies, so mountebank is already healthy, and before
+// seedData.
 //
-// When hostMode is true (integration tests), stub URLs are seeded as
-// localhost addresses since the test process runs on the host.
-// When false (full/API mode), URLs use Docker network addresses since
-// the app container runs on the compose network.
+// With hostMode set, for integration tests, stub URLs are seeded as localhost
+// addresses because the test process runs on the host. Without it, for full and
+// API mode, they use Docker network addresses reachable from the app container
+// on the compose network.
 func (o *Orchestrator) loadStubs(ctx context.Context, hostMode bool) error {
+	if o.config.ComposeCfg == nil {
+		return nil
+	}
+
 	stubServices := o.config.ComposeCfg.StubServices
 	if len(stubServices) == 0 {
 		return nil
@@ -32,13 +36,11 @@ func (o *Orchestrator) loadStubs(ctx context.Context, hostMode bool) error {
 		return nil
 	}
 
-	// Wait for mountebank to be ready.
 	if err := waitForMountebank(ctx, mbAPIURL); err != nil {
 		o.output.PrintWarning("Mountebank not ready", err)
 		return nil
 	}
 
-	// Load imposters from stub files.
 	loaded, err := devstubs.LoadStubs(o.config.AppDir)
 	if err != nil {
 		o.output.PrintWarning("Failed to load stubs for imposters", err)
@@ -75,14 +77,12 @@ func (o *Orchestrator) seedStubConfigValues(ctx context.Context, stubServices []
 	}
 	defer seeder.Close()
 
+	configs := seed.CollectConfigResources(o.config.Blueprint)
+
 	for _, svc := range stubServices {
-		namespace := svc.ConfigNamespace
-		if namespace == "" {
-			// Default to the first config resource's store name.
-			configs := seed.CollectConfigResources(o.config.Blueprint)
-			if len(configs) > 0 {
-				namespace = configs[0].StoreName
-			}
+		namespace, err := resolveStubConfigNamespace(svc, configs)
+		if err != nil {
+			return err
 		}
 		if namespace == "" {
 			o.logger.Warn("no config namespace for stub service, skipping config seed",
@@ -93,10 +93,10 @@ func (o *Orchestrator) seedStubConfigValues(ctx context.Context, stubServices []
 
 		var url string
 		if hostMode {
-			// Host URL — integration tests run on the host.
+			// Integration tests run on the host.
 			url = fmt.Sprintf("http://localhost:%d", svc.HostPort)
 		} else {
-			// Docker network URL — the app container resolves "stubs" via compose DNS.
+			// The app container resolves "stubs" through compose DNS.
 			url = fmt.Sprintf("http://%s:%d", compose.ServiceNameStubs, svc.Port)
 		}
 		values := map[string]string{svc.ConfigKey: url}
@@ -140,4 +140,53 @@ func waitForMountebank(ctx context.Context, baseURL string) error {
 	}
 
 	return fmt.Errorf("mountebank not ready at %s after 15s", baseURL)
+}
+
+// A declared namespace wins, matched against the application's config resources
+// by either the blueprint resource name or the store name, so an author can name
+// whichever they think of it by.
+//
+// With nothing declared and exactly one config resource there is no choice to
+// make, so that one is used. With several this is an error rather than a guess,
+// because picking one seeds the URL into a store the application never reads and
+// the only symptom is requests going to the real endpoint instead of the stub, a
+// long way from the blueprint that caused it.
+func resolveStubConfigNamespace(
+	svc compose.StubServiceInfo,
+	configs []seed.ConfigResourceInfo,
+) (string, error) {
+	if declared := svc.ConfigNamespace; declared != "" {
+		for _, cfg := range configs {
+			if cfg.ResourceName == declared || cfg.StoreName == declared {
+				return cfg.StoreName, nil
+			}
+		}
+		// Named a store this application does not declare. Passed through
+		// rather than refused, since a store can exist without the blueprint
+		// describing it.
+		return declared, nil
+	}
+
+	switch len(configs) {
+	case 0:
+		// Nothing to seed into. The caller skips the service.
+		return "", nil
+	case 1:
+		return configs[0].StoreName, nil
+	default:
+		return "", fmt.Errorf(
+			"stub service %q does not say which config store its URL belongs in, and this "+
+				"application has %d: %s.\n"+
+				"Set configNamespace on the stub service to one of them",
+			svc.Name, len(configs), strings.Join(configStoreNames(configs), ", "),
+		)
+	}
+}
+
+func configStoreNames(configs []seed.ConfigResourceInfo) []string {
+	names := make([]string, 0, len(configs))
+	for _, cfg := range configs {
+		names = append(names, cfg.StoreName)
+	}
+	return names
 }
