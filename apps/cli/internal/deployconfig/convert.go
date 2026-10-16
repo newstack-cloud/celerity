@@ -104,8 +104,17 @@ func pluginVersionConstraint(pluginID string) string {
 // Config key prefixes, keyed by provider namespace, marking a value as
 // resource-specific deployment configuration handled by the Celerity
 // transformer rather than the provider.
+//
+// A prefix omitted here is sent to the provider, which does not declare it, so
+// the key fails validation rather than reaching the plugin that reads it. Whether
+// a key is valid is decided by the receiving plugin's config definition, not by
+// this list.
 var transformerConfigPrefixes = map[string][]string{
-	"aws":    {"aws.sqs.", "aws.sns.", "aws.dynamodb.", "aws.s3.", "aws.lambda.", "aws.apigateway.", "aws.ecs.", "aws.eks."},
+	"aws": {
+		"aws.sqs.", "aws.sns.", "aws.dynamodb.", "aws.s3.", "aws.lambda.",
+		"aws.apigateway.", "aws.ecs.", "aws.eks.",
+		"aws.vpc.", "aws.rds.", "aws.aurora.", "aws.elasticache.",
+	},
 	"gcloud": {"gcloud.pubsub.", "gcloud.cloudfunctions.", "gcloud.cloudrun.", "gcloud.firestore.", "gcloud.storage."},
 	"azure":  {"azure.servicebus.", "azure.functions.", "azure.container.", "azure.cosmosdb.", "azure.storage."},
 }

@@ -307,3 +307,48 @@ func (s *ConvertTestSuite) Test_stripJSONCComments_trailing_commas() {
 	result := stripJSONCComments(input)
 	s.NotContains(result, ",\n}")
 }
+
+// The vpc, rds, aurora and elasticache prefixes must reach the transformer that
+// reads them; sent to the provider they fail validation as unexpected fields.
+func (s *ConvertTestSuite) Test_ConvertToBluelinkFormat_routes_vpc_database_and_cache_config() {
+	cfg := &AppDeployConfig{
+		DeployTarget: DeployTarget{
+			Name: "aws",
+			Config: map[string]any{
+				"aws.vpc.appVpc.cidrBlock":              "10.42.0.0/16",
+				"aws.vpc.enableDNSHostnames":            true,
+				"aws.rds.appDb.instanceClass":           "db.r6g.large",
+				"aws.rds.appDb.allocatedStorage":        200,
+				"aws.aurora.appDb.enabled":              true,
+				"aws.aurora.appDb.minACU":               0.5,
+				"aws.elasticache.appCache.nodeType":     "cache.t4g.micro",
+				"aws.elasticache.snapshotRetentionDays": 7,
+			},
+		},
+	}
+
+	blCfg, err := ConvertToBluelinkFormat(cfg)
+	s.Require().NoError(err)
+
+	transformerCfg := blCfg.Transformers["celerity"]
+	s.Equal("10.42.0.0/16", transformerCfg["aws.vpc.appVpc.cidrBlock"])
+	s.Equal(true, transformerCfg["aws.vpc.enableDNSHostnames"])
+	s.Equal("db.r6g.large", transformerCfg["aws.rds.appDb.instanceClass"])
+	s.Equal(200, transformerCfg["aws.rds.appDb.allocatedStorage"])
+	s.Equal(true, transformerCfg["aws.aurora.appDb.enabled"])
+	s.Equal(0.5, transformerCfg["aws.aurora.appDb.minACU"])
+	s.Equal("cache.t4g.micro", transformerCfg["aws.elasticache.appCache.nodeType"])
+	s.Equal(7, transformerCfg["aws.elasticache.snapshotRetentionDays"])
+
+	// None of them may reach the provider, in either key shape.
+	providerCfg := blCfg.Providers["aws"]
+	for _, key := range []string{
+		"vpc.appVpc.cidrBlock",
+		"aws.vpc.appVpc.cidrBlock",
+		"rds.appDb.instanceClass",
+		"aurora.appDb.minACU",
+		"elasticache.appCache.nodeType",
+	} {
+		s.NotContains(providerCfg, key)
+	}
+}
