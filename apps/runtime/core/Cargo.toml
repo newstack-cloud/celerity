@@ -17,8 +17,8 @@ name = "celerity-runtime-core"
 path = "src/main.rs"
 
 [dependencies]
-libc = "=0.2.189"
-tokio = { version = "=1.53.1", features = ["full"] }
+libc = "=0.2.190"
+tokio = { version = "=1.53.3", features = ["full"] }
 tracing = "=0.1.44"
 
 [dependencies.celerity_runtime_core]
