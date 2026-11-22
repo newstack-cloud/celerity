@@ -14,67 +14,20 @@ git config core.hooksPath .githooks
 There are npm dependencies that provide tools that are used in git hooks and scripting that span
 multiple applications and libraries.
 
-Install dependencies from the root directory by simply running:
+Install dependencies from the root directory, so the commit-msg hook finds commitlint in a
+`node_modules` instead of downloading it on every commit:
 ```bash
-yarn
+YARN_NODE_LINKER=node-modules yarn install
 ```
 
-## Build-time
+Yarn 4 otherwise installs in Plug'n'Play mode, without a `node_modules`.
 
-Tools and libraries that make up the Celerity "build-time engine" that handles everything involved in validating source code/configuration, parsing, packaging and deploying Celerity backend services.
+## Projects
 
-### Binary applications
-
-- [Celerity CLI](./apps/cli)
-- [Celerity API](./apps/api)
-
-### Libraries
-
-- [Blueprint](./libs/blueprint)
-- [Deploy Engine](./libs/deploy-engine)
-- [Common](./libs/common)
-
-### Validators
-
-## Runtime
-
-The runtime powers applications built with Celerity across all the supported languages. The core runtime is Rust with FFI/C API interfaces exposed through libraries in each language supported by Celerity.
-The runtime provides a framework to run a HTTP/WebSocket API server and async message consumers (polling).
-
-The runtime is designed to be used in local emulator environments and for containerised deployments of a Celerity backend application.
-
-### Libraries
-
-- [Runtime Core](./runtime/core)
-
-### Runtimes
-
-The runtime directories host instances of the core Rust runtime embedded into thin wrapper applications along with automatically generated SDKs for supported Celerity languages.
-
-Each runtime has an accompanying docker image that are used in the build-time phase in deploying applications as containerised services. 
-
-- [Go](./runtime/go)
-- [Java](./runtime/java)
-- [NodeJS](./runtime/nodejs)
-- [Python](./runtime/python)
-- [Rust](./runtime/rust)
-
-## Templates
-
-Templates provide sample applications built with the Celerity framework that are used as boilerplates when creating new Celerity projects.
-
-- [Go Templates](./templates/go)
-- [Java Templates](./templates/java)
-- [NodeJS Templates](./templates/nodejs)
-- [Python Templates](./templates/python)
-- [Rust Templates](./templates/rust)
-
-## Tools
-
-Tools provide test harnesses along with the packaging/release tooling for all the components that make up the Celerity framework.
-
-- [Releaser CLI](./tools/releaser) - The releaser CLI used to manage releases for Celerity libraries and applications.
-- [Test Runner CLI](./tools/test-runner) - The test runner CLI handles creating test environments for integration/integrated tests for Celerity libraries and applications.
+[docs/INDEX.md](./docs/INDEX.md) lists the released applications and libraries, with their
+language and release component. Build, lint and test commands are in each project's
+`CONTRIBUTING.md`: `apps/cli/docs/CONTRIBUTING.md`, `apps/local-events/docs/CONTRIBUTING.md`,
+and `libs/runtime/CONTRIBUTING.md` for all the runtime crates. dev-auth has only `scripts/lint.sh`.
 
 ## Further documentation
 
