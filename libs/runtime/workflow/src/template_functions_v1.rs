@@ -39,7 +39,7 @@ impl fmt::Display for FunctionCallError {
 /// The use of `{}` in the format string will be replaced by the arguments
 /// in the order they are provided.
 ///
-/// See [format function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#format).
+/// See [format function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#format).
 pub fn format(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.is_empty() {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -93,7 +93,7 @@ pub fn format(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function decodes a JSON string into an object, array or scalar value.
 ///
-/// See [jsondecode function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#jsondecode).
+/// See [jsondecode function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#jsondecode).
 pub fn jsondecode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 1 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -122,7 +122,7 @@ pub fn jsondecode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function encodes a value into a JSON string.
 ///
-/// See [jsonencode function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#jsonencode).
+/// See [jsonencode function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#jsonencode).
 pub fn jsonencode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 1 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -142,7 +142,7 @@ pub fn jsonencode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function merges two JSON objects into a single JSON object.
 ///
-/// See [jsonmerge function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#jsonmerge).
+/// See [jsonmerge function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#jsonmerge).
 pub fn jsonmerge(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 2 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -167,7 +167,7 @@ pub fn jsonmerge(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function base64 encodes a string.
 ///
-/// See [b64encode function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#b64encode).
+/// See [b64encode function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#b64encode).
 pub fn b64encode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 1 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -191,7 +191,7 @@ pub fn b64encode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function base64 decodes a string.
 ///
-/// See [b64decode function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#b64decode).
+/// See [b64decode function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#b64decode).
 pub fn b64decode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 1 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -229,7 +229,7 @@ pub fn b64decode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 /// MD5 and SHA1 were considered in the original design but were not included
 /// due to the insecurity of these algorithms.
 ///
-/// See [hash function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#hash).
+/// See [hash function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#hash).
 pub fn hash(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 2 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -286,7 +286,7 @@ pub fn hash(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function creates a list from a set of positional arguments.
 ///
-/// See [list function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#list).
+/// See [list function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#list).
 pub fn list(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     Ok(Value::Array(args))
 }
@@ -295,7 +295,7 @@ pub fn list(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function splits a list into chunks of a specified size.
 ///
-/// See [chunk list function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#chunk_list).
+/// See [chunk list function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#chunk_list).
 pub fn chunk_list(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 2 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -334,7 +334,7 @@ pub fn chunk_list(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function returns an element from a list at a specific index.
 ///
-/// See [list element function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#list_elem).
+/// See [list element function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#list_elem).
 pub fn list_elem(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 2 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -377,7 +377,7 @@ pub fn list_elem(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 /// The functoin will carry out deep equality checks for objects and arrays,
 /// performance may be significantly implacted when working with large and complex structures.
 ///
-/// See [remove duplicates function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#remove_duplicates).
+/// See [remove duplicates function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#remove_duplicates).
 pub fn remove_duplicates(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 1 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -409,7 +409,7 @@ pub fn remove_duplicates(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 /// This function checks if a value is present in a list or a substring is present in a string.
 /// This will carry out deep equality checks for objects and arrays.
 ///
-/// See [contains function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#contains).
+/// See [contains function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#contains).
 pub fn contains(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 2 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -445,7 +445,7 @@ pub fn contains(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function splits a string into an array of substrings based on a delimiter.
 ///
-/// See [split function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#split).
+/// See [split function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#split).
 pub fn split(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 2 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -485,7 +485,7 @@ pub fn split(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 /// This function generates a random number between a minimum and maximum value.
 /// The random number generated is an integer and the provided parameters must be integers.
 ///
-/// See [math rand function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#math_rand).
+/// See [math rand function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#math_rand).
 pub fn math_rand(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 2 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -526,7 +526,7 @@ pub fn math_rand(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function will add two numbers together.
 ///
-/// See [math add function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#math_add).
+/// See [math add function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#math_add).
 pub fn math_add(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 2 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -561,7 +561,7 @@ pub fn math_add(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function will subtract the second number from the first.
 ///
-/// See [math subtract function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#math_sub).
+/// See [math subtract function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#math_sub).
 pub fn math_sub(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 2 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -596,7 +596,7 @@ pub fn math_sub(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function will multiply two numbers together.
 ///
-/// See [math mult function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#math_mult).
+/// See [math mult function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#math_mult).
 pub fn math_mult(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 2 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -631,7 +631,7 @@ pub fn math_mult(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function will divide a number by another.
 ///
-/// See [math div function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#math_div).
+/// See [math div function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#math_div).
 pub fn math_div(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 2 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -672,7 +672,7 @@ pub fn math_div(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function will return the length of a string or an array.
 ///
-/// See [len function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#len).
+/// See [len function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#len).
 pub fn len(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() != 1 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -694,7 +694,7 @@ pub fn len(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// This function generates a random UUID as per the UUID version 4 specification.
 ///
-/// See [uuid function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#uuid).
+/// See [uuid function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#uuid).
 pub fn uuid(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if !args.is_empty() {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -710,7 +710,7 @@ pub fn uuid(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 /// This function provides a way to generate an ID that is shorter than a UUID
 /// while maintaining a low probability of collisions.
 ///
-/// See [nanoid function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#nanoid).
+/// See [nanoid function definition](https://celerity.dev/docs/framework/applications/resources/celerity-workflow#nanoid).
 pub fn nanoid(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if !args.is_empty() {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
