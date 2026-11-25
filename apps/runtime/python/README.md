@@ -1,6 +1,6 @@
 # Celerity Python Runtime
 
-The Python runtime host for [Celerity](https://celerityframework.com) applications.
+The Python runtime host for [Celerity](https://celerity.dev) applications.
 Bridges the Rust core runtime (via PyO3 FFI bindings) with Python application code
 using the `celerity-sdk` framework.
 
