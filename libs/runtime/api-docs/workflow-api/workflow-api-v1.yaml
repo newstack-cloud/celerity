@@ -23,7 +23,7 @@ parameters:
       A header containing a signature in the [Bluelink Signature v1](https://bluelink.dev/docs/bluelink/auth/signature-v1) format.
       This is used to authenticate requests to Workflow API endpoints.
       This is required if an API key and a bearer token are not present and the Workflow application is configured to use signature auth.
-    example: 'keyId="test-key-id" headers="Celerity-Date X-Custom-Header" signature="{signature}"'
+    example: 'keyId="test-key-id", headers="bluelink-date x-custom-header", signature="{signature}"'
 
 paths:
   /run:
