@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// The parsed data from a binary message in the
-/// [Celerity Binary Message Format](https://celerityframework.io/docs/framework/applications/resources/celerity-api#celerity-binary-message-format)
+/// [Celerity Binary Message Format](https://celerity.dev/docs/framework/applications/resources/celerity-api#celerity-binary-message-format)
 /// used for WebSocket APIs.
 #[derive(Debug, PartialEq)]
 pub struct BinaryMessageData {
@@ -71,7 +71,7 @@ pub enum BinaryMessageParseError {
 }
 
 /// Parses a binary message in the
-/// [Celerity Binary Message Format](https://celerityframework.io/docs/framework/applications/resources/celerity-api#celerity-binary-message-format)
+/// [Celerity Binary Message Format](https://celerity.dev/docs/framework/applications/resources/celerity-api#celerity-binary-message-format)
 /// used for WebSocket APIs.
 /// Empty payloads are allowed but all other fields are required.
 pub fn parse_binary_message(
@@ -156,7 +156,7 @@ pub fn parse_binary_message(
 }
 
 /// The parts of a binary message to be framed in the
-/// [Celerity Binary Message Format](https://celerityframework.io/docs/framework/applications/resources/celerity-api#celerity-binary-message-format).
+/// [Celerity Binary Message Format](https://celerity.dev/docs/framework/applications/resources/celerity-api#celerity-binary-message-format).
 pub struct BinaryMessageParts<'a> {
     /// The route the message is for, which a client uses to hand it to the
     /// right handler. Reserved single byte routes are not built through here,
@@ -179,7 +179,7 @@ pub enum BinaryMessageEncodeError {
 }
 
 /// Frames a binary message in the
-/// [Celerity Binary Message Format](https://celerityframework.io/docs/framework/applications/resources/celerity-api#celerity-binary-message-format).
+/// [Celerity Binary Message Format](https://celerity.dev/docs/framework/applications/resources/celerity-api#celerity-binary-message-format).
 ///
 /// The mirror of [`parse_binary_message`], and the reason a caller should not
 /// be laying out these bytes itself. Every field that cannot be represented is
