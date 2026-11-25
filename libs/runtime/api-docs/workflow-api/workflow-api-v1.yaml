@@ -15,7 +15,7 @@ tags:
 
 parameters:
   CeleritySignatureHeader:
-    name: Celerity-Signature-V1
+    name: Bluelink-Signature-V1
     type: string
     in: header
     required: false
