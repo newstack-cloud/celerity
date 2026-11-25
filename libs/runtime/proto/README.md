@@ -82,7 +82,7 @@ The `.proto` is the authority on message shapes, field numbers and wire
 compatibility. What it cannot express is ordering, timing and obligation, and
 those are what an SDK author gets wrong. This section is the short form; the
 normative specification is the
-[Handler IPC Protocol](https://celerityframework.io/docs/framework/runtime/handler-ipc-protocol)
+[Handler IPC Protocol](https://celerity.dev/docs/framework/runtime/handler-ipc-protocol)
 document.
 
 An implementation must:
