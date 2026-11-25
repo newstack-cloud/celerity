@@ -17,7 +17,7 @@ servers:
       Workflow engine API server to stream workflow execution events from.
       The host specified in this server is nothing more than a placeholder, the actual base URL will be unique for each deployment of a Celerity workflow application.
 
-      In addition to the API Key and JWT Token security schemes defined for the server, the [Celerity Signature v1](https://celerity.dev/docs/framework/auth/signature-v1) authentication method is also supported for streaming workflow execution events, it is not listed in the security section as AsyncAPI lacks a way to document custom authentication methods.
+      In addition to the API Key and JWT Token security schemes defined for the server, the [Bluelink Signature v1](https://bluelink.dev/docs/bluelink/auth/signature-v1) authentication method is also supported for streaming workflow execution events, it is not listed in the security section as AsyncAPI lacks a way to document custom authentication methods.
     security:
       - $ref: '#/components/securitySchemes/api_key'
       - $ref: '#/components/securitySchemes/jwt_token'
