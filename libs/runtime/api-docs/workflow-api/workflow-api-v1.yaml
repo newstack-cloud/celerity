@@ -20,7 +20,7 @@ parameters:
     in: header
     required: false
     description: |
-      A header containing a signature in the [Celerity Signature v1](https://celerityframework.com/docs/auth/signature-v1) format.
+      A header containing a signature in the [Celerity Signature v1](https://celerity.dev/docs/framework/auth/signature-v1) format.
       This is used to authenticate requests to Workflow API endpoints.
       This is required if an API key and a bearer token are not present and the Workflow application is configured to use signature auth.
     example: 'keyId="test-key-id" headers="Celerity-Date X-Custom-Header" signature="{signature}"'

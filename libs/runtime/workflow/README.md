@@ -3,7 +3,7 @@
 [![codecov](https://codecov.io/gh/newstack-cloud/celerity/graph/badge.svg?token=u1SKOg58yo&flag=runtime-lib-workflow)](https://codecov.io/gh/newstack-cloud/celerity)
 
 This package provides the workflow engine components designed to be used in the Celerity workflow runtime.
-This crate provides a HTTP server application for the workflow engine that implements the specification defined in the [Celerity Workflow Specification](https://celerityframework.io/docs/framework/applications/resources/celerity-workflow).
+This crate provides a HTTP server application for the workflow engine that implements the specification defined in the [Celerity Workflow Specification](https://celerity.dev/docs/framework/applications/resources/celerity-workflow).
 This package creates an executable workflow from a blueprint file and a set of handlers.
 This also provides an API for the registration of handlers.
 
