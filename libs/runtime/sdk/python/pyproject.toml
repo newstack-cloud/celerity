@@ -20,9 +20,9 @@ classifiers = [
 dynamic = ["version"]
 
 [project.urls]
-Homepage = "https://celerityframework.io"
+Homepage = "https://celerity.dev"
 Repository = "https://github.com/two-hundred/celerity"
-Documentation = "https://www.celerityframework.io/docs/python-runtime/"
+Documentation = "https://celerity.dev/docs/python-runtime/"
 
 [dependency-groups]
 dev = [
