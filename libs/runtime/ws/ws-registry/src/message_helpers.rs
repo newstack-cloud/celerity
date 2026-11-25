@@ -7,7 +7,7 @@ use crate::{errors::WebSocketConnError, types::MessageType};
 
 /// Creates a message lost event to be sent to a WebSocket connection.
 /// This follows the Celerity Binary Message Format documented here:
-/// https://celerityframework.io/docs/framework/applications/resources/celerity-api#celerity-binary-message-format
+/// https://celerity.dev/docs/framework/applications/resources/celerity-api#celerity-binary-message-format
 pub fn create_message_lost_event(message_id: String, caller: Option<String>) -> Vec<u8> {
     let payload = json!({
         "messageId": message_id,
