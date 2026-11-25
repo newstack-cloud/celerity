@@ -4,7 +4,7 @@ The backend toolkit that gets you moving fast
 
 - [Contributing](./CONTRIBUTING.md)
 - [Architecture Overview](./ARCHITECTURE_OVERVIEW.md)
-- [Docs Site](https://celerityframework.io)
+- [Docs Site](https://celerity.dev)
 
 Celerity lets you write your application code once and deploy it to any cloud provider — or on-premises — without modification. Your handlers and application logic stay the same whether you target AWS, Google Cloud, Azure, or a self-hosted environment; Celerity takes care of the mapping between your application and the underlying platform.
 
