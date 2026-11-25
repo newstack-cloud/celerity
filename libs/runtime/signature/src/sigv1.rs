@@ -21,7 +21,7 @@ pub const DATE_HEADER_NAME: &str = "Bluelink-Date";
 pub const DEFAULT_CLOCK_SKEW: u64 = 300;
 
 /// Verify a signature header with
-/// [Bluelink Signature v1](https://www.bluelink.dev/docs/auth/signature-v1).
+/// [Bluelink Signature v1](https://bluelink.dev/docs/bluelink/auth/signature-v1).
 ///
 /// # Errors
 ///
@@ -89,7 +89,7 @@ pub fn verify_signature(
 }
 
 /// Creates a signature header value to be attached to a request
-/// for [Bluelink Signature v1](https://www.bluelink.dev/docs/auth/signature-v1).
+/// for [Bluelink Signature v1](https://bluelink.dev/docs/bluelink/auth/signature-v1).
 /// This function will return the value of the signature header that should be
 /// set in the "Bluelink-Signature-V1" header of the request.
 ///
